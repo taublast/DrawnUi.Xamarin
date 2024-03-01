@@ -88,19 +88,10 @@ namespace AppoMobi.Forms.Gestures
     {
         public TouchEffect() : base("AMFEffects.TouchEffect")
         {
-            
+
         }
 
-        public class ScaleEventArgs : EventArgs
-        {
-
-            public float Scale { get; set; }
-
-            /// <summary>
-            /// Pixels inside parent view
-            /// </summary>
-            public PointF Center { get; set; }
-        }
+        public new Element Element { get; set; }
 
         public static bool LogEnabled { get; set; }
 

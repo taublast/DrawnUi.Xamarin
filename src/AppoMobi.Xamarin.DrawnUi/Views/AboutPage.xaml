@@ -43,8 +43,9 @@
             </StackLayout>
         </StackLayout>
 
-        <ScrollView Grid.Row="1">
+   
             <StackLayout
+                Grid.Row="1"
                 Padding="30,24,30,24"
                 Orientation="Vertical"
                 Spacing="10">
@@ -56,68 +57,82 @@
 
                 <drawn:Canvas
                     Background="Transparent"
-                    HeightRequest="150"
+                    Gestures="Enabled"
+                    HeightRequest="250"
                     HorizontalOptions="Fill">
 
-                    <draw:SkiaLayout
+                    <draw:SkiaScroll
+                        BackgroundColor="Gainsboro"
                         HorizontalOptions="Fill"
                         VerticalOptions="Fill">
 
-                        <draw:SkiaShape
-                            Margin="16"
-                            BackgroundColor="Green"
-                            CornerRadius="20,10,20,10"
+                        <draw:SkiaLayout
+                            BackgroundColor="White"
+                            ColumnDefinitions="50*,50*"
+                            ColumnSpacing="12"
+                            HeightRequest="500"
                             HorizontalOptions="Fill"
+                            RowDefinitions="50*,50*"
+                            RowSpacing="12"
+                            Tag="Wrapper"
+                            Type="Absolute"
                             VerticalOptions="Fill">
 
-                            <draw:SkiaControl.FillGradient>
+                            <draw:SkiaShape
+                                Margin="16"
+                                BackgroundColor="Green"
+                                CornerRadius="20,10,20,10"
+                                HeightRequest="100"
+                                HorizontalOptions="Fill">
 
-                                <draw:SkiaGradient
-                                    EndXRatio="1"
-                                    EndYRatio="1"
-                                    StartXRatio="0"
-                                    StartYRatio="0"
-                                    Type="Linear">
-                                    <draw:SkiaGradient.Colors>
-                                        <Color>#FF4455</Color>
-                                        <Color>#88FF22</Color>
-                                        <Color>#222222</Color>
-                                    </draw:SkiaGradient.Colors>
-                                </draw:SkiaGradient>
+                                <draw:SkiaControl.FillGradient>
 
-                            </draw:SkiaControl.FillGradient>
+                                    <draw:SkiaGradient
+                                        EndXRatio="1"
+                                        EndYRatio="1"
+                                        StartXRatio="0"
+                                        StartYRatio="0"
+                                        Type="Linear">
+                                        <draw:SkiaGradient.Colors>
+                                            <Color>#FF4455</Color>
+                                            <Color>#88FF22</Color>
+                                        </draw:SkiaGradient.Colors>
+                                    </draw:SkiaGradient>
 
-                            <draw:SkiaControl.Shadows>
+                                </draw:SkiaControl.FillGradient>
 
-                                <draw:SkiaShadow
-                                    Blur="3"
-                                    Opacity="0.5"
-                                    X="2"
-                                    Y="3"
-                                    Color="Black" />
+                                <draw:SkiaControl.Shadows>
 
-                            </draw:SkiaControl.Shadows>
+                                    <draw:SkiaShadow
+                                        Blur="3"
+                                        Opacity="0.5"
+                                        X="2"
+                                        Y="3"
+                                        Color="Black" />
 
-                            <draw:SkiaImage
-                                Source="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Olive_baboon_Ngorongoro.jpg/220px-Olive_baboon_Ngorongoro.jpg"
-                                BackgroundColor="Black"
-                                HeightRequest="64"
+                                </draw:SkiaControl.Shadows>
+
+                                <draw:SkiaImage
+                                    BackgroundColor="Black"
+                                    HeightRequest="64"
+                                    HorizontalOptions="Center"
+                                    Source="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Olive_baboon_Ngorongoro.jpg/220px-Olive_baboon_Ngorongoro.jpg"
+                                    VerticalOptions="Center"
+                                    WidthRequest="64" />
+
+                            </draw:SkiaShape>
+
+                            <draw:SkiaLabel
+                                FontFamily="FontTextBold"
+                                FontSize="16"
                                 HorizontalOptions="Center"
-                                VerticalOptions="Center"
-                                WidthRequest="64" />
+                                Text="Hello World!"
+                                TextColor="White"
+                                VerticalOptions="Center" />
 
-                        </draw:SkiaShape>
+                        </draw:SkiaLayout>
 
-                        <draw:SkiaLabel
-                            TextColor="White"
-                            FontFamily="FontTextBold"
-                            FontSize="16"
-                            HorizontalOptions="Center"
-                            Text="Hello World!"
-                            VerticalOptions="Center" />
-
-                    </draw:SkiaLayout>
-
+                    </draw:SkiaScroll>
                 </drawn:Canvas>
 
 
@@ -130,7 +145,7 @@
 
             </StackLayout>
 
-        </ScrollView>
+ 
     </Grid>
 
 </ContentPage>

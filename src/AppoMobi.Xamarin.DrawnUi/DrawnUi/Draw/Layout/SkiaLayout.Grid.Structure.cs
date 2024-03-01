@@ -41,8 +41,8 @@ public partial class SkiaLayout
         readonly Thickness _padding;
         readonly double _rowSpacing;
         readonly double _columnSpacing;
-        readonly IReadOnlyList<IGridRowDefinition> _rowDefinitions;
-        readonly IReadOnlyList<IGridColumnDefinition> _columnDefinitions;
+        readonly IReadOnlyList<RowDefinition> _rowDefinitions;
+        readonly IReadOnlyList<ColumnDefinition> _columnDefinitions;
 
         readonly Dictionary<SpanKey, GridSpan> _spans = new();
 
@@ -161,11 +161,11 @@ public partial class SkiaLayout
                 {
                     if (isRow)
                     {
-                        array[i] = new DefinitionInfo(this._grid.DefaultRowDefinition.Height);
+                        array[i] = new DefinitionInfo(this._grid.DefaultRowDefinition);
                     }
                     else
                     {
-                        array[i] = new DefinitionInfo(this._grid.DefaultColumnDefinition.Width);
+                        array[i] = new DefinitionInfo(this._grid.DefaultColumnDefinition);
                     }
                 }
             }
@@ -178,14 +178,14 @@ public partial class SkiaLayout
             {
                 return new DefinitionInfo[]
                 {
-                    new DefinitionInfo(this._grid.DefaultRowDefinition.Height)
+                    new DefinitionInfo(this._grid.DefaultRowDefinition)
                 };
             }
             else
             {
                 return new DefinitionInfo[]
                 {
-                    new DefinitionInfo(this._grid.DefaultColumnDefinition.Width)
+                    new DefinitionInfo(this._grid.DefaultColumnDefinition)
                 };
             }
         }

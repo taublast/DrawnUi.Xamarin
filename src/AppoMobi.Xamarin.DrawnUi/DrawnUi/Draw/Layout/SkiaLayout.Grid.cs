@@ -2,6 +2,8 @@
 
 
 using System.ComponentModel;
+using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace DrawnUi.Maui.Draw;
 
@@ -129,10 +131,10 @@ public partial class SkiaLayout
     /// <summary>
     /// Will use this to create a missing but required ColumnDefinition
     /// </summary>
-    [System.ComponentModel.TypeConverter(typeof(ColumnDefinitionCollectionTypeConverter))]
-    public ColumnDefinition DefaultColumnDefinition
+    [System.ComponentModel.TypeConverter(typeof(GridLengthTypeConverter))]
+    public GridLength DefaultColumnDefinition
     {
-        get { return (ColumnDefinition)GetValue(DefaultColumnDefinitionProperty); }
+        get { return (GridLength)GetValue(DefaultColumnDefinitionProperty); }
         set { SetValue(DefaultColumnDefinitionProperty, value); }
     }
 
@@ -145,21 +147,21 @@ public partial class SkiaLayout
     /// <summary>
     /// Will use this to create a missing but required RowDefinition
     /// </summary>
-    [System.ComponentModel.TypeConverter(typeof(RowDefinitionCollectionTypeConverter))]
-    public RowDefinition DefaultRowDefinition
+    [System.ComponentModel.TypeConverter(typeof(GridLengthTypeConverter))]
+    public GridLength DefaultRowDefinition
     {
-        get { return (RowDefinition)GetValue(DefaultRowDefinitionProperty); }
+        get { return (GridLength)GetValue(DefaultRowDefinitionProperty); }
         set { SetValue(DefaultRowDefinitionProperty, value); }
     }
 
-    private List<IGridColumnDefinition> _colDefs;
-    private List<IGridRowDefinition> _rowDefs;
+    private List<ColumnDefinition> _colDefs;
+    private List<RowDefinition> _rowDefs;
 
     //private ColumnDefinitionCollection _colDefs;
     //private RowDefinitionCollection _rowDefs;
 
-    IReadOnlyList<IGridRowDefinition> ISkiaGridLayout.RowDefinitions => _rowDefs ??= new();//RowDefinitions
-    IReadOnlyList<IGridColumnDefinition> ISkiaGridLayout.ColumnDefinitions => _colDefs ??= new();//ColumnDefinitions
+    IReadOnlyList<RowDefinition> ISkiaGridLayout.RowDefinitions => _rowDefs ??= new(RowDefinitions);
+    IReadOnlyList<ColumnDefinition> ISkiaGridLayout.ColumnDefinitions => _colDefs ??= new(ColumnDefinitions);
 
     public static readonly BindableProperty RowSpacingProperty = BindableProperty.Create(nameof(RowSpacing), typeof(double), typeof(SkiaLayout),
         1.0,
@@ -213,8 +215,8 @@ public partial class SkiaLayout
             colDef.ItemSizeChanged += ((SkiaLayout)bindable).DefinitionsChanged;
             return colDef;
         });
-    [System.ComponentModel.TypeConverter(typeof(RowDefinitionCollectionTypeConverter))]
 
+    [System.ComponentModel.TypeConverter(typeof(RowDefinitionCollectionTypeConverter))]
     public RowDefinitionCollection RowDefinitions
     {
         get { return (RowDefinitionCollection)GetValue(RowDefinitionsProperty); }

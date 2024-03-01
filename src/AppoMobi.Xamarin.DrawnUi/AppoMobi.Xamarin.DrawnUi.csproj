@@ -8,20 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\Fonts\SFProDisplay-Bold.ttf" />
-    <None Remove="Resources\Fonts\SFProDisplay-Heavy.ttf" />
-    <None Remove="Resources\Fonts\SFProDisplay-Light.ttf" />
-    <None Remove="Resources\Fonts\SFProDisplay-Regular.ttf" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\Fonts\SFProDisplay-Bold.ttf" />
-    <EmbeddedResource Include="Resources\Fonts\SFProDisplay-Heavy.ttf" />
-    <EmbeddedResource Include="Resources\Fonts\SFProDisplay-Light.ttf" />
-    <EmbeddedResource Include="Resources\Fonts\SFProDisplay-Regular.ttf" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="AppoMobi.Specials" Version="8.0.3" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="SkiaSharp.Views.Forms" Version="2.88.7" />
@@ -33,5 +19,6 @@
 
   <ItemGroup>
     <Folder Include="DrawnUi\Features\" />
+    <Folder Include="Resources\Fonts\" />
   </ItemGroup>
 </Project>

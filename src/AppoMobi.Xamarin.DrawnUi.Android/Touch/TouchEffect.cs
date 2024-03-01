@@ -233,122 +233,122 @@ namespace AppoMobi.Framework.Droid.Touch
 
                     switch (motionEvent.ActionMasked)
                     {
-                        case MotionEventActions.Down:
-                        case MotionEventActions.PointerDown:
+                    case MotionEventActions.Down:
+                    case MotionEventActions.PointerDown:
 
-                            if (_parent.FormsEffect.TouchMode == TouchHandlingStyle.Lock)
-                                LockInput(sender);
-                            else
-                                UnlockInput(sender);
+                    if (_parent.FormsEffect.TouchMode == TouchHandlingStyle.Lock)
+                        LockInput(sender);
+                    else
+                        UnlockInput(sender);
 
-                            _parent.FireEvent(_parent, id, TouchActionType.Pressed,
-                                screenPointerCoords, true);
+                    _parent.FireEvent(_parent, id, TouchActionType.Pressed,
+                        screenPointerCoords, true);
 
-                            idToEffectDictionary[id] = _parent;
+                    idToEffectDictionary[id] = _parent;
 
-                            _parent.capture = _parent.FormsEffect.Capture;
-                            break;
+                    _parent.capture = _parent.FormsEffect.Capture;
+                    break;
 
-                        case MotionEventActions.Move:
+                    case MotionEventActions.Move:
 
-                            if (_parent.FormsEffect.TouchMode == TouchHandlingStyle.Lock)
-                                LockInput(sender);
-                            else
-                                UnlockInput(sender);
+                    if (_parent.FormsEffect.TouchMode == TouchHandlingStyle.Lock)
+                        LockInput(sender);
+                    else
+                        UnlockInput(sender);
 
-                            // Multiple Move events are bundled, so handle them in a loop
-                            for (pointerIndex = 0; pointerIndex < motionEvent.PointerCount; pointerIndex++)
+                    // Multiple Move events are bundled, so handle them in a loop
+                    for (pointerIndex = 0; pointerIndex < motionEvent.PointerCount; pointerIndex++)
+                    {
+                        id = motionEvent.GetPointerId(pointerIndex);
+
+                        if (_parent.capture)
+                        {
+                            senderView.GetLocationOnScreen(_parent.twoIntArray);
+
+                            screenPointerCoords = new Point(
+                                _parent.twoIntArray[0] + motionEvent.GetX(pointerIndex),
+                                _parent.twoIntArray[1] + motionEvent.GetY(pointerIndex));
+
+                            _parent.FireEvent(_parent, id, TouchActionType.Moved, screenPointerCoords,
+                                true);
+                        }
+                        else
+                        {
+                            _parent.CheckForBoundaryHop(id, screenPointerCoords);
+
+                            if (idToEffectDictionary[id] != null)
                             {
-                                id = motionEvent.GetPointerId(pointerIndex);
-
+                                _parent.FireEvent(idToEffectDictionary[id], id, TouchActionType.Moved,
+                                    screenPointerCoords, true);
+                            }
+                            else
+                            {
                                 if (_parent.capture)
                                 {
-                                    senderView.GetLocationOnScreen(_parent.twoIntArray);
-
-                                    screenPointerCoords = new Point(
-                                        _parent.twoIntArray[0] + motionEvent.GetX(pointerIndex),
-                                        _parent.twoIntArray[1] + motionEvent.GetY(pointerIndex));
-
-                                    _parent.FireEvent(_parent, id, TouchActionType.Moved, screenPointerCoords,
-                                        true);
-                                }
-                                else
-                                {
-                                    _parent.CheckForBoundaryHop(id, screenPointerCoords);
-
-                                    if (idToEffectDictionary[id] != null)
-                                    {
-                                        _parent.FireEvent(idToEffectDictionary[id], id, TouchActionType.Moved,
-                                            screenPointerCoords, true);
-                                    }
-                                    else
-                                    {
-                                        if (_parent.capture)
-                                        {
-                                            //lost capture
-                                            _parent.FireEvent(idToEffectDictionary[id], id,
-                                                TouchActionType.Cancelled, screenPointerCoords, true);
-                                        }
-                                    }
+                                    //lost capture
+                                    _parent.FireEvent(idToEffectDictionary[id], id,
+                                        TouchActionType.Cancelled, screenPointerCoords, true);
                                 }
                             }
+                        }
+                    }
 
-                            break;
+                    break;
 
-                        case MotionEventActions.Up:
-                        case MotionEventActions.Pointer1Up:
+                    case MotionEventActions.Up:
+                    case MotionEventActions.Pointer1Up:
 
-                            UnlockInput(sender);
+                    UnlockInput(sender);
 
 
-                            if (_parent.capture)
-                            {
-                                _parent.FireEvent(_parent, id, TouchActionType.Released, screenPointerCoords,
-                                    false);
-                            }
-                            else
-                            {
-                                _parent.CheckForBoundaryHop(id, screenPointerCoords);
+                    if (_parent.capture)
+                    {
+                        _parent.FireEvent(_parent, id, TouchActionType.Released, screenPointerCoords,
+                            false);
+                    }
+                    else
+                    {
+                        _parent.CheckForBoundaryHop(id, screenPointerCoords);
 
-                                if (idToEffectDictionary[id] != null)
-                                {
-                                    _parent.FireEvent(idToEffectDictionary[id], id, TouchActionType.Released,
-                                        screenPointerCoords, false);
-                                }
-                            }
+                        if (idToEffectDictionary[id] != null)
+                        {
+                            _parent.FireEvent(idToEffectDictionary[id], id, TouchActionType.Released,
+                                screenPointerCoords, false);
+                        }
+                    }
 
-                            if (canRemove)
-                                idToEffectDictionary.Remove(id);
-                            break;
-                        case MotionEventActions.Cancel:
+                    if (canRemove)
+                        idToEffectDictionary.Remove(id);
+                    break;
+                    case MotionEventActions.Cancel:
 
-                            //Debug.WriteLine($"[TOUCH] Android native: {motionEvent.ActionMasked} - {_parent.capture}");
+                    //Debug.WriteLine($"[TOUCH] Android native: {motionEvent.ActionMasked} - {_parent.capture}");
 
-                            UnlockInput(sender);
+                    UnlockInput(sender);
 
-                            if (_parent.capture)
-                            {
-                                _parent.FireEvent(_parent, id, TouchActionType.Cancelled, screenPointerCoords,
-                                    false);
-                            }
-                            else
-                            {
-                                if (idToEffectDictionary[id] != null)
-                                {
-                                    _parent.FireEvent(idToEffectDictionary[id], id, TouchActionType.Cancelled,
-                                        screenPointerCoords, false);
-                                }
-                            }
+                    if (_parent.capture)
+                    {
+                        _parent.FireEvent(_parent, id, TouchActionType.Cancelled, screenPointerCoords,
+                            false);
+                    }
+                    else
+                    {
+                        if (idToEffectDictionary[id] != null)
+                        {
+                            _parent.FireEvent(idToEffectDictionary[id], id, TouchActionType.Cancelled,
+                                screenPointerCoords, false);
+                        }
+                    }
 
-                            if (canRemove)
-                                idToEffectDictionary.Remove(id);
-                            break;
+                    if (canRemove)
+                        idToEffectDictionary.Remove(id);
+                    break;
 
-                        default:
+                    default:
 
-                            UnlockInput(sender);
+                    UnlockInput(sender);
 
-                            break;
+                    break;
 
                     }
 

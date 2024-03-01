@@ -14,19 +14,19 @@ public interface ISkiaLayout : ISkiaControl, ILayoutInsideViewport
 public interface ISkiaGridLayout : ISkiaLayout
 {
 
-    ColumnDefinition DefaultColumnDefinition { get; }
+    GridLength DefaultColumnDefinition { get; }
 
-    RowDefinition DefaultRowDefinition { get; }
+    GridLength DefaultRowDefinition { get; }
 
     /// <summary>
     /// An IGridRowDefinition collection for the GridLayout instance.
     /// </summary>
-    IReadOnlyList<IGridRowDefinition> RowDefinitions { get; }
+    IReadOnlyList<RowDefinition> RowDefinitions { get; }
 
     /// <summary>
     /// An IGridColumnDefinition collection for the GridLayout instance.
     /// </summary>
-    IReadOnlyList<IGridColumnDefinition> ColumnDefinitions { get; }
+    IReadOnlyList<ColumnDefinition> ColumnDefinitions { get; }
 
     /// <summary>
     /// Gets the amount of space left between rows in the GridLayout.
