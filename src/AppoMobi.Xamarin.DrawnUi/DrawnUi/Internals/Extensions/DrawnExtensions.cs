@@ -31,6 +31,26 @@ public static class DrawnExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static double Clamp(double value, double min, double max)
+    {
+        if (min > max)
+        {
+            new ArgumentException("Clamp Max<Min");
+        }
+
+        if (value < min)
+        {
+            return min;
+        }
+        else if (value > max)
+        {
+            return max;
+        }
+
+        return value;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsNormal(float f)
     {
         return !float.IsInfinity(f) && !float.IsNaN(f);

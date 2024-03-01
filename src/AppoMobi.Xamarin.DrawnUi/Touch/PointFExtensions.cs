@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using Size = System.Drawing.Size;
 
 namespace AppoMobi.Forms.Gestures;
 
@@ -12,6 +13,11 @@ public static class PointFExtensions
     public static PointF Add(this PointF lhs, PointF rhs)
     {
         return new PointF(lhs.X + rhs.X, lhs.Y + rhs.Y);
+    }
+
+    public static SizeF Distance(this PointF lhs, PointF rhs)
+    {
+        return new(lhs.X - rhs.X, lhs.Y - rhs.Y);
     }
 
     public static PointF Subtract(this PointF lhs, PointF rhs)
