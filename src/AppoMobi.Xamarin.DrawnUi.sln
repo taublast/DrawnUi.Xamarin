@@ -16,6 +16,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "glidex.forms", "glidex.forms\glidex.forms.csproj", "{DFB39F19-EEC3-4ECB-888D-D84C3B4A9113}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuget", "nuget", "{AF40C3DF-46F6-4154-B93C-81F073EFDE2A}"
+	ProjectSection(SolutionItems) = preProject
+		..\nuget\createnuget.bat = ..\nuget\createnuget.bat
+		..\nuget\DrawnUi.Xamarin.nuspec = ..\nuget\DrawnUi.Xamarin.nuspec
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

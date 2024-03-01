@@ -20,7 +20,6 @@
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
@@ -46,10 +45,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.Forms" Version="5.0.0.2337" ExcludeAssets="build">
+    <PackageReference Include="Xamarin.Forms" Version="5.0.0.2612" ExcludeAssets="build">
       <IncludeAssets>runtime; compile; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Xamarin.Android.Glide" Version="4.12.0.8" />
+    <PackageReference Include="Xamarin.Android.Glide" Version="4.16.0.2" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Forms.cs" />
