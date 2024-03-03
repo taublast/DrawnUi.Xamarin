@@ -1,5 +1,4 @@
-﻿
-using AppoMobi.Forms.Gestures;
+﻿using AppoMobi.Forms.Gestures;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
