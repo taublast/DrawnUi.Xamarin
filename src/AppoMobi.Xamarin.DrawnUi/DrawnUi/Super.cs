@@ -21,14 +21,14 @@ using Xamarin.Essentials;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml.Diagnostics;
 
-//[assembly: XmlnsDefinition("http://schemas.appomobi.com/drawnUi/2023/draw",
-//    "DrawnUi.Maui.Draw")]
+[assembly: XmlnsDefinition("http://schemas.appomobi.com/drawnUi/2023/draw",
+    "DrawnUi.Maui.Draw")]
 
-//[assembly: XmlnsDefinition("http://schemas.appomobi.com/drawnUi/2023/draw",
-//    "DrawnUi.Maui.Controls")]
+[assembly: XmlnsDefinition("http://schemas.appomobi.com/drawnUi/2023/draw",
+    "DrawnUi.Maui.Controls")]
 
-//[assembly: XmlnsDefinition("http://schemas.appomobi.com/drawnUi/2023/draw",
-//    "DrawnUi.Maui.Views")]
+[assembly: XmlnsDefinition("http://schemas.appomobi.com/drawnUi/2023/draw",
+    "DrawnUi.Maui.Views")]
 
 namespace DrawnUi.Maui.Draw;
 

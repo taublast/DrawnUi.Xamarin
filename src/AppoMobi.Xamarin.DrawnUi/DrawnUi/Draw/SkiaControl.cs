@@ -3760,11 +3760,6 @@ namespace DrawnUi.Maui.Draw
 
             IsDisposed = true;
 
-            //this.SizeChanged -= OnFormsSizeChanged;
-            DisposeChildren();
-            Parent = null;
-            Superview = null;
-
             //for the double buffering case it's safer to delay
             Tasks.StartDelayed(TimeSpan.FromSeconds(3), () =>
             {
@@ -3774,7 +3769,13 @@ namespace DrawnUi.Maui.Draw
 
                 _lastAnimatorManager = null;
 
+                DisposeChildren();
+
                 OnDisposing();
+
+                Parent = null;
+
+                Superview = null;
 
                 CustomizeLayerPaint = null;
 
@@ -6093,7 +6094,7 @@ namespace DrawnUi.Maui.Draw
             foreach (var child in Views.ToList())
             {
                 RemoveSubView(child);
-                DisposeObject(child);
+                child.Dispose();
             }
             Views.Clear();
             Invalidate();
