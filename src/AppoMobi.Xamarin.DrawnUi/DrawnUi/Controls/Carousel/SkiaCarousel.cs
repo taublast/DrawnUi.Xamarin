@@ -692,9 +692,9 @@ public class SkiaCarousel : SnappingLayout
     }
 
 
-    protected override void OnChildAdded(SkiaControl child)
+    protected override void OnDrawnChildAdded(SkiaControl child)
     {
-        base.OnChildAdded(child);
+        base.OnDrawnChildAdded(child);
 
         AdaptChildren();
     }

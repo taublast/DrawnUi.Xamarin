@@ -12,6 +12,8 @@ public static class AddGestures
 {
     public class GestureListener : SkiaControl, ISkiaGestureListener
     {
+
+
         public new string Tag
         {
             get

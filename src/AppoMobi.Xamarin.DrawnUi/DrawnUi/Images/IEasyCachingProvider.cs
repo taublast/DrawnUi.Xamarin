@@ -1,4 +1,6 @@
-﻿namespace DrawnUi.Maui.Draw;
+﻿using System.Collections.Concurrent;
+
+namespace DrawnUi.Maui.Draw;
 
 internal interface IEasyCachingProvider
 {
@@ -11,11 +13,11 @@ internal interface IEasyCachingProvider
 
 public class SimpleCachingProvider : IEasyCachingProvider
 {
-    protected Dictionary<string, object> Cache { get; } = new();
+    protected ConcurrentDictionary<string, object> Cache { get; } = new();
 
     public void Set<T>(string cacheKey, T value, TimeSpan fromSeconds)
     {
-        Cache.Add(cacheKey, value);
+        Cache.TryAdd(cacheKey, value);
     }
 
     public CacheValue<T> Get<T>(string cacheKey)

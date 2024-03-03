@@ -37,6 +37,24 @@ namespace DrawnUi.Maui.Draw
             Init();
         }
 
+        protected override void OnChildRemoved(Element child)
+        {
+            //thanks but no
+            //base.OnChildRemoved(child);
+        }
+
+        protected override void OnChildRemoved(Element child, int oldLogicalIndex)
+        {
+            //thanks but no
+            //base.OnChildRemoved(child, oldLogicalIndex);
+        }
+
+        protected override void OnChildAdded(Element child)
+        {
+            //thanks but no
+            //base.OnChildAdded(child);
+        }
+
         public virtual bool IsVisibleInViewTree()
         {
             var isVisible = IsVisible && !IsDisposed;
@@ -314,7 +332,7 @@ namespace DrawnUi.Maui.Draw
             if (control == null)
                 return;
             control.SetParent(this);
-            OnChildAdded(control);
+            OnDrawnChildAdded(control);
 
             //if (Debugger.IsAttached)
             //    Superview?.PostponeExecutionAfterDraw(() =>
@@ -335,7 +353,7 @@ namespace DrawnUi.Maui.Draw
             //    });
 
             control.SetParent(null);
-            OnChildRemoved(control);
+            OnDrawnChildRemoved(control);
         }
 
 
@@ -6099,22 +6117,13 @@ namespace DrawnUi.Maui.Draw
             //NeedMeasure = true;
         }
 
-        protected virtual void OnChildAdded(SkiaControl child)
+        protected virtual void OnDrawnChildAdded(SkiaControl child)
         {
             Invalidate();
         }
 
-        protected override void OnChildRemoved(Element child, int oldLogicalIndex)
-        {
-            //base.OnChildRemoved(child, oldLogicalIndex);
-        }
 
-        protected override void OnChildAdded(Element child)
-        {
-            //base.OnChildAdded(child);
-        }
-
-        protected virtual void OnChildRemoved(SkiaControl child)
+        protected virtual void OnDrawnChildRemoved(SkiaControl child)
         {
             Invalidate();
         }

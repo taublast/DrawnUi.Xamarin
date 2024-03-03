@@ -1861,9 +1861,10 @@ namespace DrawnUi.Maui.Views
             if (control == null)
                 return;
             control.SetParent(this);
-            OnChildAdded(control);
-            //if (Debugger.IsAttached)
-            ReportHotreloadChildAdded(control);
+            OnDrawnChildAdded(control);
+
+            if (Debugger.IsAttached)
+                ReportHotreloadChildAdded(control);
         }
 
         public virtual void ReportHotreloadChildAdded(SkiaControl child)
@@ -1871,8 +1872,7 @@ namespace DrawnUi.Maui.Views
             if (child == null)
                 return;
 
-            //var index = Views.FindIndex(child);
-            //VisualDiagnostics.OnChildAdded(this, child, index);
+            OnChildAdded(child);
         }
 
         public void RemoveSubView(SkiaControl control)
@@ -1880,11 +1880,11 @@ namespace DrawnUi.Maui.Views
             if (control == null)
                 return;
 
-            //if (Debugger.IsAttached)
-            ReportHotreloadChildRemoved(control);
+            if (Debugger.IsAttached)
+                ReportHotreloadChildRemoved(control);
 
             control.SetParent(null);
-            OnChildRemoved(control);
+            OnDrawnChildRemoved(control);
         }
 
         public virtual void ReportHotreloadChildRemoved(SkiaControl control)
@@ -1892,16 +1892,16 @@ namespace DrawnUi.Maui.Views
             if (control == null)
                 return;
 
-            //var index = Views.FindIndex(control);
-            //VisualDiagnostics.OnChildRemoved(this, control, index);
+            var index = Views.IndexOf(control);
+            OnChildRemoved(control, index);
         }
 
-        protected virtual void OnChildAdded(SkiaControl child)
+        protected virtual void OnDrawnChildAdded(SkiaControl child)
         {
             InvalidateViewsList();
         }
 
-        protected virtual void OnChildRemoved(SkiaControl child)
+        protected virtual void OnDrawnChildRemoved(SkiaControl child)
         {
             InvalidateViewsList();
         }

@@ -66,7 +66,7 @@ public class Canvas : DrawnView, IGestureListener
         // so we just override not calling base
     }
 
-    protected override void OnChildAdded(SkiaControl child)
+    protected override void OnDrawnChildAdded(SkiaControl child)
     {
         if (Views.Count > 1)
         {
@@ -74,7 +74,7 @@ public class Canvas : DrawnView, IGestureListener
                 "Canvas cannot have more than one subview due to rendering optimizations. Please use Content property and use SkiaLayout if you need to have many controls on canvas.");
         }
 
-        base.OnChildAdded(child);
+        base.OnDrawnChildAdded(child);
     }
 
     /// <summary>
