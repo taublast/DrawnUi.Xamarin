@@ -112,6 +112,11 @@ namespace DrawnUi.Maui.Draw
             }
             //do not need to call base we have no children
 
+            if (Tapped != null || CommandTapped != null)
+            {
+                return this;
+            }
+
             return null;
         }
 
