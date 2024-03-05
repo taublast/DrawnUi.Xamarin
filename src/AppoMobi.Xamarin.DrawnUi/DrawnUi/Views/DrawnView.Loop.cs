@@ -97,7 +97,7 @@ public partial class DrawnView
                 if (needWait >= 1)
                 {
                     var ms = (int)(needWait / 1000);
-                    if (ms >= 1)
+                    if (ms < 1)
                         ms = 1;
                     await Task.Delay(ms);
                 }
@@ -161,6 +161,13 @@ public partial class DrawnView
                         if (NeedCheckParentVisibility)
                             CheckElementVisibility(this);
 
+                        if (UpdateMode == UpdateMode.Constant)
+                        {
+                            InvalidatedCanvas++;
+                            CanvasView?.InvalidateSurface();
+                            return;
+                        }
+
                         if (!CanvasView.IsDrawing && CanDraw)  //passed checks
                         {
                             InvalidatedCanvas++;
@@ -175,7 +182,7 @@ public partial class DrawnView
                             if (needWait >= 1)
                             {
                                 var ms = (int)(needWait / 1000);
-                                if (ms >= 1)
+                                if (ms < 1)
                                     ms = 1;
                                 await Task.Delay(ms);
                             }
