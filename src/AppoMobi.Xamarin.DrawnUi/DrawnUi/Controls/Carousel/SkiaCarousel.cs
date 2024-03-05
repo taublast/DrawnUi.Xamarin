@@ -1080,6 +1080,8 @@ public class SkiaCarousel : SnappingLayout
     protected Vector2 _panningStartOffset;
     private SKRect _lastViewport;
 
+    protected VelocityAccumulator VelocityAccumulator { get; } = new();
+
     public override ISkiaGestureListener ProcessGestures(TouchActionType type, TouchActionEventArgs args, TouchActionResult touchAction,
     SKPoint childOffset, SKPoint childOffsetDirect, ISkiaGestureListener alreadyConsumed)
     {
@@ -1105,7 +1107,7 @@ public class SkiaCarousel : SnappingLayout
 
         ISkiaGestureListener consumed = null;
 
-        if (!IsUserPanning || !RespondsToGestures)
+        if (!IsUserPanning || !RespondsToGestures || touchAction == TouchActionResult.Tapped)
         {
             consumed = PassToChildren();
             if (consumed != null)
@@ -1124,6 +1126,8 @@ public class SkiaCarousel : SnappingLayout
             IsUserPanning = false;
 
             _animatorSpring?.Stop();
+
+            VelocityAccumulator.Clear();
 
             _panningOffset = CurrentPosition;
             _panningStartOffset = CurrentPosition;
@@ -1167,6 +1171,22 @@ public class SkiaCarousel : SnappingLayout
         var x = _panningOffset.X + args.Distance.Delta.X / RenderingScale;
         var y = _panningOffset.Y + args.Distance.Delta.Y / RenderingScale;
 
+        Vector2 velocity;
+        float useVelocity = 0;
+        if (!IsVertical)
+        {
+            useVelocity = (float)(args.Distance.Velocity.X / RenderingScale);
+            velocity = new(useVelocity, 0);
+        }
+        else
+        {
+            useVelocity = (float)(args.Distance.Velocity.Y / RenderingScale);
+            velocity = new(0, useVelocity);
+        }
+
+        //record velocity
+        VelocityAccumulator.CaptureVelocity(velocity);
+
         //saving non clamped
         _panningOffset.X = x;
         _panningOffset.Y = y;
@@ -1184,26 +1204,16 @@ public class SkiaCarousel : SnappingLayout
 
         if (IsUserFocused)
         {
-            Vector2 Velocity;
-            float velocity = 0;
-            if (!IsVertical)
-            {
-                velocity = (float)(args.Distance.Velocity.X / RenderingScale);
-                Velocity = new(velocity, 0);
-            }
-            else
-            {
-                velocity = (float)(args.Distance.Velocity.Y / RenderingScale);
-                Velocity = new(0, velocity);
-            }
 
             if (IsUserPanning) //|| Math.Abs(velocity) > 30)
             {
                 consumed = this;
 
+                var final = VelocityAccumulator.CalculateFinalVelocity();
+
                 //animate
                 CurrentSnap = CurrentPosition;
-                ScrollToNearestAnchor(CurrentSnap, Velocity);
+                ScrollToNearestAnchor(CurrentSnap, final);
             }
 
             IsUserPanning = false;

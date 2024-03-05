@@ -10,7 +10,7 @@ using Color = Xamarin.Forms.Color;
 
 namespace DrawnUi.Maui.Draw
 {
-    public class SkiaHotspot : SkiaControl, ISkiaGestureListener
+       public class SkiaHotspot : SkiaControl, ISkiaGestureListener
     {
         public SkiaHotspot()
         {
