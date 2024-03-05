@@ -3,12 +3,15 @@
   
   <metadata>
     <id>AppoMobi.Xamarin.DrawnUi</id>
-    <version>1.0.0.16</version>
+    <version>1.0.0.17</version>
     <owners>Nick Kovalsky aka AppoMobi</owners>
     <authors>Nick Kovalsky aka AppoMobi</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <title>DrawnUi for Xamarin.Forms</title>
     <description>Draw virtual controls on a SkiaSharp canvas</description>
     <tags>xamarin xamarinforms ios android skia skiasharp drawnui</tags>
+    <copyright>(c) AppoMobi, 2023 - present day</copyright>
+    <repository type="git" url="https://github.com/taublast/DrawnUi.Xamarin"/>
   
   <dependencies>
 
