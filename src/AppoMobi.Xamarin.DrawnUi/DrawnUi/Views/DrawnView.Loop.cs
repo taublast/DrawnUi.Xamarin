@@ -50,9 +50,19 @@ public partial class DrawnView
         }
     }
 
-#if ANDROID
-
     protected async void InvalidateCanvas()
+    {
+        if (Device.RuntimePlatform == Device.Android)
+        {
+            InvalidateCanvasAndroid();
+        }
+        else
+        {
+            InvalidateCanvasPlatform();
+        }
+    }
+
+    protected async void InvalidateCanvasAndroid()
     {
         if (CanvasView == null)
             return;
@@ -87,7 +97,7 @@ public partial class DrawnView
                 if (needWait >= 1)
                 {
                     var ms = (int)(needWait / 1000);
-                    if (ms < 1)
+                    if (ms >= 1)
                         ms = 1;
                     await Task.Delay(ms);
                 }
@@ -103,16 +113,7 @@ public partial class DrawnView
                     return;
                 }
 
-#if WINDOWS
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    // Update the UI
-                    CanvasView?.InvalidateSurface();
-
-                });
-#else
                 CanvasView?.InvalidateSurface();
-#endif
 
             }
             else
@@ -132,9 +133,7 @@ public partial class DrawnView
         }
     }
 
-#else
-
-    protected async void InvalidateCanvas()
+    protected async void InvalidateCanvasPlatform()
     {
         IsDirty = true;
 
@@ -176,7 +175,7 @@ public partial class DrawnView
                             if (needWait >= 1)
                             {
                                 var ms = (int)(needWait / 1000);
-                                if (ms < 1)
+                                if (ms >= 1)
                                     ms = 1;
                                 await Task.Delay(ms);
                             }
@@ -228,5 +227,5 @@ public partial class DrawnView
         }
     }
 
-#endif
+
 }
