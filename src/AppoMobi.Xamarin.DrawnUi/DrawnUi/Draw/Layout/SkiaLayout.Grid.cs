@@ -264,7 +264,7 @@ public partial class SkiaLayout
 
         UpdateRowColumnBindingContexts();
 
-        Invalidate();
+        InvalidateMeasure();
     }
 
     void UpdateRowColumnBindingContexts()

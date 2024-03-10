@@ -128,6 +128,9 @@
     <PackageReference Include="AppoMobi.Specials">
       <Version>8.0.3</Version>
     </PackageReference>
+    <PackageReference Include="SkiaSharp.Skottie">
+      <Version>2.88.7</Version>
+    </PackageReference>
     <PackageReference Include="SkiaSharp.Views.Forms">
       <Version>2.88.7</Version>
     </PackageReference>

@@ -611,21 +611,33 @@ namespace DrawnUi.Maui.Draw
 
             try
             {
-                string json;
+                string text;
                 if (Uri.TryCreate(fileName, UriKind.Absolute, out var uri))
                 {
                     var client = new WebClient();
                     var data = await client.DownloadDataTaskAsync(uri);
-                    json = Encoding.UTF8.GetString(data);
+                    text = Encoding.UTF8.GetString(data);
                 }
                 else
                 {
-                    using var stream = await FileSystem.OpenAppPackageFileAsync(fileName);
+                    //using var stream = await FileSystem.OpenAppPackageFileAsync(fileName);
+                    //using var reader = new StreamReader(stream);
+                    //json = await reader.ReadToEndAsync();
+
+                    var assembly = Super.AppAssembly;
+                    if (assembly == null)
+                    {
+                        var callingAssemblyMethod = typeof(Assembly).GetTypeInfo().GetDeclaredMethod("GetCallingAssembly");
+                        assembly = (Assembly)callingAssemblyMethod.Invoke(null, new object[0]);
+                    }
+                    var fullPath = $"{assembly.GetName().Name}.{fileName.Replace(@"\", ".").Replace(@"/", ".")}";
+                    using var stream = assembly.GetManifestResourceStream(fullPath);
+
                     using var reader = new StreamReader(stream);
-                    json = await reader.ReadToEndAsync();
+                    text = await reader.ReadToEndAsync();
                 }
 
-                UpdateImageFromString(json);
+                UpdateImageFromString(text);
                 UpdateIcon();
             }
             catch (Exception e)

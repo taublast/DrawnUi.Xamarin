@@ -122,7 +122,7 @@ public partial class SkiaImageManager : IDisposable
 
     private readonly ConcurrentDictionary<string, Task<SKBitmap>> _trackLoadingBitmapsUris = new();
 
-    private readonly Dictionary<string, Stack<QueueItem>> pendingLoads = new();
+    private readonly ConcurrentDictionary<string, Stack<QueueItem>> pendingLoads = new();
 
 
 

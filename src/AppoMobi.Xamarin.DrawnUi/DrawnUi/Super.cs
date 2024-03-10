@@ -12,14 +12,9 @@ global using System.Collections.Generic;
 global using System.Diagnostics;
 global using System.Diagnostics;
 global using Xamarin.Forms;
-using System;
 using System.Globalization;
+using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Threading;
-using Xamarin.Essentials;
-using Xamarin.Forms;
-using Xamarin.Forms.Xaml.Diagnostics;
 
 [assembly: XmlnsDefinition("http://schemas.appomobi.com/drawnUi/2023/draw",
     "DrawnUi.Maui.Draw")]
@@ -41,6 +36,8 @@ public interface IDrawnUiPlatform
 
 public partial class Super
 {
+    public static Assembly AppAssembly { get; set; }
+
     static IDrawnUiPlatform m_Record;
     public static IDrawnUiPlatform Native
     {

@@ -2880,7 +2880,18 @@ namespace DrawnUi.Maui.Draw
         /// <summary>
         /// This is the destination in PIXELS with margins applied, using this to paint background
         /// </summary>
-        public SKRect DrawingRect { get; set; }
+        public SKRect DrawingRect
+        {
+            get => _drawingRect;
+            set
+            {
+                if (value.Equals(_drawingRect)) return;
+                _drawingRect = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(DebugString));
+                OnPropertyChanged(nameof(HitBoxAuto));
+            }
+        }
 
         /*
         /// <summary>
@@ -3092,8 +3103,6 @@ namespace DrawnUi.Maui.Draw
         /// <param name="scale"></param>
         public virtual void Arrange(SKRect destination, float widthRequest, float heightRequest, float scale)
         {
-
-
             if (!PreArrange(destination, widthRequest, heightRequest, scale))
             {
                 DrawingRect = SKRect.Empty;
@@ -6579,6 +6588,7 @@ namespace DrawnUi.Maui.Draw
         private SKRect _lastArrangedInside;
         private double _lastArrangedForScale;
         private bool _needUpdateFrontCache;
+        private SKRect _drawingRect;
 
         public static Color GetRandomColor()
         {

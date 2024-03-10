@@ -30,9 +30,10 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AndroidLinkMode>None</AndroidLinkMode>
-    <EmbedAssembliesIntoApk>false</EmbedAssembliesIntoApk>
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+  
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>portable</DebugType>
@@ -56,6 +57,9 @@
   <ItemGroup>
     <PackageReference Include="AppoMobi.Specials">
       <Version>8.0.3</Version>
+    </PackageReference>
+    <PackageReference Include="SkiaSharp.Skottie">
+      <Version>2.88.7</Version>
     </PackageReference>
     <PackageReference Include="SkiaSharp.Views.Forms">
       <Version>2.88.7</Version>
