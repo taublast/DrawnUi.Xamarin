@@ -25,6 +25,18 @@ public class SkiaLottie : AnimatedFramesRenderer
     {
         base.Stop();
 
+        SeekToDefaultFrame();
+    }
+
+    protected override void OnFinished()
+    {
+        base.OnFinished();
+
+        SeekToDefaultFrame();
+    }
+
+    public virtual void SeekToDefaultFrame()
+    {
         if (Animator != null)
         {
             if (IsOn)
@@ -32,6 +44,21 @@ public class SkiaLottie : AnimatedFramesRenderer
             else
                 Seek(DefaultFrame);
         }
+    }
+
+
+    protected override void OnAnimatorSeeking(double frame)
+    {
+        if (LottieAnimation != null)
+        {
+            if (frame < 0)
+            {
+                frame = LottieAnimation.OutPoint;
+            }
+            LottieAnimation.SeekFrame(frame);
+        }
+
+        base.OnAnimatorSeeking(frame);
     }
 
     private static void ApplyDefaultFrameWhenOnProperty(BindableObject bindable, object oldvalue, object newvalue)
@@ -63,7 +90,7 @@ public class SkiaLottie : AnimatedFramesRenderer
                     control.Stop();
                 else
                 {
-
+                    control.SeekToDefaultFrame();
                 }
             }
         }
@@ -436,19 +463,6 @@ public class SkiaLottie : AnimatedFramesRenderer
         }
     }
 
-    protected override void OnAnimatorSeeking(double frame)
-    {
-        if (LottieAnimation != null)
-        {
-            if (frame < 0)
-            {
-                frame = LottieAnimation.OutPoint;
-            }
-            LottieAnimation.SeekFrame(frame);
-        }
-
-        base.OnAnimatorSeeking(frame);
-    }
 
     private static void ApplySourceProperty(BindableObject bindable, object oldvalue, object newvalue)
     {
