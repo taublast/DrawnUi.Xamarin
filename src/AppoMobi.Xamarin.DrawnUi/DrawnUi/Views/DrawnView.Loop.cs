@@ -188,7 +188,8 @@ public partial class DrawnView
                             }
                             else
                             {
-                                await Task.Delay(1); //unlock threads
+                                if (Device.RuntimePlatform != Device.Android)
+                                    await Task.Delay(1); //unlock threads
                             }
 
                             if (!Super.EnableRendering)

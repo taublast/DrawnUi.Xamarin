@@ -1354,12 +1354,12 @@ namespace DrawnUi.Maui.Draw
 
         #endregion
 
-        public virtual SKSize GetSizeRequest(float widthConstraint, float heightConstraint, bool insideLayout)
+        public SKSize GetSizeRequest(float widthConstraint, float heightConstraint, bool insideLayout)
         {
-            if (insideLayout)
-            {
-                //todo
-            }
+            //if (insideLayout)
+            //{
+
+            //}
 
             widthConstraint *= (float)this.WidthRequestRatio;
             heightConstraint *= (float)this.HeightRequestRatio;

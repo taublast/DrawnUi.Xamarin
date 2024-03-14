@@ -347,9 +347,42 @@ public class Canvas : DrawnView, IGestureListener
     #region GESTURES
 
     public static Color DebugGesturesColor { get; set; } = Color.Transparent;// Color.Parse("#ff0000");
+    /// <summary>
+    /// To filter micro-gestures on super sensitive screens, start passing panning only when threshold is once overpassed
+    /// </summary>
+    public static float FirstPanThreshold = 5;
+
+    bool _isPanning;
 
     protected virtual void ProcessGestures(TouchActionType type, TouchActionEventArgs args, TouchActionResult touchAction)
     {
+
+        if (touchAction == TouchActionResult.Down)
+        {
+            _isPanning = false;
+        }
+
+        if (touchAction == TouchActionResult.Panning)
+        {
+            //filter micro-gestures
+            if (Math.Abs(args.Distance.Delta.X) < 1 || Math.Abs(args.Distance.Velocity.X / RenderingScale) < 1)
+            {
+                return;
+            }
+
+            var threshold = FirstPanThreshold * RenderingScale;
+            if (!_isPanning)
+            {
+                //filter first panning movement on super sensitive screens
+                if (Math.Abs(args.Distance.Total.X) < threshold && Math.Abs(args.Distance.Total.Y) < threshold)
+                {
+                    return;
+                }
+
+                _isPanning = true;
+            }
+        }
+
         lock (LockIterateListeners)
         {
             ISkiaGestureListener consumed = null;

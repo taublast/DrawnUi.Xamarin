@@ -2,6 +2,7 @@
 using DrawnUi.Maui.Infrastructure.Extensions;
 using ExCSS;
 using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -19,7 +20,7 @@ public class SkiaLottie : AnimatedFramesRenderer
     /// <summary>
     ///     To avoid reloading same files multiple times..
     /// </summary>
-    public static Dictionary<string, string> CachedAnimations = new();
+    public static ConcurrentDictionary<string, string> CachedAnimations = new();
 
     public override void Stop()
     {
@@ -90,11 +91,23 @@ public class SkiaLottie : AnimatedFramesRenderer
                     control.Stop();
                 else
                 {
-                    control.SeekToDefaultFrame();
+                    if (control.ApplyIsOnWhenNotPlaying)
+                        control.SeekToDefaultFrame();
                 }
             }
         }
     }
+
+    public static readonly BindableProperty ApplyIsOnWhenNotPlayingProperty = BindableProperty.Create(nameof(ApplyIsOnWhenNotPlaying),
+    typeof(bool),
+    typeof(SkiaLottie),
+    true);
+    public bool ApplyIsOnWhenNotPlaying
+    {
+        get { return (bool)GetValue(ApplyIsOnWhenNotPlayingProperty); }
+        set { SetValue(ApplyIsOnWhenNotPlayingProperty, value); }
+    }
+
 
     public static readonly BindableProperty DefaultFrameProperty = BindableProperty.Create(nameof(DefaultFrame),
         typeof(int),
