@@ -83,21 +83,6 @@ public class SkiaImage : SkiaControl
 
     protected int RetriesLeft { get; set; }
 
-    public override void OnDisposing()
-    {
-        LastSource = null;
-        CancelLoading?.Cancel();
-        ClearBitmap();
-        ImagePaint?.Dispose();
-        PaintColorFilter?.Dispose();
-        PaintImageFilter?.Dispose();
-        LoadedSource?.Dispose();
-        ImagePaint = null;
-        PaintColorFilter = null;
-        PaintImageFilter = null;
-        LoadedSource = null;
-    }
-
 
     public static bool LogEnabled = false;
 
@@ -1128,6 +1113,41 @@ propertyChanged: NeedChangeColorFIlter);
 
     public SKPoint AspectScale { get; protected set; }
 
+    public override void OnDisposing()
+    {
+        LastSource = null;
+        CancelLoading?.Cancel();
+        ClearBitmap();
+        ImagePaint?.Dispose();
+        PaintColorFilter?.Dispose();
+        PaintImageFilter?.Dispose();
+        LoadedSource?.Dispose();
+        ImagePaint = null;
+        PaintColorFilter = null;
+        PaintImageFilter = null;
+        LoadedSource = null;
+
+        ScaledSource?.Dispose();
+        ScaledSource = null;
+
+        base.OnDisposing();
+    }
+
+    public RescaledBitmap ScaledSource { get; protected set; }
+
+
+    public class RescaledBitmap : IDisposable
+    {
+        public SKBitmap Bitmap { get; set; }
+        public SKFilterQuality Quality { get; set; }
+        public Guid Source { get; set; }
+
+        public void Dispose()
+        {
+            Bitmap?.Dispose();
+        }
+    }
+
     protected virtual void DrawSource(
         SkiaDrawingContext ctx,
         LoadedImageSource source,
@@ -1163,8 +1183,27 @@ propertyChanged: NeedChangeColorFIlter);
             {
                 if (this.RescalingQuality != SKFilterQuality.None)
                 {
-                    using var bmp = source.Bitmap.Resize(new SKSizeI((int)display.Width, (int)display.Height), RescalingQuality);
-                    ctx.Canvas.DrawBitmap(bmp, display, paint);
+                    if (ScaledSource == null
+                        || ScaledSource.Source != source.Id
+                        || ScaledSource.Quality != this.RescalingQuality
+                        || ScaledSource.Bitmap.Width != (int)display.Width
+                        || ScaledSource.Bitmap.Height != (int)display.Height)
+                    {
+                        var bmp = source.Bitmap.Resize(new SKSizeI((int)display.Width, (int)display.Height), RescalingQuality);
+                        var kill = ScaledSource;
+                        ScaledSource = new()
+                        {
+                            Source = this.Source.Id,
+                            Bitmap = bmp,
+                            Quality = RescalingQuality
+                        };
+                        kill?.Dispose(); //todo with delay?
+                    }
+
+                    if (ScaledSource != null)
+                    {
+                        ctx.Canvas.DrawBitmap(ScaledSource.Bitmap, display, paint);
+                    }
                 }
                 else
                 {

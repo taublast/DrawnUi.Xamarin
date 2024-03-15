@@ -2,6 +2,8 @@
 
 public class LoadedImageSource : IDisposable
 {
+    public Guid Id { get; } = Guid.NewGuid();
+
     public LoadedImageSource Clone()
     {
         if (IsDisposed)
