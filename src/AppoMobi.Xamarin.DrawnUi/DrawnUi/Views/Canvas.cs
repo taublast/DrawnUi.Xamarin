@@ -356,7 +356,6 @@ public class Canvas : DrawnView, IGestureListener
 
     protected virtual void ProcessGestures(TouchActionType type, TouchActionEventArgs args, TouchActionResult touchAction)
     {
-
         if (touchAction == TouchActionResult.Down)
         {
             _isPanning = false;
@@ -365,7 +364,8 @@ public class Canvas : DrawnView, IGestureListener
         if (touchAction == TouchActionResult.Panning)
         {
             //filter micro-gestures
-            if (Math.Abs(args.Distance.Delta.X) < 1 || Math.Abs(args.Distance.Velocity.X / RenderingScale) < 1)
+            if ((Math.Abs(args.Distance.Delta.X) < 1 && Math.Abs(args.Distance.Delta.Y) < 1)
+                || (Math.Abs(args.Distance.Velocity.X / RenderingScale) < 1 && Math.Abs(args.Distance.Velocity.Y / RenderingScale) < 1))
             {
                 return;
             }

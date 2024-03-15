@@ -237,6 +237,23 @@ public class SkiaImage : SkiaControl
         set { SetValue(LoadSourceOnFirstDrawProperty, value); }
     }
 
+    public static readonly BindableProperty RescalingQualityProperty = BindableProperty.Create(
+        nameof(RescalingQuality),
+        typeof(SKFilterQuality),
+        typeof(SkiaImage),
+        SKFilterQuality.Medium,
+        propertyChanged: NeedInvalidateMeasure);
+
+    /// <summary>
+    /// Default value is Medium.
+    /// You might want to set this to None for large a quick changing images like camera preview etc.
+    /// </summary>
+    public SKFilterQuality RescalingQuality
+    {
+        get { return (SKFilterQuality)GetValue(RescalingQualityProperty); }
+        set { SetValue(RescalingQualityProperty, value); }
+    }
+
     private static void OnLoadSourceChanged(BindableObject bindable, object oldvalue, object newvalue)
     {
         if (bindable is SkiaImage control)
@@ -1136,7 +1153,6 @@ propertyChanged: NeedChangeColorFIlter);
                 aspectScaleX * source.Width, aspectScaleY * source.Height,
                 horizontal, vertical);
 
-            //if (this.BlurAmount > 0)
             display.Inflate(new SKSize((float)InflateAmount, (float)InflateAmount));
 
             display.Offset((float)Math.Round(scale * HorizontalOffset), (float)Math.Round(scale * VerticalOffset));
@@ -1144,7 +1160,17 @@ propertyChanged: NeedChangeColorFIlter);
             TextureScale = new(dest.Width / display.Width, dest.Height / display.Height);
 
             if (source.Bitmap != null)
-                ctx.Canvas.DrawBitmap(source.Bitmap, display, paint);
+            {
+                if (this.RescalingQuality != SKFilterQuality.None)
+                {
+                    using var bmp = source.Bitmap.Resize(new SKSizeI((int)display.Width, (int)display.Height), RescalingQuality);
+                    ctx.Canvas.DrawBitmap(bmp, display, paint);
+                }
+                else
+                {
+                    ctx.Canvas.DrawBitmap(source.Bitmap, display, paint);
+                }
+            }
             else
             if (source.Image != null)
                 ctx.Canvas.DrawImage(source.Image, display, paint);
