@@ -1193,7 +1193,7 @@ propertyChanged: NeedChangeColorFIlter);
                         var kill = ScaledSource;
                         ScaledSource = new()
                         {
-                            Source = this.Source.Id,
+                            Source = source.Id,
                             Bitmap = bmp,
                             Quality = RescalingQuality
                         };
