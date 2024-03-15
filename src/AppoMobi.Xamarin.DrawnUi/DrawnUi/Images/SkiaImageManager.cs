@@ -122,9 +122,8 @@ public partial class SkiaImageManager : IDisposable
 
     private readonly ConcurrentDictionary<string, Task<SKBitmap>> _trackLoadingBitmapsUris = new();
 
-    private readonly ConcurrentDictionary<string, Stack<QueueItem>> pendingLoads = new();
-
-
+    //todo avoid conflicts, cannot use concurrent otherwise will loose data
+    private readonly Dictionary<string, Stack<QueueItem>> pendingLoads = new();
 
     public Task<SKBitmap> Enqueue(ImageSource source, CancellationTokenSource token)
     {
