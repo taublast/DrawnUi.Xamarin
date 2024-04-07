@@ -8,7 +8,6 @@ namespace DrawnUi.Maui.Views
 
         protected virtual void OnSizeChanged()
         {
-
 #if ANDROID
             if (Handler != null) //this is basically for clipping SkiaMauiElement
             {

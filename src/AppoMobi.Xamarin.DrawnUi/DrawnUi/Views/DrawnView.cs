@@ -510,6 +510,8 @@ namespace DrawnUi.Maui.Views
             HasHandler = false;
 
             Super.NeedGlobalRefresh -= OnNeedUpdate;
+
+            DisposePlatform();
         }
 
         public long NeedGlobalRefreshCount { get; set; }
@@ -526,6 +528,8 @@ namespace DrawnUi.Maui.Views
 
             Super.NeedGlobalRefresh -= OnNeedUpdate;
             Super.NeedGlobalRefresh += OnNeedUpdate;
+
+            SetupRenderingLoop();
         }
 
 
@@ -689,6 +693,8 @@ namespace DrawnUi.Maui.Views
             //this.Handler?.DisconnectHandler();
 
             ClearChildren();
+
+            DisposePlatform();
         }
         /// <summary>
         /// Makes the control dirty, in need to be remeasured and rendered but this doesn't call Update, it's up yo you
@@ -795,10 +801,6 @@ namespace DrawnUi.Maui.Views
 
             if (propertyName == "Renderer")
             {
-
-#if ANDROID
-            OnHandlerChangedInternal();
-#endif
 
                 if (rendererSet)
                 {
@@ -1445,7 +1447,7 @@ namespace DrawnUi.Maui.Views
                     _globalRefresh = NeedGlobalRefreshCount;
                     foreach (var item in Children)
                     {
-                        item.AttachControl.InvalidateMeasureInternal();
+                        item.InvalidateMeasureInternal();
                         NeedCheckParentVisibility = true;
                         IsDirty = true;
                     }
@@ -1455,32 +1457,9 @@ namespace DrawnUi.Maui.Views
                 {
                     DrawingThreads++;
 
-                    FrameTime = GetNanoseconds();
-                    context.FrameTimeNanos = FrameTime;
+                    FrameTime = CanvasView.FrameTime;
 
-                    #region Calculate average fps
-
-                    var fps = CanvasFps;
-                    // Calculate an averaged fps
-                    _fpsAverage += fps;
-                    _fpsCount++;
-
-                    if (fps < 1)
-                    {
-                        FPS = 0;
-                    }
-                    else if (_fpsCount >= 16)
-                    {
-                        FPS = _fpsAverage / _fpsCount;
-
-                        _fpsCount = 0;
-                        _fpsAverage = 0.0;
-                    }
-
-                    _fps = fps;
-
-                    #endregion
-
+                    FPS = CanvasFps;
 
                     while (ExecuteBeforeDraw.Count > 0)
                     {
@@ -1847,7 +1826,7 @@ namespace DrawnUi.Maui.Views
             InvalidateViewsList();
         }
 
-        public virtual void SetChildren(IEnumerable<ISkiaAttachable> views)
+        public virtual void SetChildren(IEnumerable<SkiaControl> views)
         {
             ClearChildren();
             foreach (var child in views)
@@ -1917,30 +1896,28 @@ namespace DrawnUi.Maui.Views
 
         public static readonly BindableProperty ChildrenProperty = BindableProperty.Create(
             nameof(Children),
-            typeof(IList<ISkiaAttachable>),
+            typeof(IList<SkiaControl>),
             typeof(DrawnView),
             defaultValueCreator: (instance) =>
             {
-                var created = new ObservableCollection<ISkiaAttachable>();
+                var created = new ObservableCollection<SkiaControl>();
                 ChildrenPropertyChanged(instance, null, created);
                 return created;
             },
-            validateValue: (bo, v) => v is IList<ISkiaAttachable>,
+            validateValue: (bo, v) => v is IList<SkiaControl>,
             propertyChanged: ChildrenPropertyChanged);
 
 
-        public IList<ISkiaAttachable> Children
+        public IList<SkiaControl> Children
         {
-            get => (IList<ISkiaAttachable>)GetValue(ChildrenProperty);
+            get => (IList<SkiaControl>)GetValue(ChildrenProperty);
             set => SetValue(ChildrenProperty, value);
         }
 
 #pragma warning restore NU1605, CS0108
 
-        protected void AddOrRemoveView(ISkiaAttachable child, bool add)
+        protected void AddOrRemoveView(SkiaControl subView, bool add)
         {
-            SkiaControl subView = child.AttachControl;
-
             if (subView != null)
             {
                 if (add)
@@ -1962,11 +1939,11 @@ namespace DrawnUi.Maui.Views
         {
             if (bindable is DrawnView skiaControl)
             {
-                var enumerableChildren = (IEnumerable<ISkiaAttachable>)newvalue;
+                var enumerableChildren = (IEnumerable<SkiaControl>)newvalue;
 
                 if (oldvalue != null)
                 {
-                    var oldViews = (IEnumerable<ISkiaAttachable>)oldvalue;
+                    var oldViews = (IEnumerable<SkiaControl>)oldvalue;
 
                     if (oldvalue is INotifyCollectionChanged oldCollection)
                     {
@@ -2033,27 +2010,7 @@ namespace DrawnUi.Maui.Views
         {
             if (bindable is DrawnView control)
             {
-                Super.OnFrame -= control.OnFrame;
-
-                var value = (DrawnUi.Maui.Infrastructure.Enums.UpdateMode)newvalue;
-                if (value == DrawnUi.Maui.Infrastructure.Enums.UpdateMode.Constant)
-                {
-                    Super.OnFrame += control.OnFrame;
-                }
                 control.Update();
-            }
-        }
-
-        /// <summary>
-        /// UpdateMode.Constant callback
-        /// </summary>
-        /// <param name="nanoseconds"></param>
-        private void OnFrame(long nanoseconds)
-        {
-            if (CheckCanDraw())
-            {
-                OrderedDraw = true;
-                InvalidateCanvas();
             }
         }
 

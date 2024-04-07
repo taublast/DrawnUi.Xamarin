@@ -60,7 +60,7 @@ public class Canvas : DrawnView, IGestureListener
         }
         */
 
-    public override void SetChildren(IEnumerable<ISkiaAttachable> views)
+    public override void SetChildren(IEnumerable<SkiaControl> views)
     {
         //do not use subviews as we are using Content property for this control
         // so we just override not calling base
@@ -354,12 +354,10 @@ public class Canvas : DrawnView, IGestureListener
 
     bool _isPanning;
 
-    protected virtual void ProcessGestures(TouchActionType type, TouchActionEventArgs args, TouchActionResult touchAction)
+    public virtual void OnGestureEvent(TouchActionType type, TouchActionEventArgs args, TouchActionResult touchAction)
     {
-        if (touchAction == TouchActionResult.Down)
-        {
-            _isPanning = false;
-        }
+
+        //ProcessGestures(type, args, touchAction);
 
         if (touchAction == TouchActionResult.Panning)
         {
@@ -382,6 +380,31 @@ public class Canvas : DrawnView, IGestureListener
                 _isPanning = true;
             }
         }
+
+        if (touchAction == TouchActionResult.Down)
+        {
+            _isPanning = false;
+        }
+
+        //this is intended to not loose gestures when fps drops
+        PostponeExecutionBeforeDraw(() =>
+        {
+            try
+            {
+                ProcessGestures(type, args, touchAction);
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine(e);
+            }
+        });
+
+        Repaint();
+    }
+
+    protected virtual void ProcessGestures(TouchActionType type, TouchActionEventArgs args, TouchActionResult touchAction)
+    {
+
 
         lock (LockIterateListeners)
         {
@@ -451,7 +474,7 @@ public class Canvas : DrawnView, IGestureListener
                 }
             }
 
-            if (false)
+            if (TouchEffect.LogEnabled)
             {
                 if (consumed == null)
                 {
@@ -463,45 +486,12 @@ public class Canvas : DrawnView, IGestureListener
                 }
             }
 
-            if (manageChildFocus || FocusedChild != null && consumed == null)
-            {
-                FocusedChild = null;
-            }
+            if (touchAction == TouchActionResult.Up)
+                if (manageChildFocus || FocusedChild != null && consumed != FocusedChild)
+                {
+                    FocusedChild = consumed;
+                }
         }
-
-
-        /*
-        foreach (var child in Views.Where(child => child.IsVisible && !child.InputTransparent)
-                     .OfType<ISkiaGestureListener>())
-        {
-            bool forChild = ((SkiaControl)child).DrawingRect.ContainsInclusive(args.StartingLocation.X, args.StartingLocation.Y);
-            if (forChild)
-            {
-                var consumed = child.OnGestureEvent(type, args, tag, 0, 0);
-                if (consumed)
-                    break;
-            }
-        }
-        */
-    }
-
-    public virtual void OnGestureEvent(TouchActionType type, TouchActionEventArgs args, TouchActionResult touchAction)
-    {
-
-
-        PostponeExecutionBeforeDraw(() =>
-        {
-            try
-            {
-                ProcessGestures(type, args, touchAction);
-            }
-            catch (Exception e)
-            {
-                Trace.WriteLine(e);
-            }
-        });
-
-        Repaint();
 
     }
 

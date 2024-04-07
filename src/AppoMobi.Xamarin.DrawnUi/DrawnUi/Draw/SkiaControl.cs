@@ -29,7 +29,7 @@ namespace DrawnUi.Maui.Draw
     [DebuggerDisplay("{DebugString}")]
     [ContentProperty("Children")]
     public partial class SkiaControl : VisualElement,
-        IHasAfterEffects, ISkiaControl, ISkiaAttachable
+        IHasAfterEffects, ISkiaControl
     //IVisualTreeElement, IReloadHandler, IHotReloadableView
     {
         public SkiaControl()
@@ -37,22 +37,24 @@ namespace DrawnUi.Maui.Draw
             Init();
         }
 
-        protected override void OnChildRemoved(Element child)
+        protected virtual void OnChildAdded(SkiaControl child)
         {
-            //thanks but no
-            //base.OnChildRemoved(child);
+            Invalidate();
         }
 
         protected override void OnChildRemoved(Element child, int oldLogicalIndex)
         {
-            //thanks but no
             //base.OnChildRemoved(child, oldLogicalIndex);
         }
 
         protected override void OnChildAdded(Element child)
         {
-            //thanks but no
             //base.OnChildAdded(child);
+        }
+
+        protected virtual void OnChildRemoved(SkiaControl child)
+        {
+            Invalidate();
         }
 
         public virtual bool IsVisibleInViewTree()
@@ -3819,17 +3821,6 @@ namespace DrawnUi.Maui.Draw
 
 
 
-        public SkiaDrawingContext CreateContext(SKCanvas canvas)
-        {
-            return new SkiaDrawingContext()
-            {
-                FrameTimeNanos = Superview.CanvasView.FrameTime,
-                Canvas = canvas,
-                Width = canvas.DeviceClipBounds.Width,
-                Height = canvas.DeviceClipBounds.Height,
-            };
-        }
-
         public virtual void OnBeforeMeasure()
         {
 
@@ -3997,9 +3988,20 @@ namespace DrawnUi.Maui.Draw
 
             //lock (lockDraw)
             {
+                if (widthRequest == 7 && heightRequest == 7)
+                {
+                    var stop = 9;
+                }
+
                 Arrange(destination, widthRequest, heightRequest, scale);
 
                 bool willDraw = !CheckIsGhost();
+
+                if (DrawingRect.Width < 0 || DrawingRect.Height < 0)
+                {
+                    willDraw = false;
+                }
+
                 if (willDraw)
                 {
                     if (UsingCacheType != SkiaCacheType.None)
@@ -4256,52 +4258,29 @@ namespace DrawnUi.Maui.Draw
                 RenderObjectNeedsUpdate = false;
                 if (_renderObject != value)
                 {
-
-#if DOUBLE
-
+                    //lock both RenderObjectPrevious and RenderObject
                     lock (LockDraw)
                     {
-                        if (UsingCacheType == SkiaCacheType.ImageDoubleBuffered
-                            && value != null
-                            && _renderObject != null)
+                        if (_renderObject != null)
                         {
-                            var kill = OffscreenRenderObject;
-                            OffscreenRenderObject = _renderObject; //push front to back
-                            _renderObject = value;
-                            if (kill != value)
+                            if (UseCache == SkiaCacheType.ImageDoubleBuffered)
                             {
-                                kill?.Dispose();
+                                RenderObjectPrevious = _renderObject;
                             }
-                        }
-                        else
-                        {
-                            var kill = _renderObject;
-                            _renderObject = value;
-                            kill?.Dispose();
-                        }
-
-                        OnPropertyChanged();
-                        if (value != null)
-                            CreatedCache?.Invoke(this, value);
-                    }
-
-#else
-                    //  lock (LockDraw)
-                    {
-                        if (UseCache == SkiaCacheType.ImageDoubleBuffered && _renderObject != null)
-                        {
-                            RenderObjectPrevious = _renderObject;
-                        }
-                        else
-                        {
-                            DisposeObject(_renderObject);
+                            else
+                            {
+                                DisposeObject(_renderObject);
+                            }
                         }
                         _renderObject = value;
                         OnPropertyChanged();
+
                         if (value != null)
                             CreatedCache?.Invoke(this, value);
+
+                        Monitor.PulseAll(LockDraw);
                     }
-#endif
+
                 }
             }
         }
@@ -4542,99 +4521,77 @@ namespace DrawnUi.Maui.Draw
         {
 
             //lock (LockDraw)
-
-            var cache = RenderObject;
-            var cacheType = UsingCacheType;
-            var cacheOffscreen = RenderObjectPrevious;
-
-            if (cache != null)
             {
-                if (cache.Surface != null && cache.Surface.Context != null &&
-                    cacheType == SkiaCacheType.GPU && context.Superview?.CanvasView is SkiaViewAccelerated hardware)
+                var cache = RenderObject;
+                var cacheType = UsingCacheType;
+
+
+                if (cache != null)
                 {
-                    //hardware context might change if we returned from background..
-                    if (hardware.GRContext == null || (int)hardware.GRContext.Handle != (int)cache.Surface.Context.Handle)
+                    if (cache.Surface != null && cache.Surface.Context != null &&
+                        cacheType == SkiaCacheType.GPU && context.Superview?.CanvasView is SkiaViewAccelerated hardware)
                     {
-                        //maybe we returned to app from background and GPU memory was erased..
-                        Update();
-                        return false;
+                        //hardware context might change if we returned from background..
+                        if (hardware.GRContext == null || (int)hardware.GRContext.Handle != (int)cache.Surface.Context.Handle)
+                        {
+                            //maybe we returned to app from background and GPU memory was erased..
+                            Update();
+                            return false;
+                        }
                     }
+
+                    lock (LockDraw)
+                    {
+                        DrawRenderObjectInternal(cache, context, recordArea);
+                        Monitor.PulseAll(LockDraw);
+                    }
+
+                    if (UsingCacheType != SkiaCacheType.ImageDoubleBuffered || !NeedUpdateFrontCache)
+                        return true;
                 }
 
-                DrawRenderObjectInternal(cache, context, recordArea);
-
-                if (UsingCacheType != SkiaCacheType.ImageDoubleBuffered || !NeedUpdateFrontCache)
-                    return true;
-            }
-            else
-            if (cacheOffscreen != null)
-            {
-                DrawRenderObjectInternal(cacheOffscreen, context, recordArea);
-            }
-
-#if DOUBLE
-
-
-            if (UsingCacheType == SkiaCacheType.ImageDoubleBuffered)
-            {
-                //push task to create new cache, will always try to take last from stack:
-                var args = CreatePaintArguments();
-                _offscreenCacheRenderingQueue.Push(() =>
+                if (UseCache == SkiaCacheType.ImageDoubleBuffered)
                 {
-                    //will be executed on background thread in parallel
-                    return CreateRenderingObject(context, recordArea, OffscreenRenderObject, (ctx) =>
+                    lock (LockDraw)
+                    {
+                        var cacheOffscreen = RenderObjectPrevious;
+                        if (cache == null && cacheOffscreen != null)
+                        {
+                            DrawRenderObjectInternal(cacheOffscreen, context, recordArea);
+                        }
+                        Monitor.PulseAll(LockDraw);
+                    }
+
+                    NeedUpdateFrontCache = false;
+
+                    //push task to create new cache, will always try to take last from stack:
+                    var args = CreatePaintArguments();
+                    _offscreenCacheRenderingQueue.Push(() =>
+                    {
+                        //will be executed on background thread in parallel
+                        RenderObjectPreparing = CreateRenderingObject(context, recordArea, RenderObjectPreparing, (ctx) =>
                         {
                             Paint(ctx, recordArea, scale, args);
                         });
-                });
-
-                NeedUpdateCache = false;
-
-                if (!_processingOffscrenRendering)
-                {
-                    _processingOffscrenRendering = true;
-                    Task.Run(async () => //100% background thread
-                    {
-                        await ProcessOffscreenCacheRenderingAsync();
-
-                    }).ConfigureAwait(false);
-                }
-
-                return true;
-            }
-
-
-#else
-            if (UseCache == SkiaCacheType.ImageDoubleBuffered)
-            {
-                NeedUpdateFrontCache = false;
-
-                //push task to create new cache, will always try to take last from stack:
-                var args = CreatePaintArguments();
-                _offscreenCacheRenderingQueue.Push(() =>
-                {
-                    //will be executed on background thread in parallel
-                    RenderObjectPreparing = CreateRenderingObject(context, recordArea, RenderObjectPreparing, (ctx) =>
-                    {
-                        Paint(ctx, recordArea, scale, args);
                     });
-                });
 
-                if (!_processingOffscrenRendering)
-                {
-                    _processingOffscrenRendering = true;
-                    Task.Run(async () => //100% background thread
+                    if (!_processingOffscrenRendering)
                     {
-                        await ProcessOffscreenCacheRenderingAsync();
+                        _processingOffscrenRendering = true;
+                        Task.Run(async () => //100% background thread
+                        {
+                            await ProcessOffscreenCacheRenderingAsync();
 
-                    }).ConfigureAwait(false);
+                        }).ConfigureAwait(false);
+                    }
+
+                    return !NeedUpdateFrontCache;
                 }
 
-                return !NeedUpdateFrontCache;
+                return false;
             }
-#endif
 
-            return false;
+
         }
 
 
@@ -4642,6 +4599,7 @@ namespace DrawnUi.Maui.Draw
         private readonly LimitedQueue<Func<CachedObject>> _offscreenCacheRenderingQueue = new(1);
 #else
         private readonly LimitedQueue<Action> _offscreenCacheRenderingQueue = new(1);
+
 
 
         /// <summary>
@@ -4659,13 +4617,12 @@ namespace DrawnUi.Maui.Draw
                 RenderObjectNeedsUpdate = false;
                 if (_renderObjectPreparing != value)
                 {
-                    var existing = _renderObjectPreparing;
                     _renderObjectPreparing = value;
-                    existing?.Dispose();
                 }
             }
         }
         CachedObject _renderObjectPreparing;
+
 #endif
 
         private bool _processingOffscrenRendering = false;
@@ -4769,6 +4726,7 @@ namespace DrawnUi.Maui.Draw
 
 #else
 
+
         public async Task ProcessOffscreenCacheRenderingAsync()
         {
 
@@ -4778,34 +4736,34 @@ namespace DrawnUi.Maui.Draw
 
             try
             {
-                Action action = _offscreenCacheRenderingQueue.Pop();
-                while (action != null)
+                if (_offscreenCacheRenderingQueue.Count > 0)
                 {
-                    try
+                    Action action = _offscreenCacheRenderingQueue.Pop();
+                    while (action != null)
                     {
-                        action.Invoke();
-
-                        var kill = RenderObjectPrevious;
-                        RenderObject = RenderObjectPreparing;
-                        _renderObjectPreparing = null;
-
-                        Repaint();
-
-                        if (kill != null)
+                        try
                         {
-                            kill.Surface = null; //do not dispose surface we are reusing it
-                            DisposeObject(kill);
+                            action.Invoke();
+
+                            RenderObject = RenderObjectPreparing;
+                            _renderObjectPreparing = null;
+
+                            Repaint();
+
+                            if (_offscreenCacheRenderingQueue.Count > 0)
+                                action = _offscreenCacheRenderingQueue.Pop();
+                            else
+                                break;
                         }
+                        catch (Exception e)
+                        {
+                            Super.Log(e);
+                        }
+                    }
 
-                        action = _offscreenCacheRenderingQueue.Pop();
-                    }
-                    catch (Exception e)
-                    {
-                        Super.Log(e);
-                    }
+                    if (NeedUpdate) //someone changed us while rendering inner content
+                        Repaint();
                 }
-
-                Repaint();
 
             }
             finally
@@ -5822,19 +5780,29 @@ namespace DrawnUi.Maui.Draw
         /// </summary>
         /// <param name="paintShadow"></param>
         /// <param name="shadow"></param>
-        protected void AddShadowFilter(SKPaint paintShadow, SkiaShadow shadow)
+        public static void AddShadowFilter(SKPaint paintShadow, SkiaShadow shadow, float scale)
         {
             var colorShadow = shadow.Color;
             if (colorShadow.A == 1.0)
             {
                 colorShadow = shadow.Color.WithAlpha((float)shadow.Opacity);
             }
-
-            paintShadow.ImageFilter = SKImageFilter.CreateDropShadow(
-                (float)(shadow.X * RenderingScale), (float)(shadow.Y * RenderingScale),
-                (float)(shadow.Blur * RenderingScale), (float)(shadow.Blur * RenderingScale),
-                colorShadow.ToSKColor());
+            if (shadow.ShadowOnly)
+            {
+                paintShadow.ImageFilter = SKImageFilter.CreateDropShadowOnly(
+                    (float)(shadow.X * scale), (float)(shadow.Y * scale),
+                    (float)(shadow.Blur * scale), (float)(shadow.Blur * scale),
+                    colorShadow.ToSKColor());
+            }
+            else
+            {
+                paintShadow.ImageFilter = SKImageFilter.CreateDropShadow(
+                    (float)(shadow.X * scale), (float)(shadow.Y * scale),
+                    (float)(shadow.Blur * scale), (float)(shadow.Blur * scale),
+                    colorShadow.ToSKColor());
+            }
         }
+
 
         public static readonly BindableProperty ShadowsProperty = BindableProperty.Create(
             nameof(Shadows),
@@ -6324,32 +6292,32 @@ namespace DrawnUi.Maui.Draw
 
         public static readonly BindableProperty TemplatesProperty = BindableProperty.Create(
             nameof(Templates),
-            typeof(IList<ISkiaAttachable>),
+            typeof(IList<SkiaControl>),
             typeof(SkiaControl),
             defaultValueCreator: (instance) =>
             {
-                var created = new ObservableCollection<ISkiaAttachable>();
+                var created = new ObservableCollection<SkiaControl>();
                 ItemTemplateChanged(instance, null, created);
                 return created;
             },
-            validateValue: (bo, v) => v is IList<ISkiaAttachable>,
+            validateValue: (bo, v) => v is IList<SkiaControl>,
             propertyChanged: ItemTemplateChanged,
             coerceValue: CoerceTemplates);
 
-        public IList<ISkiaAttachable> Templates
+        public IList<SkiaControl> Templates
         {
-            get => (IList<ISkiaAttachable>)GetValue(TemplatesProperty);
+            get => (IList<SkiaControl>)GetValue(TemplatesProperty);
             set => SetValue(TemplatesProperty, value);
         }
 
         private static object CoerceTemplates(BindableObject bindable, object value)
         {
-            if (!(value is ReadOnlyCollection<ISkiaAttachable> readonlyCollection))
+            if (!(value is ReadOnlyCollection<SkiaControl> readonlyCollection))
             {
                 return value;
             }
 
-            return new ReadOnlyCollection<ISkiaAttachable>(
+            return new ReadOnlyCollection<SkiaControl>(
                 readonlyCollection.ToList());
         }
 
@@ -6378,35 +6346,25 @@ namespace DrawnUi.Maui.Draw
 
         public static readonly BindableProperty ChildrenProperty = BindableProperty.Create(
             nameof(Children),
-            typeof(IList<ISkiaAttachable>),
+            typeof(IList<SkiaControl>),
             typeof(SkiaControl),
             defaultValueCreator: (instance) =>
             {
-                var created = new ObservableCollection<ISkiaAttachable>();
+                var created = new ObservableCollection<SkiaControl>();
                 ChildrenPropertyChanged(instance, null, created);
                 return created;
             },
-            validateValue: (bo, v) => v is IList<ISkiaAttachable>,
+            validateValue: (bo, v) => v is IList<SkiaControl>,
             propertyChanged: ChildrenPropertyChanged);
 
-        public IList<ISkiaAttachable> Children
+        public IList<SkiaControl> Children
         {
-            get => (IList<ISkiaAttachable>)GetValue(ChildrenProperty);
+            get => (IList<SkiaControl>)GetValue(ChildrenProperty);
             set => SetValue(ChildrenProperty, value);
         }
 
-        public virtual SkiaControl AttachControl
+        protected void AddOrRemoveView(SkiaControl subView, bool add)
         {
-            get
-            {
-                return this;
-            }
-        }
-
-        protected void AddOrRemoveView(ISkiaAttachable child, bool add)
-        {
-            SkiaControl subView = child.AttachControl;
-
             if (subView != null)
             {
                 if (add)
@@ -6421,7 +6379,7 @@ namespace DrawnUi.Maui.Draw
             }
         }
 
-        public virtual void SetChildren(IEnumerable<ISkiaAttachable> views)
+        public virtual void SetChildren(IEnumerable<SkiaControl> views)
         {
             ClearChildren();
             foreach (var child in views)
@@ -6435,11 +6393,11 @@ namespace DrawnUi.Maui.Draw
             if (bindable is SkiaControl skiaControl)
             {
 
-                var enumerableChildren = (IEnumerable<ISkiaAttachable>)newvalue;
+                var enumerableChildren = (IEnumerable<SkiaControl>)newvalue;
 
                 if (oldvalue != null)
                 {
-                    var oldViews = (IEnumerable<ISkiaAttachable>)oldvalue;
+                    var oldViews = (IEnumerable<SkiaControl>)oldvalue;
 
                     if (oldvalue is INotifyCollectionChanged oldCollection)
                     {
@@ -6489,7 +6447,7 @@ namespace DrawnUi.Maui.Draw
             switch (e.Action)
             {
             case NotifyCollectionChangedAction.Add:
-            foreach (ISkiaAttachable newChildren in e.NewItems)
+            foreach (SkiaControl newChildren in e.NewItems)
             {
                 AddOrRemoveView(newChildren, true);
             }
@@ -6497,7 +6455,7 @@ namespace DrawnUi.Maui.Draw
 
             case NotifyCollectionChangedAction.Reset:
             case NotifyCollectionChangedAction.Remove:
-            foreach (ISkiaAttachable oldChildren in e.OldItems ?? Array.Empty<ISkiaAttachable>())
+            foreach (SkiaControl oldChildren in e.OldItems ?? Array.Empty<SkiaControl>())
             {
                 AddOrRemoveView(oldChildren, false);
             }

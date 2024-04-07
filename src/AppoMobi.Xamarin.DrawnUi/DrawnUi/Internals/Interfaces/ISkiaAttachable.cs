@@ -2,7 +2,3 @@
 
 namespace DrawnUi.Maui.Draw;
 
-public interface ISkiaAttachable
-{
-	public SkiaControl AttachControl { get; }
-}

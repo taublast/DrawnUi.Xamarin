@@ -89,14 +89,16 @@ public class ViewsAdapter : IDisposable
             {
                 if (_dicoCellsInUse.ContainsKey(index))
                 {
-                    SkiaControl hiddenView = _dicoCellsInUse[index];
-
-                    if (hiddenView is ISkiaCell notify)
+                    if (_dicoCellsInUse.TryGetValue(index, out SkiaControl hiddenView))
                     {
-                        notify.OnDisappeared();
-                    }
+                        if (hiddenView is ISkiaCell notify)
+                        {
+                            notify.OnDisappeared();
+                        }
 
-                    ReleaseView(hiddenView);
+                        _dicoCellsInUse.Remove(index);
+                        ReleaseView(hiddenView);
+                    }
 
                     //Debug.WriteLine($"[InUse] {_dicoCellsInUse.Keys.Select(k => k.ToString()).Aggregate((current, next) => $"{current},{next}")}");
                 }
@@ -214,19 +216,19 @@ public class ViewsAdapter : IDisposable
                             Trace.WriteLine($"[ViewsAdapter] {_parent.Tag} returned a ready view {ready.Uid}");
                         }
 
-                        //#if DEBUG
-                        //                        try
-                        //                        {
-                        //                            if (!object.Equals(_dataContexts[index], ready.BindingContext))
-                        //                            {
-                        //                                Trace.WriteLine($"[ViewsAdapter] {_parent.Tag} ready view has different context!");
-                        //                            }
-                        //                        }
-                        //                        catch (Exception e)
-                        //                        {
-                        //                            Trace.WriteLine(e);
-                        //                        }
-                        //#endif
+#if DEBUG
+                        try
+                        {
+                            if (!object.Equals(_dataContexts[index], ready.BindingContext))
+                            {
+                                Debug.WriteLine($"[ViewsAdapter] {_parent.Tag} ready view has different context!");
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine(e);
+                        }
+#endif
 
                         AttachView(ready, index);
                         return ready;
@@ -707,9 +709,9 @@ public class ViewsAdapter : IDisposable
             if (LogEnabled)
                 Trace.WriteLine($"[ViewsAdapter] created new view !");
 
-            if (create is ISkiaAttachable element)
+            if (create is SkiaControl element)
             {
-                return element.AttachControl;
+                return element;
             }
             return (SkiaControl)create;
         }
@@ -741,32 +743,38 @@ public class ViewsAdapter : IDisposable
         {
             //lock (_syncLock)
             {
-                var viewModel = _pool.Pop();
-                if (viewModel != null)
-                {
-                    return viewModel;
-                }
+                SkiaControl viewModel = null;
 
-                if (_pool.Count < MaxSize)
+                try
                 {
-                    try
+                    if (_pool.Count > 0)
+                        viewModel = _pool.Pop();
+
+                    if (viewModel != null)
+                    {
+                        return viewModel;
+                    }
+
+                    if (_pool.Count < MaxSize)
                     {
                         return CreateFromTemplate();
                     }
-                    catch (Exception e)
+
+                    // Wait and try again if the pool is full
+                    viewModel = _pool.Pop();
+                    while (viewModel != null)
                     {
-                        Trace.WriteLine(e);
-                        throw;
+                        System.Threading.Thread.Sleep(10); //todo add cancellation
+                        viewModel = _pool.Pop();
                     }
                 }
-
-                // Wait and try again if the pool is full
-                viewModel = _pool.Pop();
-                while (viewModel != null)
+                catch (Exception e)
                 {
-                    System.Threading.Thread.Sleep(10); //todo add cancellation
-                    viewModel = _pool.Pop();
+                    Super.Log(e);
+                    throw e;
                 }
+
+
 
                 return viewModel;
             }

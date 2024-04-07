@@ -245,7 +245,7 @@ public class SkiaCarousel : SnappingLayout
 
             //Trace.WriteLine($"[CAROUSEL] {Tag}: {ChildrenFactory.GetDebugInfo()}");
 
-            RenderTree = tree.ToList();
+            RenderTree = tree;
             _builtRenderTreeStamp = _measuredStamp;
 
             return drawn;
@@ -328,25 +328,20 @@ public class SkiaCarousel : SnappingLayout
         }
     }
 
-
-
     public override object CreateContentFromTemplate()
     {
-        var created = base.CreateContentFromTemplate();
-        SkiaControl control;
-        if (created is ISkiaAttachable element)
+        try
         {
-            control = element.AttachControl;
+            var control = base.CreateContentFromTemplate() as SkiaControl;
+            AdaptTemplate(control);
+            return control;
         }
-        else
+        catch (Exception e)
         {
-            control = created as SkiaControl;
+            Super.Log(e);
+            return null;
         }
-
-        AdaptTemplate(control);
-        return control;
     }
-
 
     SemaphoreSlim semaphoreItemSouce = new(1);
 
@@ -691,9 +686,9 @@ public class SkiaCarousel : SnappingLayout
     }
 
 
-    protected override void OnDrawnChildAdded(SkiaControl child)
+    protected override void OnChildAdded(SkiaControl child)
     {
-        base.OnDrawnChildAdded(child);
+        base.OnChildAdded(child);
 
         AdaptChildren();
     }
@@ -1209,7 +1204,7 @@ public class SkiaCarousel : SnappingLayout
             {
                 consumed = this;
 
-                var final = VelocityAccumulator.CalculateFinalVelocity();
+                var final = VelocityAccumulator.CalculateFinalVelocity(500);
 
                 //animate
                 CurrentSnap = CurrentPosition;

@@ -16,4 +16,6 @@ public interface ISkiaDrawable : ISkiaSharpView, IDisposable
     public bool IsDrawing { get; }
 
     long FrameTime { get; }
+
+    void Update();
 }

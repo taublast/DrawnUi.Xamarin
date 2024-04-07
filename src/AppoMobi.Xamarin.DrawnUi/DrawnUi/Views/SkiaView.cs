@@ -37,6 +37,16 @@ public partial class SkiaView : SKCanvasView, ISkiaDrawable
 
     bool rendererSet;
 
+    public void Update()
+    {
+        if (
+            Super.EnableRendering && rendererSet && CanvasSize is { Width: > 0, Height: > 0 })
+        {
+            IsDrawing = true;
+            InvalidateSurface();
+        }
+    }
+
     protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)
     {
         base.OnPropertyChanged(propertyName);
@@ -76,40 +86,78 @@ public partial class SkiaView : SKCanvasView, ISkiaDrawable
     {
         get
         {
-            return _fps;
+            return _reportFps;
         }
     }
 
     public long FrameTime { get; protected set; }
+    private double _fpsAverage;
+    private int _fpsCount;
+    private long _lastFrameTimestamp;
+    private long _nanos;
+    private bool _isDrawing;
+    static bool maybeLowEnd = true;
+    private double _reportFps;
+
+    /// <summary>
+    /// Calculates the frames per second (FPS) and updates the rolling average FPS every 'averageAmount' frames.
+    /// </summary>
+    /// <param name="currentTimestamp">The current timestamp in nanoseconds.</param>
+    /// <param name="averageAmount">The number of frames over which to average the FPS. Default is 10.</param>
+    void CalculateFPS(long currentTimestamp, int averageAmount = 10)
+    {
+        // Convert nanoseconds to seconds for elapsed time calculation.
+        double elapsedSeconds = (currentTimestamp - _lastFrameTimestamp) / 1_000_000_000.0;
+        _lastFrameTimestamp = currentTimestamp;
+
+        double currentFps = 1.0 / elapsedSeconds;
+
+        _fpsAverage = ((_fpsAverage * _fpsCount) + currentFps) / (_fpsCount + 1);
+        _fpsCount++;
+
+        if (_fpsCount >= averageAmount)
+        {
+            _reportFps = _fpsAverage;
+            _fpsCount = 0;
+            _fpsAverage = 0.0;
+        }
+    }
 
     public bool IsDrawing { get; protected set; }
+
 
     private void OnPaintingSurface(object sender, SKPaintSurfaceEventArgs paintArgs)
     {
         IsDrawing = true;
 
-        _fps = 1.0 / (DateTime.Now - _lastFrame).TotalSeconds;
-        _lastFrame = DateTime.Now;
-
         FrameTime = Super.GetCurrentTimeNanos();
+
+        if (Device.RuntimePlatform == Device.Android)
+        {
+            CalculateFPS(FrameTime);
+        }
+        else
+        {
+            CalculateFPS(FrameTime, 60);
+        }
 
         if (OnDraw != null && Super.EnableRendering)
         {
             _surface = paintArgs.Surface;
-            bool invalidate = OnDraw.Invoke(paintArgs.Surface.Canvas, new SKRect(0, 0, paintArgs.Info.Width, paintArgs.Info.Height));
-            if (invalidate && Super.EnableRendering) //if we didnt call update because IsDrawing was true need to kick here
+            bool isDirty = OnDraw.Invoke(paintArgs.Surface.Canvas, new SKRect(0, 0, paintArgs.Info.Width, paintArgs.Info.Height));
+
+            if (Device.RuntimePlatform == Device.Android)
             {
-                IsDrawing = false;
-                if (Device.RuntimePlatform == Device.Android)
+                if (maybeLowEnd && FPS > 200)
                 {
-                    if (_fps < 70)
-                        InvalidateSurface();
+                    maybeLowEnd = false;
                 }
-                else
+
+                if (maybeLowEnd && isDirty && _fps < 55) //kick refresh for low-end devices
                 {
-                    Superview.Update();
+                    InvalidateSurface();
+                    return;
                 }
-                return;
             }
         }
 

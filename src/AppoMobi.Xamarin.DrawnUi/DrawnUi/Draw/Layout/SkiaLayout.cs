@@ -7,6 +7,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Xamarin.Forms.Xaml.Diagnostics;
 
 namespace DrawnUi.Maui.Draw
@@ -367,6 +368,12 @@ namespace DrawnUi.Maui.Draw
                                 var forChild = child.Rect.ContainsInclusive(x, y) || child.Control == Superview.FocusedChild;
                                 if (forChild)
                                 {
+
+                                    if (touchAction == TouchActionResult.Tapped && CommandChildTapped != null)
+                                    {
+                                        CommandChildTapped.Execute(child);
+                                    }
+
                                     //Trace.WriteLine($"[HIT] for cell {i} at Y {y:0.0}");
                                     if (manageChildFocus && listener == Superview.FocusedChild)
                                     {
@@ -497,7 +504,8 @@ namespace DrawnUi.Maui.Draw
         /// <summary>
         /// Last rendered controls tree. Used by gestures etc..
         /// </summary>
-        public List<SkiaControlWithRect> RenderTree { get; protected set; } = new();
+        public IReadOnlyList<SkiaControlWithRect> RenderTree { get; protected set; } =
+            new List<SkiaControlWithRect>();
 
         private Stopwatch _stopwatchRender = new();
         List<string> elapsedTimes = new();
@@ -726,7 +734,7 @@ namespace DrawnUi.Maui.Draw
         //	Update();
         //}
 
-        public override void SetChildren(IEnumerable<ISkiaAttachable> views)
+        public override void SetChildren(IEnumerable<SkiaControl> views)
         {
             base.SetChildren(views);
 
@@ -1305,6 +1313,18 @@ namespace DrawnUi.Maui.Draw
         {
             get { return (double)GetValue(HiddenAmountToRenderProperty); }
             set { SetValue(HiddenAmountToRenderProperty, value); }
+        }
+
+        public static readonly BindableProperty CommandChildTappedProperty = BindableProperty.Create(nameof(CommandChildTapped), typeof(ICommand),
+            typeof(SkiaLayout),
+            null);
+        /// <summary>
+        /// Child was tapped. Will pass the tapped child as parameter. You might want then read child's BindingContext etc..
+        /// </summary>
+        public ICommand CommandChildTapped
+        {
+            get { return (ICommand)GetValue(CommandChildTappedProperty); }
+            set { SetValue(CommandChildTappedProperty, value); }
         }
 
         #endregion

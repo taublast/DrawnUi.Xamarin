@@ -93,7 +93,7 @@ public class SkiaImage : SkiaControl
 #if WINDOWS
             Trace.WriteLine(message);
 #else
-            Trace.WriteLine(message);
+            Console.WriteLine(message);
 #endif
         }
     }
@@ -206,12 +206,12 @@ public class SkiaImage : SkiaControl
         nameof(LoadSourceOnFirstDraw),
         typeof(bool),
         typeof(SkiaImage),
-        true,
+        false,
         propertyChanged: OnLoadSourceChanged);
 
     /// <summary>
     /// Should the source be loaded on the first draw, useful for the first fast rendering of the screen and loading images after,
-    /// default is True.
+    /// default is False.
     /// Set this to False if you need an off-screen loading and to True to make the screen load faster.
     /// While images are loaded in async manner this still has its impact.
     /// Useful to set True for for SkiaCarousel cells etc..
@@ -416,51 +416,71 @@ public class SkiaImage : SkiaControl
                                 //Debug.WriteLine($"[SkiaImage] {Id} loading canceled for {url} - ({retries})");
                                 cancel?.Cancel();
                                 IsLoading = false;
-                                TraceLog($"[SkiaImage] Canceled loading {source}");
+                                if (LogEnabled)
+                                    TraceLog($"[SkiaImage] Canceled loading {source}");
                                 return;
                             }
 
-                            //bitmap = await Super.LoadSKBitmapAsync(source, cancel.Token);
 
-                            bitmap = await SkiaImageManager.Instance.Enqueue(source, cancel);
-
-                            //Console.WriteLine($"[SKIAIMAGE] *** Loaded {source} = {bitmap}");
-
-                            IsLoading = false;
-
-                            if (cancel.Token.IsCancellationRequested)
+                            async Task LoadAction()
                             {
-                                //Debug.WriteLine($"[SkiaImage] {Id} loading canceled for {url}");
-                                cancel?.Cancel();
-                                IsLoading = false;
-                                TraceLog($"[SkiaImage] Canceled already loaded {source}");
-                                if (bitmap != null && !SkiaImageManager.ReuseBitmaps)
-                                    SafeAction(() =>
+                                try
+                                {
+                                    //bitmap = await SkiaImageManager.LoadImageOnPlatformAsync(source, cancel.Token);
+                                    bitmap = await SkiaImageManager.Instance.LoadImageManagedAsync(source, cancel);
+
+                                    if (cancel.Token.IsCancellationRequested)
                                     {
-                                        bitmap.Dispose();
-                                    });
-                                return;
+                                        //Debug.WriteLine($"[SkiaImage] {Id} loading canceled for {url}");
+                                        cancel?.Cancel();
+                                        IsLoading = false;
+                                        TraceLog($"[SkiaImage] Canceled already loaded {source}");
+                                        if (bitmap != null && !SkiaImageManager.ReuseBitmaps)
+                                            SafeAction(() =>
+                                            {
+                                                bitmap.Dispose();
+                                            });
+                                        return;
+                                    }
+
+                                    if (bitmap != null)
+                                    {
+                                        CancelLoading?.Cancel();
+                                        ImageBitmap = new LoadedImageSource(bitmap); //at the end will use SetImage(new InstancedBitmap(bitmap));
+                                        TraceLog($"[SkiaImage] Loaded {source}");
+                                        OnSuccess?.Invoke(this, new ContentLoadedEventArgs(url));
+                                        OnSourceSuccess();
+                                        return;
+                                    }
+
+                                    TraceLog($"[SkiaImage] Error loading {url} as {source} for tag {Tag} try {RetriesOnError - RetriesLeft + 1}");
+
+                                    //ClearBitmap(); //erase old image anyway even if EraseChangedContent is false
+
+                                    if (RetriesLeft > 0)
+                                    {
+                                        await Task.Delay(1000);
+                                        RetriesLeft--;
+                                        await LoadAction();
+                                    }
+                                }
+                                catch (TaskCanceledException)
+                                {
+                                }
+                                catch (Exception e)
+                                {
+                                    Super.Log(e);
+                                }
+                                finally
+                                {
+                                    IsLoading = false;
+                                }
+
                             }
 
-                            if (bitmap != null)
-                            {
-                                CancelLoading?.Cancel();
-                                ImageBitmap = new LoadedImageSource(bitmap); //at the end will use SetImage(new InstancedBitmap(bitmap));
-                                TraceLog($"[SkiaImage] Loaded {source}");
-                                OnSuccess?.Invoke(this, new ContentLoadedEventArgs(url));
-                                OnSourceSuccess();
-                                return;
-                            }
 
-                            TraceLog($"[SkiaImage] Error loading {url} as {source} for tag {Tag} try {RetriesOnError - RetriesLeft + 1}");
+                            await LoadAction();
 
-                            //ClearBitmap(); //erase old image anyway even if EraseChangedContent is false
-
-                            if (RetriesLeft > 0)
-                            {
-                                await Task.Delay(1000);
-                                RetriesLeft--;
-                            }
                         }
 
                         OnError?.Invoke(this, new ContentLoadedEventArgs(url));
@@ -469,7 +489,7 @@ public class SkiaImage : SkiaControl
                     }
                     catch (Exception e)
                     {
-                        Super.Log(e);
+                        TraceLog(e.Message);
 
                         OnError?.Invoke(this, new ContentLoadedEventArgs(url));
                         OnSourceError();
@@ -533,18 +553,18 @@ public class SkiaImage : SkiaControl
         }
     }
 
-    public static readonly BindableProperty EffectProperty = BindableProperty.Create(
-nameof(Effect),
+    public static readonly BindableProperty AddEffectProperty = BindableProperty.Create(
+nameof(AddEffect),
 typeof(SkiaImageEffect),
 typeof(SkiaImage),
 SkiaImageEffect.None,
 propertyChanged: NeedChangeColorFIlter);
 
 
-    public SkiaImageEffect Effect
+    public SkiaImageEffect AddEffect
     {
-        get { return (SkiaImageEffect)GetValue(EffectProperty); }
-        set { SetValue(EffectProperty, value); }
+        get { return (SkiaImageEffect)GetValue(AddEffectProperty); }
+        set { SetValue(AddEffectProperty, value); }
     }
 
     public static readonly BindableProperty ColorTintProperty = BindableProperty.Create(
@@ -959,7 +979,7 @@ propertyChanged: NeedChangeColorFIlter);
                 ImagePaint = new()
                 {
                     IsAntialias = true,
-                    FilterQuality = SKFilterQuality.Medium
+                    FilterQuality = SKFilterQuality.High
                 };
             }
             else
@@ -980,7 +1000,7 @@ propertyChanged: NeedChangeColorFIlter);
             //ColorFilter
             if (PaintColorFilter == null)
             {
-                PaintColorFilter = Effect switch
+                PaintColorFilter = AddEffect switch
                 {
                     SkiaImageEffect.Tint when ColorTint != Color.Transparent
                         => SkiaImageEffects.Tint(ColorTint, EffectBlendMode),
@@ -1037,6 +1057,7 @@ propertyChanged: NeedChangeColorFIlter);
 
     object lockDraw = new();
     private bool _hasError;
+    private RescaledBitmap _scaledSource;
 
     public virtual void LoadSourceIfNeeded()
     {
@@ -1064,6 +1085,9 @@ propertyChanged: NeedChangeColorFIlter);
     protected override void Draw(SkiaDrawingContext context,
         SKRect destination, float scale)
     {
+        if (IsDisposed)
+            return;
+
         LoadSourceIfNeeded();
 
         var apply = ApplyNewSource;
@@ -1103,15 +1127,10 @@ propertyChanged: NeedChangeColorFIlter);
             Update(); //gamechanger for doublebuffering and other complicated cases
         }
 
-        var widthRequest = SizeRequest.Width + (float)(Margins.Left + Margins.Right);
-        var heightRequest = SizeRequest.Height + (float)(Margins.Top + Margins.Bottom);
-
-        var drawn = DrawUsingRenderObject(context,
-            widthRequest, heightRequest,
+        DrawUsingRenderObject(context,
+            SizeRequest.Width, SizeRequest.Height,
             destination, scale);
     }
-
-    public SKPoint AspectScale { get; protected set; }
 
     public override void OnDisposing()
     {
@@ -1126,15 +1145,26 @@ propertyChanged: NeedChangeColorFIlter);
         PaintColorFilter = null;
         PaintImageFilter = null;
         LoadedSource = null;
-
         ScaledSource?.Dispose();
         ScaledSource = null;
 
         base.OnDisposing();
     }
 
-    public RescaledBitmap ScaledSource { get; protected set; }
+    public SKPoint AspectScale { get; protected set; }
 
+    public RescaledBitmap ScaledSource
+    {
+        get => _scaledSource;
+        protected set
+        {
+            _scaledSource = value;
+            if (value != null && value.Bitmap == null)
+            {
+                var stop = 1;
+            }
+        }
+    }
 
     public class RescaledBitmap : IDisposable
     {
@@ -1173,6 +1203,7 @@ propertyChanged: NeedChangeColorFIlter);
                 aspectScaleX * source.Width, aspectScaleY * source.Height,
                 horizontal, vertical);
 
+            //if (this.BlurAmount > 0)
             display.Inflate(new SKSize((float)InflateAmount, (float)InflateAmount));
 
             display.Offset((float)Math.Round(scale * HorizontalOffset), (float)Math.Round(scale * VerticalOffset));
@@ -1186,8 +1217,8 @@ propertyChanged: NeedChangeColorFIlter);
                     if (ScaledSource == null
                         || ScaledSource.Source != source.Id
                         || ScaledSource.Quality != this.RescalingQuality
-                        || ScaledSource.Bitmap.Width != (int)display.Width
-                        || ScaledSource.Bitmap.Height != (int)display.Height)
+                         || ScaledSource.Bitmap.Width != (int)display.Width
+                         || ScaledSource.Bitmap.Height != (int)display.Height)
                     {
                         var bmp = source.Bitmap.Resize(new SKSizeI((int)display.Width, (int)display.Height), RescalingQuality);
                         var kill = ScaledSource;

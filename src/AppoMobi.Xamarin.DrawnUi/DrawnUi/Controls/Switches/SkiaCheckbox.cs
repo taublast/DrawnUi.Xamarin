@@ -1,15 +1,19 @@
-﻿namespace DrawnUi.Maui.Draw;
+﻿using AppoMobi.Forms.Gestures;
+
+namespace DrawnUi.Maui.Draw;
 
 /// <summary>
 /// Switch-like control, can include any content inside. It's aither you use default content (todo templates?..)
 /// or can include any content inside, and properties will by applied by convention to a SkiaShape with Tag `Frame`, SkiaShape with Tag `Thumb`. At the same time you can override ApplyProperties() and apply them to your content yourself.
 /// </summary>
-public class SkiaSwitch : SkiaToggle
+public class SkiaCheckbox : SkiaToggle
 {
     #region DEFAULT CONTENT
 
     protected override void CreateDefaultContent()
     {
+        // TODO
+        /*
         //todo can make different upon platform!
         if (!DefaultChildrenCreated && this.Views.Count == 0)
         {
@@ -57,7 +61,7 @@ public class SkiaSwitch : SkiaToggle
             }
 
         }
-
+        */
     }
 
     #endregion
@@ -71,48 +75,33 @@ public class SkiaSwitch : SkiaToggle
 
     public virtual void ApplyOff()
     {
-        if (Thumb != null)
+        if (ViewOn != null)
         {
-            Thumb.TranslationX = GetThumbPosForOff();
-            Thumb.BackgroundColor = this.ColorThumbOff;
-            Track.BackgroundColor = this.ColorFrameOff;
+            ViewOn.IsVisible = false;
         }
     }
 
     public virtual void ApplyOn()
     {
-        if (Thumb != null)
+        if (ViewOn != null)
         {
-            Thumb.TranslationX = GetThumbPosForOn();
-            Thumb.BackgroundColor = this.ColorThumbOn;
-            Track.BackgroundColor = this.ColorFrameOn;
+            ViewOn.IsVisible = true;
         }
     }
 
-    public SkiaShape Track;
-    public SkiaShape Thumb;
+    public SkiaControl ViewOff;
+    public SkiaControl ViewOn;
 
-    protected virtual double GetThumbPosForOn()
-    {
-        var x = Track.Width + Track.Margins.Right + Track.Margins.Left
-                - Thumb.Width - Thumb.Margins.Right - Thumb.Margins.Left;
-        return x;
-    }
-
-    protected virtual double GetThumbPosForOff()
-    {
-        return 0;
-    }
 
     protected virtual void FindViews()
     {
-        Track = FindView<SkiaShape>("Frame");
-        Thumb = FindView<SkiaShape>("Thumb");
+        ViewOn = FindView<SkiaControl>("ViewOn");
+        ViewOff = FindView<SkiaControl>("ViewOff");
     }
 
     public override void ApplyProperties()
     {
-        if (Track == null)
+        if (ViewOn == null)
         {
             FindViews();
         }
@@ -127,37 +116,22 @@ public class SkiaSwitch : SkiaToggle
         }
     }
 
-    public static uint AnimationSpeed = 200;
-
-    protected override void OnToggledChanged()
+    public override ISkiaGestureListener ProcessGestures(TouchActionType type, TouchActionEventArgs args, TouchActionResult touchAction,
+        SKPoint childOffset, SKPoint childOffsetDirect, ISkiaGestureListener alreadyConsumed)
     {
-        if (LayoutReady && IsAnimated)
+        if (touchAction == TouchActionResult.Tapped)
         {
-            var easing = Easing.CubicOut;
-            var msSpeed = AnimationSpeed;
-            var pos = 0.0;
-            if (!IsToggled)
-            {
-                Task.Run(async () =>
-                {
-                    await Thumb.TranslateToAsync(pos, 0, msSpeed, easing);
-                    ApplyOff();
-                });
-            }
-            else
-            {
-                pos = GetThumbPosForOn();
-                Task.Run(async () =>
-                {
-                    await Thumb.TranslateToAsync(pos, 0, msSpeed, easing);
-                    ApplyOn();
-                });
-            }
+            IsToggled = !IsToggled;
+            return this;
         }
-        else
-        {
-            ApplyProperties();
-        }
+
+        return base.ProcessGestures(type, args, touchAction, childOffset, childOffsetDirect, alreadyConsumed);
     }
 
+    protected override void NotifyWasToggled()
+    {
+        base.NotifyWasToggled();
+
+
+    }
 }

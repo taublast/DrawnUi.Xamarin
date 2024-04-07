@@ -1,9 +1,10 @@
 using System.Drawing;
 using System.Numerics;
+using Color = Xamarin.Forms.Color;
 
 namespace DrawnUi.Maui.Draw;
 
-/// <summary>
+ /// <summary>
 /// Cycles content, so the scroll never ands but cycles from the start
 /// </summary>
 public class SkiaScrollLooped : SkiaScroll
@@ -12,6 +13,8 @@ public class SkiaScrollLooped : SkiaScroll
     {
         Bounces = false;
     }
+
+    public static bool Debug = false;
 
     public override bool IsClippedToBounds => true;
 
@@ -348,30 +351,19 @@ public class SkiaScrollLooped : SkiaScroll
                 if (hiddenContentHeightPixels > 0)
                 {
 
-                    float CorrectPixels(float offset)
-                    {
-                        var ending = Math.Abs(offset - Math.Truncate(offset));
-                        var adjust = (float)(CycleSpace + 1);
-                        if (ending >= 0.5) adjust++;
-                        return offset - adjust * Math.Sign(offset);
-                    }
-
                     var pixelsContentOffsetY = (float)(InternalViewportOffset.Pixels.Y);
                     float offsetY = 0;
                     if (pixelsContentOffsetY > 0)
                     {
-                        offsetY = CorrectPixels(pixelsContentOffsetY - Content.MeasuredSize.Pixels.Height);
+                        offsetY = pixelsContentOffsetY - Content.MeasuredSize.Pixels.Height;
                     }
                     else
                     if (pixelsContentOffsetY < 0)
                     {
-                        offsetY = CorrectPixels(Content.MeasuredSize.Pixels.Height + pixelsContentOffsetY);
+                        offsetY = Content.MeasuredSize.Pixels.Height + pixelsContentOffsetY;
                     }
 
-                    //if (UsePixelSnapping)
-                    //offsetY = SnapPixelsToPixel(pixelsContentOffsetY, offsetY);
-
-                    var childRect = destination.Clone();// ContentAvailableSpace.Clone();
+                    var childRect = destination.Clone();
                     childRect.Offset(0, offsetY);
 
                     if (pixelsContentOffsetY > 0)
@@ -380,9 +372,23 @@ public class SkiaScrollLooped : SkiaScroll
                     DrawWithClipAndTransforms(context, DrawingRect, true,
                         true, (ctx) =>
                         {
-                            DrawViews(context, childRect, zoomedScale, debug);
-                        });
+                            if (Debug)
+                            {
+                                using var paint = new SKPaint()
+                                {
+                                    ColorFilter = SkiaImageEffects.Tint(Color.Red, SKBlendMode.SrcIn)
+                                };
+                                var count = context.Canvas.SaveLayer(paint);
 
+                                DrawViews(context, childRect, zoomedScale, debug);
+
+                                context.Canvas.RestoreToCount(count);
+                            }
+                            else
+                            {
+                                DrawViews(context, childRect, zoomedScale, debug);
+                            }
+                        });
                 }
             }
             else
@@ -392,32 +398,22 @@ public class SkiaScrollLooped : SkiaScroll
                 if (hiddenContentWidthPixels < 0)
                     hiddenContentWidthPixels = 0;
 
-                if (hiddenContentWidthPixels > 0)//hiddenContentSizePixels > 0 && InternalViewportOffsetX != 0.0)
+                if (hiddenContentWidthPixels > 0)
                 {
-                    float OffsetDuplicate(float offset)
-                    {
-                        var ending = Math.Abs(offset - Math.Truncate(offset));
-                        var adjust = (float)(CycleSpace + 1);
-                        if (ending >= 0.5) adjust++;
-                        return offset - adjust * Math.Sign(offset);
-                    }
 
                     var pixelsContentOffsetX = InternalViewportOffset.Pixels.X;
                     float offsetX = 0;
                     if (pixelsContentOffsetX > 0)
                     {
-                        offsetX = OffsetDuplicate(pixelsContentOffsetX - Content.MeasuredSize.Pixels.Width);
+                        offsetX = pixelsContentOffsetX - Content.MeasuredSize.Pixels.Width;
                     }
                     else
                     if (pixelsContentOffsetX < 0)
                     {
-                        offsetX = OffsetDuplicate(Content.MeasuredSize.Pixels.Width + pixelsContentOffsetX);
+                        offsetX = Content.MeasuredSize.Pixels.Width + pixelsContentOffsetX;
                     }
 
-                    //if (UsePixelSnapping)
-                    //offsetX = SnapPixelsToPixel(pixelsContentOffsetX, offsetX);
-
-                    var childRect = destination.Clone();// ContentAvailableSpace.Clone();
+                    var childRect = destination.Clone();
                     childRect.Offset(offsetX, 0);
 
                     DrawWithClipAndTransforms(context, DrawingRect, true,
@@ -426,12 +422,9 @@ public class SkiaScrollLooped : SkiaScroll
                             DrawViews(context, childRect, zoomedScale, debug);
                         });
 
-
                 }
             }
         }
-
-
 
         //ScrollOrientation.Both unsupported
 
@@ -459,22 +452,22 @@ public class SkiaScrollLooped : SkiaScroll
         return new Vector2((float)Math.Round(x), (float)Math.Round(y));
     }
 
-    protected override void PositionViewport(SKRect destination, float offsetPtsX, float offsetPtsY, float viewportScale, float scale)
+    protected override void PositionViewport(SKRect destination, SKPoint offsetPixels, float viewportScale, float scale)
     {
         if (!IsBanner)
         {
-            var clampedOffset = ModifyViewportOffset(destination, offsetPtsX, offsetPtsY, scale);
-            base.PositionViewport(destination, clampedOffset.X, clampedOffset.Y, viewportScale, scale);
+            var clampedOffsetPixels = ModifyViewportOffset(destination, offsetPixels, scale);
+            base.PositionViewport(destination, clampedOffsetPixels, viewportScale, scale);
         }
         else
         {
-            base.PositionViewport(destination, offsetPtsX, offsetPtsY, viewportScale, scale);
+            base.PositionViewport(destination, offsetPixels, viewportScale, scale);
         }
     }
 
-    protected virtual PointF ModifyViewportOffset(SKRect destination, float offsetX, float offsetY, float scale)
+    protected virtual SKPoint ModifyViewportOffset(SKRect destination, SKPoint offsetPixels, float scale)
     {
-        float ClampOffset(float offset, float limitPositive, float limitNegative)
+        float ClampOffsetForDuplicate(float offset, float limitPositive, float limitNegative)
         {
             int parts;
             if (offset > 0)
@@ -502,19 +495,26 @@ public class SkiaScrollLooped : SkiaScroll
         //banner-like
         if (IsBanner)
         {
-            //do not draw duplicate
+            //infinite, but do not draw duplicate like for scrolling banner
+
             //offsetY = ClampOffset(offsetY, destination.Height / scale, Content.MeasuredSize.Units.Height);
             //offsetX = ClampOffset(offsetX, destination.Width / scale, Content.MeasuredSize.Units.Width);
         }
         else
         {
-            //sticky
             //need draw duplicate
-            offsetY = ClampOffset(offsetY, Content.MeasuredSize.Units.Height, Content.MeasuredSize.Units.Height);
-            offsetX = ClampOffset(offsetX, Content.MeasuredSize.Units.Width, Content.MeasuredSize.Units.Width);
+            var offsetY = ClampOffsetForDuplicate(
+                offsetPixels.Y,
+                Content.MeasuredSize.Pixels.Height, Content.MeasuredSize.Pixels.Height);
+
+            var offsetX = ClampOffsetForDuplicate(
+                offsetPixels.X,
+                Content.MeasuredSize.Pixels.Width, Content.MeasuredSize.Pixels.Width);
+
+            return new(offsetX, offsetY);
         }
 
-        return new PointF((float)Math.Round(offsetX), (float)Math.Round(offsetY));
+        return offsetPixels;
     }
 
     public static readonly BindableProperty CycleSpaceProperty

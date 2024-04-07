@@ -1,9 +1,10 @@
-﻿using DrawnUi.Maui.Infrastructure.Enums;
+﻿//#define LEGACY
+
+using DrawnUi.Maui.Infrastructure.Enums;
+using System.Runtime.CompilerServices;
 using Xamarin.Essentials;
 
-
 namespace DrawnUi.Maui.Views;
-
 
 public partial class DrawnView
 {
@@ -26,8 +27,12 @@ public partial class DrawnView
     }
     bool _isDirty;
 
+
+#if LEGACY
+
     public bool CheckCanDraw()
     {
+
         if (UpdateLocked && StopDrawingWhenUpdateIsLocked)
             return false;
 
@@ -36,9 +41,6 @@ public partial class DrawnView
                && IsDirty
                && IsVisible;
     }
-
-
-    public bool NeedRedraw { get; set; }
 
     public virtual void Update()
     {
@@ -61,6 +63,63 @@ public partial class DrawnView
             InvalidateCanvasPlatform();
         }
     }
+
+#else
+
+    protected virtual void DisposePlatform()
+    {
+        Super.Native.UnregisterLooperCallback(OnChoreographer);
+    }
+
+    object lockFrame = new();
+
+    private void OnChoreographer(object sender, EventArgs e)
+    {
+        lock (lockFrame)
+        {
+            if (CheckCanDraw())
+            {
+                OrderedDraw = true;
+                if (NeedCheckParentVisibility)
+                    CheckElementVisibility(this);
+
+                CanvasView?.Update();
+            }
+        }
+    }
+
+    public virtual void SetupRenderingLoop()
+    {
+        Super.Native.UnregisterLooperCallback(OnChoreographer);
+        Super.Native.RegisterLooperCallback(OnChoreographer);
+    }
+
+    protected virtual void PlatformHardwareAccelerationChanged()
+    {
+
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool CheckCanDraw()
+    {
+        return //!OrderedDraw
+
+            CanvasView != null && HasHandler
+            //&& !CanvasView.IsDrawing
+            && IsDirty
+            && !(UpdateLocked && StopDrawingWhenUpdateIsLocked)
+            && IsVisible && Super.EnableRendering;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Update()
+    {
+        IsDirty = true;
+    }
+
+#endif
+
+    public bool NeedRedraw { get; set; }
 
     protected async void InvalidateCanvasAndroid()
     {

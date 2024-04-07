@@ -15,6 +15,7 @@ global using Xamarin.Forms;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using DrawnUi.Maui.Views;
 
 [assembly: XmlnsDefinition("http://schemas.appomobi.com/drawnUi/2023/draw",
     "DrawnUi.Maui.Draw")]
@@ -26,13 +27,6 @@ using System.Runtime.CompilerServices;
     "DrawnUi.Maui.Views")]
 
 namespace DrawnUi.Maui.Draw;
-
-public interface IDrawnUiPlatform
-{
-    Task<SKBitmap> LoadSKBitmapAsync(ImageSource source, CancellationToken cancel);
-
-    void ClearImagesCache();
-}
 
 public partial class Super
 {
@@ -144,21 +138,12 @@ public partial class Super
     /// </summary>
     public static float CapMicroSecs = 8333.3333f;
 
-    public static long GetCurrentTimeMs()
-    {
-        double timestamp = Stopwatch.GetTimestamp();
-        double nanoseconds = 1_000.0 * timestamp / Stopwatch.Frequency;
-        return (long)nanoseconds;
-    }
-
     public static long GetCurrentTimeNanos()
     {
         double timestamp = Stopwatch.GetTimestamp();
         double nanoseconds = 1_000_000_000.0 * timestamp / Stopwatch.Frequency;
         return (long)nanoseconds;
     }
-
-    public static event Action<long> OnFrame;
 
     /// <summary>
     /// In DP

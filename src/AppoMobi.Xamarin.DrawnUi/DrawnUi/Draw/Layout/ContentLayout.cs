@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using DrawnUi.Maui.Draw;
+﻿using DrawnUi.Maui.Draw;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -163,18 +163,18 @@ public partial class ContentLayout : SkiaControl, ISkiaGestureListener, IVisibil
 
     public SKRect ContentAvailableSpace { get; protected set; }
 
-    public override void SetChildren(IEnumerable<ISkiaAttachable> views)
+    public override void SetChildren(IEnumerable<SkiaControl> views)
     {
         //do not use subviews as we are using Content property for this control
 
         return;
     }
 
-    protected override void OnBindingContextChanged()
+    public override void ApplyBindingContext()
     {
-        base.OnBindingContextChanged();
+        base.ApplyBindingContext();
 
-        if (this.Content != null && BindingContext != null)
+        if (this.Content != null)
         {
             Content.BindingContext = BindingContext;
         }
@@ -316,16 +316,16 @@ public partial class ContentLayout : SkiaControl, ISkiaGestureListener, IVisibil
 
 
 
-    public override bool IsClippedToBounds
-    {
-        get
-        {
-            return true;
-        }
-        set
-        {
-        }
-    }
+    //public override bool IsClippedToBounds
+    //{
+    //    get
+    //    {
+    //        return true;
+    //    }
+    //    set
+    //    {
+    //    }
+    //}
 
 
 

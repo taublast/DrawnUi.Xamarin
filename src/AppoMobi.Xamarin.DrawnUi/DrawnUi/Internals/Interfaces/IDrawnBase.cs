@@ -4,13 +4,27 @@ using System.Collections.Generic;
 
 namespace DrawnUi.Maui.Draw;
 
-public interface IDrawnBase : IDisposable
+public interface ICanBeUpdated
+{
+    /// <summary>
+    /// Force redrawing, without invalidating the measured size
+    /// </summary>
+    /// <returns></returns>
+    void Update();
+
+}
+
+public interface ICanBeUpdatedWithContext : ICanBeUpdated
+{
+    object BindingContext { get; set; }
+
+}
+
+public interface IDrawnBase  : IDisposable, ICanBeUpdatedWithContext
 {
     SKRect DrawingRect { get; }
 
     string Tag { get; }
-
-    object BindingContext { get; set; }
 
     bool IsVisible { get; set; }
 
@@ -23,12 +37,6 @@ public interface IDrawnBase : IDisposable
     /// </summary>
     /// <returns></returns>
     public ScaledRect GetOnScreenVisibleArea();
-
-    /// <summary>
-    /// Force redrawing, without invalidating the measured size
-    /// </summary>
-    /// <returns></returns>
-    void Update();
 
     /// <summary>
     /// Invalidates the measured size. May or may not call Update() inside, depends on control

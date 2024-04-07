@@ -27,7 +27,7 @@ namespace AppoMobi.Xamarin.DrawnUi.Apple
 
         public static bool DisableCache;
 
-        async Task<SKBitmap> IDrawnUiPlatform.LoadSKBitmapAsync(ImageSource source, CancellationToken cancel)
+        async Task<SKBitmap> IDrawnUiPlatform.LoadImageOnPlatformAsync(ImageSource source, CancellationToken cancel)
         {
             if (source == null)
                 return null;
