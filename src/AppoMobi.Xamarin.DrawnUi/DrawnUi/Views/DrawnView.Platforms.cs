@@ -1,4 +1,6 @@
 ﻿
+using Xamarin.Essentials;
+
 namespace DrawnUi.Maui.Views
 {
 
@@ -48,12 +50,32 @@ namespace DrawnUi.Maui.Views
         /// If you set 
         /// </summary>
         /// <param name="element"></param>
-        public void CheckElementVisibility(Element element)
+        public void CheckElementVisibility(VisualElement element)
         {
             NeedCheckParentVisibility = false;
 
             while (element != null)
             {
+
+                bool isVisible = true;
+
+                if (Device.RuntimePlatform == Device.Android)
+                {
+                    if (element == this)
+                    {
+                        isVisible = Parent != null && IsVisible && Super.Native.CheckNativeVisibility(this.Handler);
+                    }
+                    else
+                    {
+                        isVisible = element.Parent != null && element.IsVisible;
+                    }
+
+                    if (!isVisible)
+                    {
+                        IsHiddenInViewTree = true;
+                        return;
+                    }
+                }
 
 #if IOS || MACCATALYST
 
@@ -110,9 +132,8 @@ namespace DrawnUi.Maui.Views
                 //		return;
                 //                }
                 //            }
-                element = element.Parent;
+                element = element.Parent as VisualElement;
             }
-
 
             IsHiddenInViewTree = false;
         }

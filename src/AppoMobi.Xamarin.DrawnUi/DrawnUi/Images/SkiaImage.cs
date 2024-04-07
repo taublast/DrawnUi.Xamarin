@@ -27,7 +27,13 @@ public class SkiaImage : SkiaControl
     /// <param name="loaded"></param>
     protected virtual LoadedImageSource SetImage(LoadedImageSource loaded)
     {
-        if (loaded == ApplyNewSource)
+
+        if (loaded == null)
+        {
+            OnCleared?.Invoke(this, null);
+        }
+
+        if (loaded == ApplyNewSource && loaded != null)
         {
             return loaded;
         }
@@ -869,18 +875,7 @@ propertyChanged: NeedChangeColorFIlter);
 
     public void ClearBitmap()
     {
-        var safeDispose = LoadedSource;
-        LoadedSource = null;
-        Update(); //will delete old image and paint background
-
-        OnCleared?.Invoke(this, null);
-
-
-        if (safeDispose != null)
-        {
-            DisposeObject(safeDispose);
-        }
-
+        ImageBitmap = null;
     }
 
     public virtual void OnSourceError()
@@ -1092,40 +1087,43 @@ propertyChanged: NeedChangeColorFIlter);
 
         var apply = ApplyNewSource;
         ApplyNewSource = null;
-        if (apply != null && apply != LoadedSource)
+        if (apply != null && apply != LoadedSource || (LoadedSource! != null && ImageBitmap == null))
         {
             var kill = LoadedSource;
             LoadedSource = apply;
-            var source = LoadedSource;
+            if (apply != null)
             {
-
-                if (kill != null)
+                var source = LoadedSource;
                 {
-                    if (SkiaImageManager.ReuseBitmaps)
-                        kill.Bitmap = null;
-                    DisposeObject(kill);
-                }
 
-                if (NeedAutoSize)
-                {
-                    Invalidate(); //resize on next frame
-                    return;
-                }
+                    if (kill != null)
+                    {
+                        if (SkiaImageManager.ReuseBitmaps)
+                            kill.Bitmap = null;
+                        DisposeObject(kill);
+                    }
 
-                if (DrawingRect == SKRect.Empty || source == null)
-                {
-                    NeedMeasure = true;
-                }
-                else
-                {
-                    //fast insert new image into presized rect
-                    SetAspectScale(source.Width, source.Height, DrawingRect, this.Aspect, scale);
-                }
+                    if (NeedAutoSize)
+                    {
+                        Invalidate(); //resize on next frame
+                        return;
+                    }
 
+                    if (DrawingRect == SKRect.Empty || source == null)
+                    {
+                        NeedMeasure = true;
+                    }
+                    else
+                    {
+                        //fast insert new image into presized rect
+                        SetAspectScale(source.Width, source.Height, DrawingRect, this.Aspect, scale);
+                    }
+                }
             }
 
             Update(); //gamechanger for doublebuffering and other complicated cases
         }
+
 
         DrawUsingRenderObject(context,
             SizeRequest.Width, SizeRequest.Height,

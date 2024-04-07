@@ -4,8 +4,10 @@ using Android.Graphics;
 using Android.Runtime;
 using Android.Views;
 using AppoMobi.Specials;
+using AppoMobi.Xamarin.DrawnUi.Droid;
 using Bumptech.Glide;
 using DrawnUi.Maui.Draw;
+using DrawnUi.Maui.Views;
 using SkiaSharp;
 using SkiaSharp.Views.Android;
 using System;
@@ -24,6 +26,19 @@ namespace AppoMobi.Xamarin.DrawnUi.Droid
         public DrawnUi()
         {
 
+        }
+
+        public bool CheckNativeVisibility(object handler)
+        {
+            if (handler is Android.Views.View nativeView)
+            {
+                if (nativeView.Visibility != Android.Views.ViewStates.Visible)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public static void Initialize(Activity activity)

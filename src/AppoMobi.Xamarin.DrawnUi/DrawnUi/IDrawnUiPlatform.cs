@@ -18,4 +18,6 @@ public interface IDrawnUiPlatform
     /// <param name="view"></param>
     void UnregisterLooperCallback(EventHandler callback);
 
+    bool CheckNativeVisibility(object handler);
+
 }

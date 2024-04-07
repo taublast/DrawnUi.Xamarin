@@ -20,6 +20,30 @@ namespace DrawnUi.Maui.Views
     [ContentProperty("Children")]
     public partial class DrawnView : ContentView, IDrawnBase, IAnimatorsManager
     {
+        public object Handler
+        {
+            get => _handler;
+            set
+            {
+                if (Equals(value, _handler)) return;
+                _handler = value;
+                OnPropertyChanged();
+                OnHandlerChanged();
+            }
+        }
+
+        protected virtual void OnHandlerChanged()
+        {
+            NeedCheckParentVisibility = true;
+        }
+
+        protected override void OnParentSet()
+        {
+            base.OnParentSet();
+
+            NeedCheckParentVisibility = true;
+        }
+
         public bool IsUsingHardwareAcceleration
         {
             get
@@ -512,6 +536,8 @@ namespace DrawnUi.Maui.Views
             Super.NeedGlobalRefresh -= OnNeedUpdate;
 
             DisposePlatform();
+
+            NeedCheckParentVisibility = true;
         }
 
         public long NeedGlobalRefreshCount { get; set; }
@@ -519,6 +545,7 @@ namespace DrawnUi.Maui.Views
         private void OnNeedUpdate(object sender, EventArgs e)
         {
             NeedGlobalRefreshCount++;
+            NeedCheckParentVisibility = true;
             Update();
         }
 
@@ -530,6 +557,8 @@ namespace DrawnUi.Maui.Views
             Super.NeedGlobalRefresh += OnNeedUpdate;
 
             SetupRenderingLoop();
+
+            NeedCheckParentVisibility = true;
         }
 
 
@@ -1448,8 +1477,6 @@ namespace DrawnUi.Maui.Views
                     foreach (var item in Children)
                     {
                         item.InvalidateMeasureInternal();
-                        NeedCheckParentVisibility = true;
-                        IsDirty = true;
                     }
                 }
 
@@ -2155,5 +2182,6 @@ namespace DrawnUi.Maui.Views
         }
         ISkiaGestureListener _focusedChild;
         private ISkiaDrawable _canvasView;
+        private object _handler;
     }
 }
