@@ -4355,7 +4355,6 @@ namespace DrawnUi.Maui.Draw
 
             if (applyOpacity || isClipping || needTransform
                 || CustomizeLayerPaint != null)
-            //|| (VisualEffects?.Count > 0 && !DisableEffects))
             {
                 var restore = ctx.Canvas.Save();
 
@@ -4386,12 +4385,7 @@ namespace DrawnUi.Maui.Draw
 
                     restore = ctx.Canvas.SaveLayer(_paintWithOpacity);
                 }
-                //else
-                //{
-                //    //todo dispose previous!!!
-                //    _paintWithOpacity.ImageFilter = null;
-                //    _paintWithOpacity.ColorFilter = null;
-                //}
+
 
                 if (needTransform)
                 {

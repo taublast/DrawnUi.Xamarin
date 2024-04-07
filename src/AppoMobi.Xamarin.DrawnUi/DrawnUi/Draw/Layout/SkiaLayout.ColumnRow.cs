@@ -640,6 +640,14 @@ namespace DrawnUi.Maui.Draw
 
                 }//end of iterate rows
 
+                //todo arrange children inside measured rect according their layout
+                //for example centered..
+                if (Type == LayoutType.Row)
+                {
+                    var stop = 1;
+                }
+
+
                 if (IsTemplated && useOneTemplate)
                 {
                     ChildrenFactory.ReleaseView(template);
