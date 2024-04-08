@@ -69,7 +69,7 @@
     <PackageReference Include="Xamarin.Essentials" Version="1.7.3" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Native\DrawnViewRenderer.cs" />
+    <Compile Include="Native\DrawnViewRenderer.Android.cs" />
     <Compile Include="Native\IDrawnUiPlatform.Android.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

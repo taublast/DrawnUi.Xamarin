@@ -76,7 +76,25 @@ namespace DrawnUi.Maui.Views
                         return;
                     }
                 }
+                else
+                if (Device.RuntimePlatform == Device.iOS)
+                {
+                    //WARNING this must be called form UI thread only!
+                    if (element == this)
+                    {
+                        isVisible = Parent != null && IsVisible && Super.Native.CheckNativeVisibility(this.Handler);
+                    }
+                    else
+                    {
+                        isVisible = element.Parent != null && element.IsVisible;
+                    }
 
+                    if (!isVisible)
+                    {
+                        IsHiddenInViewTree = true;
+                        return;
+                    }
+                }
 #if IOS || MACCATALYST
 
 				//WARNING this must be called form UI thread only!

@@ -67,6 +67,7 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Native\DrawnViewRenderer.iOS.cs" />
     <Compile Include="Native\IDrawnUiPlatform.iOS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Touch\PlatformTouchEffect.Apple.cs" />

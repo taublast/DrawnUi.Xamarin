@@ -12,10 +12,10 @@ global using System.Collections.Generic;
 global using System.Diagnostics;
 global using System.Diagnostics;
 global using Xamarin.Forms;
+using DrawnUi.Maui.Views;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using DrawnUi.Maui.Views;
 
 [assembly: XmlnsDefinition("http://schemas.appomobi.com/drawnUi/2023/draw",
     "DrawnUi.Maui.Draw")]
@@ -160,6 +160,8 @@ public partial class Super
     /// </summary>
     public static double BottomTabsHeight { get; set; } = 56;
 
+    public static double BottomInsets { get; set; }
+
     public static Color ColorAccent { get; set; } = Color.Orange;
     public static Color ColorPrimary { get; set; } = Color.Gray;
 
@@ -170,6 +172,11 @@ public partial class Super
     public static void NeedGlocalUpdate()
     {
         NeedGlobalRefresh?.Invoke(null, null);
+    }
+
+    public static void NeedUpdateLayout()
+    {
+        InsetsChanged?.Invoke(null, null);
     }
 
 }
