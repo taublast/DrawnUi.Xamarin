@@ -1,16 +1,13 @@
 ﻿using AppoMobi.Forms.Gestures;
 using AppoMobi.Specials;
-using DrawnUi.Maui.Draw;
 using DrawnUi.Maui.Infrastructure.Extensions;
-using ExCSS;
 using SkiaSharp.Views.Forms;
 using System.Windows.Input;
 using Color = Xamarin.Forms.Color;
 
-
 namespace DrawnUi.Maui.Draw
 {
-       public class SkiaHotspot : SkiaControl, ISkiaGestureListener
+    public class SkiaHotspot : SkiaControl, ISkiaGestureListener
     {
         public SkiaHotspot()
         {
@@ -111,11 +108,6 @@ namespace DrawnUi.Maui.Draw
                 return consumed ? this : null;
             }
             //do not need to call base we have no children
-
-            if (Tapped != null || CommandTapped != null)
-            {
-                return this;
-            }
 
             return null;
         }

@@ -3314,15 +3314,20 @@ namespace DrawnUi.Maui.Draw
 
         public virtual void ApplyBindingContext()
         {
-            foreach (var shade in Shadows)
+
+            foreach (var content in this.Views)
             {
-                shade.BindingContext = BindingContext;
+                content.BindingContext = BindingContext;
             }
 
-            foreach (var view in this.Views)
+            foreach (var content in this.VisualEffects)
             {
-                view.BindingContext = BindingContext;
+                content.Attach(this);
             }
+
+            if (FillGradient != null)
+                FillGradient.BindingContext = BindingContext;
+
         }
 
         protected bool BindingContextWasSet { get; set; }
@@ -3693,12 +3698,53 @@ namespace DrawnUi.Maui.Draw
         }
 
 
-        public bool IsDisposed { get; protected set; }
+        private bool _isDisposed;
+
+        public bool IsDisposed
+        {
+            get
+            {
+                return _isDisposed;
+            }
+            protected set
+            {
+                if (value != _isDisposed)
+                {
+                    _isDisposed = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _isDisposing;
+
+        public bool IsDisposing
+        {
+            get
+            {
+                return _isDisposing;
+            }
+            protected set
+            {
+                if (value != _isDisposing)
+                {
+                    _isDisposing = value;
+                    OnPropertyChanged();
+                    if (value)
+                        OnWillBeDisposed();
+                }
+            }
+        }
 
         /// <summary>
-        /// Developer can use this to mark control as to be disposed by parent custom controls
+        /// The OnDisposing might come with a delay to avoid disposing resources at use.
+        /// This method will be called without delay when IsDisposed is set to True.
         /// </summary>
-        public bool NeedDispose { get; set; }
+        protected virtual void OnWillBeDisposed()
+        {
+
+        }
+
 
         public TChild FindView<TChild>(string tag) where TChild : SkiaControl
         {
@@ -3769,6 +3815,8 @@ namespace DrawnUi.Maui.Draw
             if (IsDisposed)
                 return;
 
+            SetWillDisposeWithChildren();
+
             IsDisposed = true;
 
             //for the double buffering case it's safer to delay
@@ -3793,16 +3841,16 @@ namespace DrawnUi.Maui.Draw
                 RenderObjectPrevious?.Dispose();
                 RenderObjectPrevious = null;
 
-#if !DOUBLE
+
                 RenderObjectPreparing?.Dispose();
                 RenderObjectPreparing = null;
-#endif
+
 
                 _paintWithOpacity?.Dispose();
+                _paintWithEffects?.Dispose();
                 _clipBounds?.Dispose();
             });
         }
-
 
 
 
@@ -3985,53 +4033,40 @@ namespace DrawnUi.Maui.Draw
             SKRect destination, float scale)
         {
 
+            Arrange(destination, widthRequest, heightRequest, scale);
 
-            //lock (lockDraw)
+            bool willDraw = !CheckIsGhost();
+            if (willDraw)
             {
-                if (widthRequest == 7 && heightRequest == 7)
+                if (UsingCacheType != SkiaCacheType.None)
                 {
-                    var stop = 9;
-                }
+                    var recordArea = DrawingRect;
 
-                Arrange(destination, widthRequest, heightRequest, scale);
-
-                bool willDraw = !CheckIsGhost();
-
-                if (DrawingRect.Width < 0 || DrawingRect.Height < 0)
-                {
-                    willDraw = false;
-                }
-
-                if (willDraw)
-                {
-                    if (UsingCacheType != SkiaCacheType.None)
+                    //paint from cache
+                    if (!UseRenderingObject(context, recordArea, scale))
                     {
-                        var recordArea = DrawingRect;
-
-                        //paint from cache
-                        if (!UseRenderingObject(context, recordArea, scale))
+                        //record to cache and paint 
+                        CreateRenderingObjectAndPaint(context, recordArea, (ctx) =>
                         {
-                            //record to cache and paint 
-                            CreateRenderingObjectAndPaint(context, recordArea, (ctx) =>
-                            {
-                                Paint(ctx, DrawingRect, scale, CreatePaintArguments());
-                            });
-                        }
-                    }
-                    else
-                    {
-                        DrawWithClipAndTransforms(context, DrawingRect, true, true, (ctx) =>
-                        {
-                            Paint(ctx, DrawingRect, scale, CreatePaintArguments());
+                            PaintWithEffects(ctx, DrawingRect, scale, CreatePaintArguments());
                         });
                     }
                 }
-
-                FinalizeDraw(context, scale); //NeedUpdate will go false
-
-                return willDraw;
+                else
+                {
+                    DrawWithClipAndTransforms(context, DrawingRect, true, true, (ctx) =>
+                    {
+                        PaintWithEffects(ctx, DrawingRect, scale, CreatePaintArguments());
+                    });
+                }
             }
+
+            FinalizeDraw(context, scale); //NeedUpdate will go false
+
+            return willDraw;
         }
+
+
 
 
 
@@ -4305,8 +4340,10 @@ namespace DrawnUi.Maui.Draw
             }
         }
 
+        protected SKPaint _paintWithEffects = null;
         protected SKPaint _paintWithOpacity = null;
         SKPath _clipBounds = null;
+
 
         private IAnimatorsManager _lastAnimatorManager;
 
@@ -4571,7 +4608,7 @@ namespace DrawnUi.Maui.Draw
                         //will be executed on background thread in parallel
                         RenderObjectPreparing = CreateRenderingObject(context, recordArea, RenderObjectPreparing, (ctx) =>
                         {
-                            Paint(ctx, recordArea, scale, args);
+                            PaintWithEffects(ctx, recordArea, scale, args);
                         });
                     });
 
@@ -4595,10 +4632,11 @@ namespace DrawnUi.Maui.Draw
         }
 
 
+
 #if DOUBLE
         private readonly LimitedQueue<Func<CachedObject>> _offscreenCacheRenderingQueue = new(1);
 #else
-        private readonly LimitedQueue<Action> _offscreenCacheRenderingQueue = new(1);
+        private readonly LimitedQueue<Action> _offscreenCacheRenderingQueue = new(2);
 
 
 
@@ -4963,6 +5001,64 @@ namespace DrawnUi.Maui.Draw
             }
 
             return renderObject;
+        }
+
+        protected virtual void PaintWithEffects(
+            SkiaDrawingContext ctx, SKRect destination, float scale, object arguments)
+        {
+            void draw(SkiaDrawingContext context)
+            {
+                Paint(context, destination, scale, arguments);
+            }
+
+            if (!DisableEffects && VisualEffects.Count > 0)
+            {
+                if (_paintWithEffects == null)
+                {
+                    _paintWithEffects = new();
+                }
+
+                var effectColor = VisualEffects.OfType<IColorEffect>().FirstOrDefault();
+                var effectImage = VisualEffects.OfType<IImageEffect>().FirstOrDefault();
+
+                if (effectImage != null)
+                    _paintWithEffects.ImageFilter = effectImage.CreateFilter(destination);
+                else
+                    _paintWithEffects.ImageFilter = null;//toso dispose!!!
+
+                if (effectColor != null)
+                    _paintWithEffects.ColorFilter = effectColor.CreateFilter(destination);
+                else
+                    _paintWithEffects.ColorFilter = null;//toso dispose!!!
+
+                var restore = ctx.Canvas.SaveLayer(_paintWithEffects);
+
+                bool hasDrawnControl = false;
+                var renderers = VisualEffects.OfType<IRenderEffect>().ToList();
+                var chainRestore = 0;
+                if (renderers.Count > 0)
+                {
+                    foreach (var effect in renderers)
+                    {
+                        var chainedEffectResult = effect.Draw(destination, ctx, draw);
+                        if (chainedEffectResult.DrawnControl)
+                            hasDrawnControl = true;
+                        if (chainedEffectResult.NeedRestoreToCount > 0)
+                            chainRestore = chainedEffectResult.NeedRestoreToCount;
+                    }
+                }
+
+                if (!hasDrawnControl)
+                {
+                    draw(ctx);
+                }
+
+                ctx.Canvas.RestoreToCount(restore);
+            }
+            else
+            {
+                draw(ctx);
+            }
         }
 
         /// <summary>
@@ -5642,72 +5738,119 @@ namespace DrawnUi.Maui.Draw
 
 
 
-        #region SHADOWS
+        #region EFFECTS
 
-        /// <summary>
-        /// Creates and sets an ImageFilter for SKPaint
-        /// </summary>
-        /// <param name="paintShadow"></param>
-        /// <param name="shadow"></param>
-        public static void AddShadowFilter(SKPaint paintShadow, SkiaShadow shadow, float scale)
+        private static void EffectsPropertyChanged(BindableObject bindable, object oldvalue, object newvalue)
         {
-            var colorShadow = shadow.Color;
-            if (colorShadow.A == 1.0)
+            if (bindable is SkiaControl control)
             {
-                colorShadow = shadow.Color.WithAlpha((float)shadow.Opacity);
-            }
-            if (shadow.ShadowOnly)
-            {
-                paintShadow.ImageFilter = SKImageFilter.CreateDropShadowOnly(
-                    (float)(shadow.X * scale), (float)(shadow.Y * scale),
-                    (float)(shadow.Blur * scale), (float)(shadow.Blur * scale),
-                    colorShadow.ToSKColor());
-            }
-            else
-            {
-                paintShadow.ImageFilter = SKImageFilter.CreateDropShadow(
-                    (float)(shadow.X * scale), (float)(shadow.Y * scale),
-                    (float)(shadow.Blur * scale), (float)(shadow.Blur * scale),
-                    colorShadow.ToSKColor());
+
+                var enumerableShadows = (IEnumerable<SkiaEffect>)newvalue;
+
+                if (oldvalue != null)
+                {
+                    if (oldvalue is INotifyCollectionChanged oldCollection)
+                    {
+                        oldCollection.CollectionChanged -= control.EffectsCollectionChanged;
+                    }
+
+                    if (oldvalue is IEnumerable<SkiaEffect> oldList)
+                    {
+                        foreach (var shade in oldList)
+                        {
+                            shade.Dettach();
+                        }
+                    }
+                }
+
+                foreach (var shade in enumerableShadows)
+                {
+                    shade.Attach(control);
+                }
+
+                if (newvalue is INotifyCollectionChanged newCollection)
+                {
+                    newCollection.CollectionChanged -= control.EffectsCollectionChanged;
+                    newCollection.CollectionChanged += control.EffectsCollectionChanged;
+                }
+
+                control.Update();
             }
         }
 
+        private void EffectsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
 
-        public static readonly BindableProperty ShadowsProperty = BindableProperty.Create(
-            nameof(Shadows),
-            typeof(IList<SkiaShadow>),
+            switch (e.Action)
+            {
+            case NotifyCollectionChangedAction.Add:
+            foreach (SkiaEffect newItem in e.NewItems)
+            {
+                newItem.Attach(this);
+            }
+
+            break;
+
+            case NotifyCollectionChangedAction.Reset:
+            case NotifyCollectionChangedAction.Remove:
+            foreach (SkiaEffect oldItem in e.OldItems ?? new SkiaEffect[0])
+            {
+                oldItem.Dettach();
+            }
+
+            break;
+            }
+
+            Update();
+        }
+
+        public static readonly BindableProperty VisualEffectsProperty = BindableProperty.Create(
+            nameof(VisualEffects),
+            typeof(IList<SkiaEffect>),
             typeof(SkiaControl),
             defaultValueCreator: (instance) =>
             {
-                var created = new ObservableCollection<SkiaShadow>();
+                var created = new ObservableCollection<SkiaEffect>();
+                //EffectsPropertyChanged(instance, null, created);
+                if (instance is SkiaControl control)
+                {
+                    created.CollectionChanged += control.EffectsCollectionChanged;
+                }
                 return created;
             },
-            validateValue: (bo, v) => v is IList<SkiaShadow>,
-            propertyChanged: NeedDraw,
-            coerceValue: CoerceShadows);
+            validateValue: (bo, v) => v is IList<SkiaEffect>,
+            propertyChanged: EffectsPropertyChanged,
+            coerceValue: CoerceVisualEffects);
 
         private static int instanceCount = 0;
 
-        public IList<SkiaShadow> Shadows
+        public IList<SkiaEffect> VisualEffects
         {
-            get => (IList<SkiaShadow>)GetValue(ShadowsProperty);
-            set => SetValue(ShadowsProperty, value);
+            get => (IList<SkiaEffect>)GetValue(VisualEffectsProperty);
+            set => SetValue(VisualEffectsProperty, value);
         }
 
-        private static object CoerceShadows(BindableObject bindable, object value)
+        private static object CoerceVisualEffects(BindableObject bindable, object value)
         {
-            if (!(value is ReadOnlyCollection<SkiaShadow> readonlyCollection))
+            if (!(value is ReadOnlyCollection<SkiaEffect> readonlyCollection))
             {
                 return value;
             }
-
-            return new ReadOnlyCollection<SkiaShadow>(
+            return new ReadOnlyCollection<SkiaEffect>(
                 readonlyCollection.ToList());
         }
 
+        public static readonly BindableProperty DisableEffectsProperty = BindableProperty.Create(nameof(DisableEffects),
+            typeof(bool),
+            typeof(SkiaControl),
+            false, propertyChanged: NeedDraw);
+        public bool DisableEffects
+        {
+            get { return (bool)GetValue(DisableEffectsProperty); }
+            set { SetValue(DisableEffectsProperty, value); }
+        }
 
         #endregion
-
 
         #region Animation 
 
@@ -5944,6 +6087,16 @@ namespace DrawnUi.Maui.Draw
             }
             Views.Clear();
             Invalidate();
+        }
+
+        public virtual void SetWillDisposeWithChildren()
+        {
+            IsDisposing = true;
+
+            foreach (var child in Views.ToList())
+            {
+                child.SetWillDisposeWithChildren();
+            }
         }
 
         public virtual void ClearChildren()
@@ -6405,6 +6558,34 @@ namespace DrawnUi.Maui.Draw
         }
 
         #region HELPERS
+
+        /// <summary>
+        /// Creates and sets an ImageFilter for SKPaint
+        /// </summary>
+        /// <param name="paintShadow"></param>
+        /// <param name="shadow"></param>
+        public static void AddShadowFilter(SKPaint paintShadow, SkiaShadow shadow, float scale)
+        {
+            var colorShadow = shadow.Color;
+            if (colorShadow.A == 1.0)
+            {
+                colorShadow = shadow.Color.WithAlpha((float)shadow.Opacity);
+            }
+            if (shadow.ShadowOnly)
+            {
+                paintShadow.ImageFilter = SKImageFilter.CreateDropShadowOnly(
+                    (float)(shadow.X * scale), (float)(shadow.Y * scale),
+                    (float)(shadow.Blur * scale), (float)(shadow.Blur * scale),
+                    colorShadow.ToSKColor());
+            }
+            else
+            {
+                paintShadow.ImageFilter = SKImageFilter.CreateDropShadow(
+                    (float)(shadow.X * scale), (float)(shadow.Y * scale),
+                    (float)(shadow.Blur * scale), (float)(shadow.Blur * scale),
+                    colorShadow.ToSKColor());
+            }
+        }
 
         public static Random Random = new Random();
         protected double _arrangedViewportHeightLimit;

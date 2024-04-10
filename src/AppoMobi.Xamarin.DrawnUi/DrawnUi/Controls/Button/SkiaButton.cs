@@ -1,7 +1,7 @@
 ﻿using AppoMobi.Forms.Gestures;
 using AppoMobi.Specials;
 using DrawnUi.Maui.Infrastructure.Extensions;
-using ExCSS;
+
 using System.Windows.Input;
 using Color = Xamarin.Forms.Color;
 

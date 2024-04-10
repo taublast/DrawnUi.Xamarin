@@ -2414,7 +2414,7 @@ namespace DrawnUi.Maui.Draw
                 DrawWithClipAndTransforms(context, DrawingRect, true,
                     true, (ctx) =>
                     {
-                        Paint(ctx, DrawingRect, scale, CreatePaintArguments());
+                        PaintWithEffects(ctx, DrawingRect, scale, CreatePaintArguments());
                     });
             }
 

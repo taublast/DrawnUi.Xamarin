@@ -151,9 +151,10 @@ namespace DrawnUi.Maui.Draw
         public virtual void OnTemplatesAvailable()
         {
             _measuredNewTemplates = false;
+
+            _measuredNewTemplates = false;
             NeedMeasure = true;
             InvalidateParent();
-            Repaint();
         }
 
         protected override ScaledSize SetMeasured(float width, float height, float scale)

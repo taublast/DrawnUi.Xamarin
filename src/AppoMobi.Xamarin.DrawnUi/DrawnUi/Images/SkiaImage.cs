@@ -1,7 +1,7 @@
 ﻿using AppoMobi.Specials;
 using DrawnUi.Maui.Infrastructure.Models;
 using DrawnUi.Maui.Infrastructure.Xaml;
-using ExCSS;
+
 using System.ComponentModel;
 using System.IO;
 using Color = Xamarin.Forms.Color;
