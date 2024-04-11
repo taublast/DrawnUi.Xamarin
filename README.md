@@ -5,9 +5,9 @@ A Light version of [DrawnUI for .Net MAUI](https://github.com/taublast/DrawnUi.M
 To remove UI lags in legacy projects and prepare them to be easily ported to MAUI by replacing all used UI-drawing related nugets (shadows, cards, gradients etc..) with just DrawnUI. 
 
 ## What's New
-1.0.0.20
-* Added `SkiaLottie`
-* Fixes from MAUI nuget 1.0.8.7
+1.0.0.24
+* Canvas auto-size
+* Many fixes
 
 ## Features
 
