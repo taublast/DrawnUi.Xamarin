@@ -128,10 +128,5 @@ public class SkiaCheckbox : SkiaToggle
         return base.ProcessGestures(type, args, touchAction, childOffset, childOffsetDirect, alreadyConsumed);
     }
 
-    protected override void NotifyWasToggled()
-    {
-        base.NotifyWasToggled();
 
-
-    }
 }

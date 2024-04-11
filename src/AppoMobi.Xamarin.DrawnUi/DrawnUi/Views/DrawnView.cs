@@ -20,6 +20,17 @@ namespace DrawnUi.Maui.Views
     [ContentProperty("Children")]
     public partial class DrawnView : ContentView, IDrawnBase, IAnimatorsManager
     {
+        protected override SizeRequest OnMeasure(double widthConstraint, double heightConstraint)
+        {
+            var measured = this.Measure((float)widthConstraint, (float)heightConstraint);
+
+            //var system = base.OnMeasure(measured.Units.Width, measured.Units.Height);
+
+            var custom = new SizeRequest(new(measured.Units.Width, measured.Units.Height), new(measured.Units.Width, measured.Units.Height));
+
+            return custom;
+        }
+
         public object Handler
         {
             get => _handler;
@@ -835,6 +846,10 @@ namespace DrawnUi.Maui.Views
                 {
                     //disconnect
                     DestroySkiaView();
+
+                    HandlerWasSet?.Invoke(this, rendererSet);
+
+                    Dispose();
                 }
                 else
                 {
@@ -842,9 +857,9 @@ namespace DrawnUi.Maui.Views
                     //connect
                     CreateSkiaView();
 
+                    HandlerWasSet?.Invoke(this, rendererSet);
                 }
 
-                HandlerWasSet?.Invoke(this, rendererSet);
             }
             else
             if (propertyName == nameof(HeightRequest)
@@ -1342,8 +1357,9 @@ namespace DrawnUi.Maui.Views
         public virtual void OnDisposing()
         {
             DeviceDisplay.MainDisplayInfoChanged -= OnMainDisplayInfoChanged;
-        }
 
+            Debug.WriteLine($"[DrawnUI] Disposing {this}");
+        }
 
 
         //public virtual void Render(SkiaDrawingContext context, SKRect destination, float scale,

@@ -230,8 +230,8 @@ public class Canvas : DrawnView, IGestureListener
                 }
 
                 ContentSize = ScaledSize.FromPixels(maxWidth, maxHeight, (float)RenderingScale);
-                widthConstraintPts = AdaptWidthContraintToContentRequest(widthConstraintPts, ContentSize, Padding.Left + Padding.Right + Margin.Left + Margin.Right);
-                heightConstraintPts = AdaptHeightContraintToContentRequest(heightConstraintPts, ContentSize, Padding.Top + Padding.Bottom + Margin.Top + Margin.Bottom);
+                widthConstraintPts = AdaptWidthContraintToContentRequest(widthConstraintPts, ContentSize, Padding.Left + Padding.Right);
+                heightConstraintPts = AdaptHeightContraintToContentRequest(heightConstraintPts, ContentSize, Padding.Top + Padding.Bottom);
 
             }
         }

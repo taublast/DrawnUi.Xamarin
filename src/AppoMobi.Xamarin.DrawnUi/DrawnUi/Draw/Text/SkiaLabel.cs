@@ -442,11 +442,6 @@ namespace DrawnUi.Maui.Draw
         {
             ReplaceFont();
 
-            if (Tag == "TextKnow")
-            {
-                var stop = LineSpacing;
-            }
-
             //background measuring or invisible or self measure from draw because layout will never pass -1
             if (IsMeasuring || !CanDraw || (widthConstraint < 0 || heightConstraint < 0))
             {

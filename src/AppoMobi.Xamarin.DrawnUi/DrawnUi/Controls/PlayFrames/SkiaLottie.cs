@@ -214,6 +214,7 @@ public class SkiaLottie : AnimatedFramesRenderer
             lock (_lockSource)
             {
                 lottie.Render(ctx.Canvas, DrawingRect);
+                Monitor.PulseAll(_lockSource);
             }
     }
 
@@ -388,6 +389,9 @@ public class SkiaLottie : AnimatedFramesRenderer
 
             if (kill != null && disposePrevious)
                 Tasks.StartDelayed(TimeSpan.FromSeconds(2), () => { kill.Dispose(); });
+
+            Monitor.PulseAll(_lockSource);
+
         }
     }
 
@@ -408,6 +412,8 @@ public class SkiaLottie : AnimatedFramesRenderer
                 Free(LottieAnimation);
                 LottieAnimation = null;
             }
+
+            Monitor.PulseAll(_lockSource);
         }
     }
 
