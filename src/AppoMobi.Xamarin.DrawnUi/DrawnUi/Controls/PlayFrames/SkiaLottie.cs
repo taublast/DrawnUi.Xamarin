@@ -40,10 +40,15 @@ public class SkiaLottie : AnimatedFramesRenderer
     {
         if (Animator != null)
         {
-            if (IsOn)
-                Seek(DefaultFrameWhenOn);
-            else
-                Seek(DefaultFrame);
+            lock (_lockSource)
+            {
+                if (IsOn)
+                    Seek(DefaultFrameWhenOn);
+                else
+                    Seek(DefaultFrame);
+
+                Monitor.PulseAll(_lockSource);
+            }
         }
     }
 
@@ -207,7 +212,7 @@ public class SkiaLottie : AnimatedFramesRenderer
     protected override void RenderFrame(SkiaDrawingContext ctx, SKRect destination, float scale,
         object arguments)
     {
-        if (IsDisposed)
+        if (IsDisposing || IsDisposed)
             return;
 
         if (LottieAnimation is Animation lottie)

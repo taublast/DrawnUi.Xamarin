@@ -37,6 +37,7 @@ public class ViewsAdapter : IDisposable
             {
                 view.InvalidateInternal();
             }
+            Monitor.PulseAll(lockVisible);
 
         }
     }
@@ -50,7 +51,7 @@ public class ViewsAdapter : IDisposable
                 view.Dispose();
             }
             _dicoCellsInUse.Clear();
-
+            Monitor.PulseAll(lockVisible);
         }
     }
 
@@ -78,6 +79,7 @@ public class ViewsAdapter : IDisposable
 
             _dicoCellsInUse.Clear();
 
+            Monitor.PulseAll(lockVisible);
         }
     }
 
@@ -103,6 +105,9 @@ public class ViewsAdapter : IDisposable
                     //Debug.WriteLine($"[InUse] {_dicoCellsInUse.Keys.Select(k => k.ToString()).Aggregate((current, next) => $"{current},{next}")}");
                 }
             }
+
+            Monitor.PulseAll(lockVisible);
+
         }
     }
 
@@ -269,10 +274,16 @@ public class ViewsAdapter : IDisposable
                         return _children.ElementAt(index);
                 }
 
+                Monitor.PulseAll(lockVisible);
+
                 return null;
 
             }
+
+            Monitor.PulseAll(lockVisible);
+
         }
+
         return null;
     }
 
@@ -295,8 +306,6 @@ public class ViewsAdapter : IDisposable
 
     private TemplatedViewsPool _templatedViewsPool;
     private IList _dataContexts;
-
-    protected readonly object _lockTemplates = new object();
 
     private readonly Dictionary<int, ViewsIterator> _wrappers =
         new();
@@ -607,6 +616,8 @@ public class ViewsAdapter : IDisposable
             {
                 Trace.WriteLine($"└─ {view} {view.Width:0.0}x{view.Height:0.0} pts ({view.MeasuredSize.Pixels.Width:0.0}x{view.MeasuredSize.Pixels.Height:0.0} px) ctx: {view.BindingContext}");
             }
+            Monitor.PulseAll(lockVisible);
+
         }
     }
 

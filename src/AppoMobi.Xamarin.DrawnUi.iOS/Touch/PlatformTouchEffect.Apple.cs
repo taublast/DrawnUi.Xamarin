@@ -1,7 +1,7 @@
 ﻿using AppoMobi.Forms.Gestures;
+using AppoMobi.Maui.Gestures;
 using CoreGraphics;
 using System;
-
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
@@ -9,6 +9,8 @@ using UIKit;
 using Xamarin.Forms;
 using Xamarin.Forms.Platform.iOS;
 
+[assembly: ResolutionGroupName("AMFEffects")]
+[assembly: ExportEffect(typeof(PlatformTouchEffect), "TouchEffect")]
 namespace AppoMobi.Maui.Gestures
 {
     public partial class PlatformTouchEffect : PlatformEffect

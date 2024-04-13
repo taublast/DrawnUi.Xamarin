@@ -280,12 +280,17 @@ public class SkiaImage : SkiaControl
 
     public void SetSource(ImageSource source)
     {
+        if (IsDisposing || IsDisposed)
+            return;
+
         TraceLog($"[SkiaImage] Creating Source from {source}");
         SetImageSource(source);
     }
 
     public void SetSource(string source)
     {
+        if (IsDisposing || IsDisposed)
+            return;
 
         if (string.IsNullOrEmpty(source))
         {
@@ -374,9 +379,18 @@ public class SkiaImage : SkiaControl
 
     public event EventHandler OnCleared;
 
+    protected override void OnWillBeDisposed()
+    {
+        CancelLoading?.Cancel();
+
+        base.OnWillBeDisposed();
+    }
 
     public void SetImageSource(ImageSource source)
     {
+        if (IsDisposing || IsDisposed)
+            return;
+
         StopLoading();
 
         RetriesLeft = RetriesOnError;
@@ -436,6 +450,12 @@ public class SkiaImage : SkiaControl
                                 {
                                     //bitmap = await SkiaImageManager.LoadImageOnPlatformAsync(source, cancel.Token);
                                     bitmap = await SkiaImageManager.Instance.LoadImageManagedAsync(source, cancel);
+
+                                    if (IsDisposing || IsDisposed)
+                                    {
+                                        cancel?.Cancel();
+                                        return;
+                                    }
 
                                     if (cancel.Token.IsCancellationRequested)
                                     {
@@ -533,8 +553,6 @@ public class SkiaImage : SkiaControl
                 OnSuccess?.Invoke(this, new ContentLoadedEventArgs(null));
             }
         }
-
-
     }
 
     /// <summary>
@@ -1084,7 +1102,7 @@ propertyChanged: NeedChangeColorFIlter);
     protected override void Draw(SkiaDrawingContext context,
         SKRect destination, float scale)
     {
-        if (IsDisposed)
+        if (IsDisposed || IsDisposing)
             return;
 
         LoadSourceIfNeeded();

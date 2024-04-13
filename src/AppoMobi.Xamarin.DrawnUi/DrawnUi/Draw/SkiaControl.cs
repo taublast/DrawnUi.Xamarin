@@ -3958,7 +3958,7 @@ namespace DrawnUi.Maui.Draw
             SKRect destination,
             float scale)
         {
-            if (IsDisposed)
+            if (IsDisposing || IsDisposed)
                 return;
 
             Superview = context.Superview;
@@ -4072,7 +4072,7 @@ namespace DrawnUi.Maui.Draw
 
         protected virtual void Draw(SkiaDrawingContext context, SKRect destination, float scale)
         {
-            if (IsDisposed)
+            if (IsDisposing || IsDisposed)
                 return;
 
             DrawUsingRenderObject(context,
@@ -4362,6 +4362,9 @@ namespace DrawnUi.Maui.Draw
             bool useClipping,
             Action<SkiaDrawingContext> draw)
         {
+            if (IsDisposing || IsDisposed)
+                return;
+
             bool isClipping = false;
 
             //clipped inside this view bounds
@@ -5125,16 +5128,8 @@ namespace DrawnUi.Maui.Draw
         /// <param name="scale"></param>
         protected virtual void Paint(SkiaDrawingContext ctx, SKRect destination, float scale, object arguments)
         {
-            if (destination.Width == 0 || destination.Height == 0)
+            if (destination.Width == 0 || destination.Height == 0 || IsDisposing || IsDisposed)
                 return;
-
-            if (IsDisposed)
-            {
-                //this will save a lot of trouble debugging unknown native crashes
-                var message = $"[SkiaControl] Attempting to Paint a disposed control: {this}";
-                Super.Log(message);
-                throw new Exception(message);
-            }
 
             PaintTintBackground(ctx.Canvas, destination);
 
@@ -5406,7 +5401,7 @@ namespace DrawnUi.Maui.Draw
 
         public virtual void Update()
         {
-            if (IsDisposed)
+            if (IsDisposing || IsDisposed)
                 return;
 
             NeedUpdateFrontCache = true;

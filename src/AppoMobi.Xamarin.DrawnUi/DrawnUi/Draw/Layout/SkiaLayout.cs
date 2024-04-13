@@ -1055,6 +1055,8 @@ namespace DrawnUi.Maui.Draw
 
         public virtual ScaledSize MeasureLayout(MeasureRequest request, bool force)
         {
+            if (IsDisposing || IsDisposed)
+                return ScaledSize.Empty;
 
             lock (lockMeasureLayout)
             {
