@@ -29,9 +29,11 @@ public class SkiaImage : SkiaControl
     {
 
         if (loaded == null)
-        {
-            OnCleared?.Invoke(this, null);
-        }
+            if (loaded == null)
+            {
+                OnCleared?.Invoke(this, null);
+                _needClearBitmap = true;
+            }
 
         if (loaded == ApplyNewSource && loaded != null)
         {
@@ -876,6 +878,7 @@ propertyChanged: NeedChangeColorFIlter);
     public void ClearBitmap()
     {
         ImageBitmap = null;
+        _needClearBitmap = true;
     }
 
     public virtual void OnSourceError()
@@ -1053,6 +1056,7 @@ propertyChanged: NeedChangeColorFIlter);
     object lockDraw = new();
     private bool _hasError;
     private RescaledBitmap _scaledSource;
+    private bool _needClearBitmap;
 
     public virtual void LoadSourceIfNeeded()
     {
@@ -1086,11 +1090,14 @@ propertyChanged: NeedChangeColorFIlter);
         LoadSourceIfNeeded();
 
         var apply = ApplyNewSource;
-        ApplyNewSource = null;
-        if (apply != null && apply != LoadedSource || (LoadedSource! != null && ImageBitmap == null))
+
+
+        if (apply != null && apply != LoadedSource || _needClearBitmap)
         {
+            ApplyNewSource = null;
             var kill = LoadedSource;
             LoadedSource = apply;
+            _needClearBitmap = false;
             if (apply != null)
             {
                 var source = LoadedSource;
