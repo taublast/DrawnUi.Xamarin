@@ -23,8 +23,6 @@ AppoMobi.Xamarin.DrawnUi.Droid.DrawnUi.Initialize<App>(this);
  This light Xamarin version has some limitations and some controls are missing in comparision to the [original MAUI Library](https://github.com/taublast/DrawnUi.Maui). Meanwhile please refer to the [original library documentation](https://github.com/taublast/DrawnUi.Maui/wiki).
 
  There is also a sample project in this repo with a drawn About page, would add more with time.
-
-___Please star ⭐ if you like it!___
   
 ## To Note
 
@@ -39,3 +37,5 @@ Loading resources is different from MAUI version:
 `SkiaLottie` and `SkiaSvg` `Source` property will always read files from shared project, files must be inlcuded with build action as `Embeeded resource`, for example `Source = "Resources\Lottie\plus.json"`. You can specify an internet url too.
 
 _Uses a modified [Glidex.Forms](https://github.com/jonathanpeppers/glidex) project created by Jonathan Peppers for caching images on Android._
+
+___Please star ⭐ if you like it!___
