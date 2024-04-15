@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="DrawnUiSample.Views.AboutPage"
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:DrawnUiSample.ViewModels"
+    xmlns:views="http://schemas.appomobi.com/drawnUi/2023/draw"
+
+    Title="{Binding Title}">
+
+    <ContentPage.BindingContext>
+        <vm:AboutViewModel />
+    </ContentPage.BindingContext>
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Color x:Key="Accent">#96d1ff</Color>
+
+        
+            
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <views:Canvas
+        Gestures="Lock"
+        HardwareAcceleration="Enabled"
+        HorizontalOptions="Fill"
+        VerticalOptions="Fill">
+
+        <views:SkiaLayout
+            HorizontalOptions="Fill"
+            RowDefinitions="120, *"
+            Type="Grid"
+            VerticalOptions="Fill">
+
+            <views:SkiaLayout
+                UseCache="Operations"
+                BackgroundColor="{StaticResource Accent}"
+                HorizontalOptions="Fill"
+                Type="Column"
+                VerticalOptions="Fill">
+
+                <views:SkiaImage
+                    HeightRequest="64"
+                    HorizontalOptions="Center"
+                    Source="xamarin_logo.png"
+                    VerticalOptions="Center" />
+
+            </views:SkiaLayout>
+
+            <views:SkiaScroll
+                Grid.Row="1"
+                HorizontalOptions="Fill"
+                VerticalOptions="Fill">
+
+                <views:SkiaLayout
+                    UseCache="Operations"
+                    Padding="30,24,30,24"
+                    Spacing="10"
+                    Type="Column">
+
+                    <views:SkiaLabel
+                        FontSize="20"
+                        UseCache="Operations"
+                        Text="Start developing now" />
+                    
+                    <views:SkiaLabel
+                        UseCache="Operations"
+                        Padding="0,0,0,0"
+                        FontSize="16"
+                        Text="Make changes to your XAML file and save to see your UI update in the running app with XAML Hot Reload. Give it a try!" />
+                    
+                    <views:SkiaLabel
+                        UseCache="Operations"
+                        Padding="0,24,0,0"
+                        FontSize="16">
+                        <views:SkiaLabel.Spans>
+                            <views:TextSpan Text="Learn more at " />
+                            <views:TextSpan
+                                IsBold="True"
+                                FontSize="13"
+                                TextColor="Blue"
+                                Text="https://aka.ms/xamarin-quickstart" />
+                        </views:SkiaLabel.Spans>
+                    </views:SkiaLabel>
+
+                    <views:SkiaButton
+                        Tag="Button"
+                        WidthRequest="-1"
+                        Margin="0,10,0,0"
+                        CommandTapped="{Binding OpenWebCommand}"
+                        Text="Learn more"
+                        TextColor="White"
+                        TintColor="{StaticResource Primary}" />
+
+                </views:SkiaLayout>
+
+            </views:SkiaScroll>
+        </views:SkiaLayout>
+
+
+    </views:Canvas>
+
+</ContentPage>
