@@ -1,8 +1,6 @@
 ﻿# DrawnUI For Xamarin Forms
 A Light version of [DrawnUI for .Net MAUI](https://github.com/taublast/DrawnUi.Maui) ported to Xamarin.Forms. 
 
- ___Please star ⭐ if you like it!___
-
 ## Use case
 To remove UI lags in Xamarin projects by replacing native views with drawn controls. At the same time to prepare projects to be more easily ported to MAUI as all UI-related nugets like shadows, cards, gradients etc.. will be replaced with just DrawnUI.
 
@@ -25,7 +23,9 @@ AppoMobi.Xamarin.DrawnUi.Droid.DrawnUi.Initialize<App>(this);
  This light Xamarin version has some limitations and some controls are missing in comparision to the [original MAUI Library](https://github.com/taublast/DrawnUi.Maui). Meanwhile please refer to the [original library documentation](https://github.com/taublast/DrawnUi.Maui/wiki).
 
  There is also a sample project in this repo with a drawn About page, would add more with time.
- 
+
+___Please star ⭐ if you like it!___
+  
 ## To Note
 
 Will not support Xamarin built-in Xaml HotReload, contrary to MAUI, due to Xamarin architecture.
