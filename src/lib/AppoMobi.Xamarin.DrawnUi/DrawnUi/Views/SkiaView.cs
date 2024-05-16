@@ -162,7 +162,6 @@ public partial class SkiaView : SKCanvasView, ISkiaDrawable
         }
 
         IsDrawing = false;
-
     }
 
 }

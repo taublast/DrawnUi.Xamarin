@@ -1,6 +1,4 @@
-﻿//#define LEGACY
-
-using DrawnUi.Maui.Infrastructure.Enums;
+﻿using DrawnUi.Maui.Infrastructure.Enums;
 using System.Runtime.CompilerServices;
 using Xamarin.Essentials;
 
@@ -28,44 +26,6 @@ public partial class DrawnView
     bool _isDirty;
 
 
-#if LEGACY
-
-    public bool CheckCanDraw()
-    {
-
-        if (UpdateLocked && StopDrawingWhenUpdateIsLocked)
-            return false;
-
-        return CanvasView != null
-               && !IsRendering
-               && IsDirty
-               && IsVisible;
-    }
-
-    public virtual void Update()
-    {
-        IsDirty = true;
-        if (!OrderedDraw && CheckCanDraw())
-        {
-            OrderedDraw = true;
-            InvalidateCanvas();
-        }
-    }
-
-    protected async void InvalidateCanvas()
-    {
-        if (Device.RuntimePlatform == Device.Android)
-        {
-            InvalidateCanvasAndroid();
-        }
-        else
-        {
-            InvalidateCanvasPlatform();
-        }
-    }
-
-#else
-
     protected virtual void DisposePlatform()
     {
         Super.Native.UnregisterLooperCallback(OnChoreographer);
@@ -81,9 +41,18 @@ public partial class DrawnView
             {
                 OrderedDraw = true;
                 if (NeedCheckParentVisibility)
+                {
                     CheckElementVisibility(this);
+                }
 
-                CanvasView?.Update();
+                if (CanDraw)
+                {
+                    CanvasView?.Update();
+                }
+                else
+                {
+                    OrderedDraw = false;
+                }
             }
         }
     }
@@ -102,11 +71,21 @@ public partial class DrawnView
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool CheckCanDraw()
     {
-        return //!OrderedDraw
+        if (Device.RuntimePlatform == Device.Android)
+        {
+            return
+                CanvasView != null && this.HasHandler
+                                   && IsDirty
+                                   && !(UpdateLocked && StopDrawingWhenUpdateIsLocked)
+                                   && IsVisible && Super.EnableRendering;
+        }
 
-            CanvasView != null && HasHandler
-            //&& !CanvasView.IsDrawing
-            && IsDirty
+        //iOS
+        return
+            !OrderedDraw &&
+            IsDirty &&
+            CanvasView != null && this.HasHandler
+            && !CanvasView.IsDrawing
             && !(UpdateLocked && StopDrawingWhenUpdateIsLocked)
             && IsVisible && Super.EnableRendering;
     }
@@ -117,7 +96,6 @@ public partial class DrawnView
         IsDirty = true;
     }
 
-#endif
 
     public bool NeedRedraw { get; set; }
 

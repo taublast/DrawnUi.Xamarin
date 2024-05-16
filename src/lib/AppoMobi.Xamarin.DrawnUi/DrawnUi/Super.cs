@@ -30,6 +30,11 @@ namespace DrawnUi.Maui.Draw;
 
 public partial class Super
 {
+    /// <summary>
+    /// Can optionally disable hardware-acceleration with this flag, for example on iOS you would want to avoid creating many metal views.
+    /// </summary>
+    public static bool CanUseHardwareAcceleration = true;
+
     public static Assembly AppAssembly { get; set; }
 
     static IDrawnUiPlatform m_Record;

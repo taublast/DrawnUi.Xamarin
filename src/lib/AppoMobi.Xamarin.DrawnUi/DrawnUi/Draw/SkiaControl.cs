@@ -1233,43 +1233,57 @@ namespace DrawnUi.Maui.Draw
             set { SetValue(HorizontalOptionsProperty, value); }
         }
 
-        protected virtual void OnParentVisibilityChanged(bool newvalue)
-        {
-
-        }
-
         /// <summary>
-        /// todo override for templated skialayout to use ViewsProfider
+        /// todo override for templated skialayout to use ViewsProvider
         /// </summary>
         /// <param name="newvalue"></param>
-        public virtual void OnVisibilityChanged(bool newvalue)
+        protected virtual void OnParentVisibilityChanged(bool newvalue)
         {
-            // need to this to:
-            // disable child gesture listeners
-            // pause hidden animations
+            if (!newvalue)
+            {
+                //DestroyRenderingObject();
+            }
+
+            Superview?.SetViewTreeVisibilityByParent(this, newvalue);
+
             try
             {
-                //if (!newvalue)
-                //{
-                //    PauseAllAnimators();
-                //}
-                //else
-                //{
-                //    ResumePausedAnimators();
-                //}
-
-                var pass = IsVisible && newvalue;
                 foreach (var child in Views)
                 {
-                    child.OnParentVisibilityChanged(pass);
+                    child.OnParentVisibilityChanged(newvalue);
                 }
-
             }
             catch (Exception e)
             {
                 Super.Log(e);
             }
+        }
 
+        /// <summary>
+        /// todo override for templated skialayout to use ViewsProvider
+        /// </summary>
+        /// <param name="newvalue"></param>
+        public virtual void OnVisibilityChanged(bool newvalue)
+        {
+            if (!newvalue)
+            {
+                //DestroyRenderingObject();
+            }
+            // need to this to:
+            // disable child gesture listeners
+            // pause hidden animations
+            try
+            {
+                var pass = IsVisible && newvalue;
+                foreach (var child in Views)
+                {
+                    child.OnParentVisibilityChanged(pass);
+                }
+            }
+            catch (Exception e)
+            {
+                Super.Log(e);
+            }
         }
 
         /// <summary>
@@ -3848,7 +3862,8 @@ namespace DrawnUi.Maui.Draw
 
                 _paintWithOpacity?.Dispose();
                 _paintWithEffects?.Dispose();
-                _clipBounds?.Dispose();
+
+                _preparedClipBounds?.Dispose();
             });
         }
 
@@ -4342,7 +4357,7 @@ namespace DrawnUi.Maui.Draw
 
         protected SKPaint _paintWithEffects = null;
         protected SKPaint _paintWithOpacity = null;
-        SKPath _clipBounds = null;
+
 
 
         private IAnimatorsManager _lastAnimatorManager;
@@ -4354,38 +4369,37 @@ namespace DrawnUi.Maui.Draw
         /// </summary>
         public Action<SKPaint, SKRect> CustomizeLayerPaint { get; set; }
 
-
+        public SK3dView Helper3d;
+        SKPath _preparedClipBounds = null;
         public void DrawWithClipAndTransforms(
-            SkiaDrawingContext ctx,
-            SKRect destination,
-            bool useOpacity,
-            bool useClipping,
-            Action<SkiaDrawingContext> draw)
+          SkiaDrawingContext ctx,
+          SKRect destination,
+          bool useOpacity,
+          bool useClipping,
+          Action<SkiaDrawingContext> draw)
         {
-            if (IsDisposing || IsDisposed)
-                return;
-
             bool isClipping = false;
 
             //clipped inside this view bounds
+            //todo extract to PrepareClipping
             if ((IsClippedToBounds || Clipping != null) && useClipping)
             {
                 isClipping = true;
 
-                if (_clipBounds == null)
+                if (_preparedClipBounds == null)
                 {
-                    _clipBounds = new();
+                    _preparedClipBounds = new();
                 }
                 else
                 {
-                    _clipBounds.Reset();
+                    _preparedClipBounds.Reset();
                 }
 
-                _clipBounds.AddRect(destination);
+                _preparedClipBounds.AddRect(destination);
 
                 if (Clipping != null)
                 {
-                    Clipping.Invoke(_clipBounds, destination);
+                    Clipping.Invoke(_preparedClipBounds, destination);
                 }
 
             }
@@ -4396,8 +4410,6 @@ namespace DrawnUi.Maui.Draw
             if (applyOpacity || isClipping || needTransform
                 || CustomizeLayerPaint != null)
             {
-                var restore = ctx.Canvas.Save();
-
                 _paintWithOpacity ??= new SKPaint();
 
                 if (IsDistorted)
@@ -4411,93 +4423,36 @@ namespace DrawnUi.Maui.Draw
                     _paintWithOpacity.FilterQuality = SKFilterQuality.None;
                 }
 
+                var alpha = (byte)(0xFF / 1.0 * Opacity);
+                _paintWithOpacity.Color = SKColors.White.WithAlpha(alpha);
+
                 if (applyOpacity || CustomizeLayerPaint != null)
                 {
-
-                    var alpha = (byte)(0xFF / 1.0 * Opacity);
-                    _paintWithOpacity.Color = SKColors.White.WithAlpha(alpha);
-
-
                     if (CustomizeLayerPaint != null)
                     {
                         CustomizeLayerPaint?.Invoke(_paintWithOpacity, destination);
                     }
 
-                    restore = ctx.Canvas.SaveLayer(_paintWithOpacity);
+                    ctx.Canvas.SaveLayer(_paintWithOpacity);
                 }
-
+                else
+                {
+                    ctx.Canvas.Save();
+                }
 
                 if (needTransform)
                 {
-                    var moveX = (float)Math.Round(UseTranslationX * RenderingScale);
-                    var moveY = (float)Math.Round(UseTranslationY * RenderingScale);
-
-                    var centerX = (float)(moveX + destination.Left + destination.Width * TransformPivotPointX);
-                    var centerY = (float)(moveY + destination.Top + destination.Height * TransformPivotPointY);
-
-                    var skewX = 0f;
-                    if (SkewX > 0)
-                        skewX = (float)Math.Tan(Math.PI * SkewX / 180f);
-
-                    var skewY = 0f;
-                    if (SkewY > 0)
-                        skewY = (float)Math.Tan(Math.PI * SkewY / 180f);
-
-                    if (Rotation != 0)
-                    {
-                        ctx.Canvas.RotateDegrees((float)this.Rotation, centerX, centerY);
-                    }
-
-                    var matrixTransforms = new SKMatrix
-                    {
-                        TransX = moveX,
-                        TransY = moveY,
-                        Persp0 = Perspective1,
-                        Persp1 = Perspective2,
-                        SkewX = skewX,
-                        SkewY = skewY,
-                        Persp2 = 1,
-                        ScaleX = (float)this.ScaleX,
-                        ScaleY = (float)this.ScaleY,
-                    };
-
-                    //set pivot point
-                    var DrawingMatrix = SKMatrix.CreateTranslation(-centerX, -centerY);
-                    //apply stuff
-                    DrawingMatrix = DrawingMatrix.PostConcat(matrixTransforms);
-
-                    if (CameraAngleX != 0 || CameraAngleY != 0 || CameraAngleZ != 0)
-                    {
-                        Helper3d.Reset();
-                        Helper3d.RotateXDegrees(CameraAngleX);
-                        Helper3d.RotateYDegrees(CameraAngleY);
-                        Helper3d.RotateZDegrees(CameraAngleZ);
-                        if (CameraTranslationZ != 0)
-                        {
-                            Helper3d.TranslateZ(CameraTranslationZ);
-                        }
-                        // Combine 3D transformations with the drawing matrix
-                        DrawingMatrix = DrawingMatrix.PostConcat(Helper3d.Matrix);
-                    }
-
-                    //restore coordinates back
-                    DrawingMatrix = DrawingMatrix.PostConcat(SKMatrix.CreateTranslation(centerX, centerY));
-
-                    //apply parent's transforms
-                    DrawingMatrix = DrawingMatrix.PostConcat(ctx.Canvas.TotalMatrix);
-
-                    ctx.Canvas.SetMatrix(DrawingMatrix);
-
+                    ApplyTransforms(ctx, destination);
                 }
 
                 if (isClipping)
                 {
-                    ctx.Canvas.ClipPath(_clipBounds, SKClipOperation.Intersect, true);
+                    ctx.Canvas.ClipPath(_preparedClipBounds, SKClipOperation.Intersect, true);
                 }
 
                 draw(ctx);
 
-                ctx.Canvas.RestoreToCount(restore);
+                ctx.Canvas.Restore();
             }
             else
             {
@@ -4506,6 +4461,81 @@ namespace DrawnUi.Maui.Draw
 
         }
 
+
+        protected virtual void ApplyTransforms(SkiaDrawingContext ctx, SKRect destination)
+        {
+            var moveX = (int)Math.Round(UseTranslationX * RenderingScale);
+            var moveY = (int)Math.Round(UseTranslationY * RenderingScale);
+
+            var pivotX = (float)(destination.Left + destination.Width * TransformPivotPointX);
+            var pivotY = (float)(destination.Top + destination.Height * TransformPivotPointY);
+
+            var centerX = (float)(moveX + destination.Left + destination.Width * TransformPivotPointX);
+            var centerY = (float)(moveY + destination.Top + destination.Height * TransformPivotPointY);
+
+
+
+            var skewX = 0f;
+            if (SkewX > 0)
+                skewX = (float)Math.Tan(Math.PI * SkewX / 180f);
+
+            var skewY = 0f;
+            if (SkewY > 0)
+                skewY = (float)Math.Tan(Math.PI * SkewY / 180f);
+
+            if (Rotation != 0)
+            {
+                ctx.Canvas.RotateDegrees((float)this.Rotation, centerX, centerY);
+            }
+
+            var matrixTransforms = new SKMatrix
+            {
+                TransX = moveX,
+                TransY = moveY,
+                Persp0 = Perspective1,
+                Persp1 = Perspective2,
+                SkewX = skewX,
+                SkewY = skewY,
+                Persp2 = 1,
+                ScaleX = (float)this.ScaleX,
+                ScaleY = (float)this.ScaleY,
+            };
+
+            //set pivot point
+            //var DrawingMatrix = SKMatrix.CreateTranslation(-centerX, -centerY);
+            var DrawingMatrix = SKMatrix.CreateTranslation(-pivotX, -pivotY);
+
+            //apply stuff
+            DrawingMatrix = DrawingMatrix.PostConcat(matrixTransforms);
+
+
+            if (CameraAngleX != 0 || CameraAngleY != 0 || CameraAngleZ != 0)
+            {
+                if (Helper3d == null)
+                {
+                    Helper3d = new();
+                }
+                Helper3d.Save();
+                Helper3d.RotateXDegrees(CameraAngleX);
+                Helper3d.RotateYDegrees(CameraAngleY);
+                Helper3d.RotateZDegrees(CameraAngleZ);
+                if (CameraTranslationZ != 0)
+                    Helper3d.TranslateZ(CameraTranslationZ);
+                DrawingMatrix = DrawingMatrix.PostConcat(Helper3d.Matrix);
+                Helper3d.Restore();
+            }
+
+
+            //restore coordinates back
+            //DrawingMatrix = DrawingMatrix.PostConcat(SKMatrix.CreateTranslation(centerX, centerY));
+
+            DrawingMatrix = DrawingMatrix.PostConcat(SKMatrix.CreateTranslation(pivotX, pivotY));
+
+            //apply parent's transforms
+            DrawingMatrix = DrawingMatrix.PostConcat(ctx.Canvas.TotalMatrix);
+
+            ctx.Canvas.SetMatrix(DrawingMatrix);
+        }
 
         public virtual bool NeedMeasure
         {
@@ -5500,9 +5530,6 @@ namespace DrawnUi.Maui.Draw
 
             canvas.Restore();
         }
-
-
-        public HelperSk3dView Helper3d { get; } = new();
 
 
         //static int countRedraws = 0;

@@ -13,6 +13,7 @@ using System.Threading;
 using Xamarin.Essentials;
 using Xamarin.Forms.PlatformConfiguration.iOSSpecific;
 using Xamarin.Forms.Xaml.Diagnostics;
+using VisualElement = Xamarin.Forms.VisualElement;
 
 namespace DrawnUi.Maui.Views
 {
@@ -55,14 +56,34 @@ namespace DrawnUi.Maui.Views
             NeedCheckParentVisibility = true;
         }
 
+        public bool GetIsVisibleWithParent(VisualElement element)
+        {
+            if (element != null)
+            {
+                if (!element.IsVisible)
+                    return false;
+
+                if (element.Parent is VisualElement visualParent)
+                {
+                    return GetIsVisibleWithParent(visualParent);
+                }
+            }
+
+            return true;
+        }
+
+
+
         public bool IsUsingHardwareAcceleration
         {
             get
             {
-                return false;
-                //HardwareAcceleration != HardwareAccelerationMode.Disabled
-                //       && DeviceInfo.Platform != DevicePlatform.WinUI
-                //       && DeviceInfo.Platform != DevicePlatform.MacCatalyst;
+                if (!Super.CanUseHardwareAcceleration)
+                    return false;
+
+                return HardwareAcceleration != HardwareAccelerationMode.Disabled
+                       && DeviceInfo.Platform != DevicePlatform.UWP
+                       && DeviceInfo.Platform != DevicePlatform.iOS;
             }
         }
 
@@ -313,6 +334,26 @@ namespace DrawnUi.Maui.Views
             }
         }
 
+        public virtual IEnumerable<ISkiaAnimator> SetViewTreeVisibilityByParent(SkiaControl parent, bool state)
+        {
+            lock (LockAnimatingControls)
+            {
+                var ret = AnimatingControls.Values.Where(x => x.Parent == parent).ToArray();
+                foreach (var animator in ret)
+                {
+                    try
+                    {
+                        animator.IsHiddenInViewTree = !state;
+                    }
+                    catch (Exception e)
+                    {
+                        Super.Log(e);
+                    }
+                }
+                return ret;
+            }
+        }
+
         public virtual IEnumerable<ISkiaAnimator> SetPauseStateOfAllAnimatorsByParent(SkiaControl parent, bool state)
         {
             lock (LockAnimatingControls)
@@ -386,12 +427,12 @@ namespace DrawnUi.Maui.Views
         /// </summary>
         public Dictionary<Guid, ISkiaAnimator> AnimatingControls { get; } = new(512);
 
-        protected int ExecuteAnimators(long time)
+        protected int ExecuteAnimators(long nanos)
         {
 
             var executed = 0;
 
-            lock (LockAnimatingControls)
+            //lock (LockAnimatingControls)
             {
                 try
                 {
@@ -412,14 +453,14 @@ namespace DrawnUi.Maui.Views
                             continue;
                         }
 
-                        bool canPlay = !(skiaAnimation.Parent != null && !skiaAnimation.Parent.IsVisibleInViewTree());
+                        bool canPlay = !skiaAnimation.IsHiddenInViewTree; //!(skiaAnimation.Parent != null && !skiaAnimation.Parent.IsVisibleInViewTree());
 
                         if (canPlay)
                         {
                             if (skiaAnimation.IsPaused)
                                 skiaAnimation.Resume(); //continue anim from current time instead of the old one
 
-                            skiaAnimation.TickFrame(time);
+                            skiaAnimation.TickFrame(nanos);
                             executed++;
                         }
                         else

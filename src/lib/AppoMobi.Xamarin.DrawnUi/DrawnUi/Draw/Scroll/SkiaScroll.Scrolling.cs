@@ -1,13 +1,13 @@
 ﻿using DrawnUi.Maui.Draw;
+using DrawnUi.Maui.Infrastructure.Extensions;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using DrawnUi.Maui.Infrastructure.Extensions;
 
 namespace DrawnUi.Maui.Draw;
 
- public class VelocityAccumulator
+public class VelocityAccumulator
 {
     private List<(Vector2 velocity, DateTime time)> velocities = new List<(Vector2 velocity, DateTime time)>();
     private const double Threshold = 10.0; // Minimum significant movement
@@ -26,7 +26,7 @@ namespace DrawnUi.Maui.Draw;
         velocities.Add((velocity, now));
     }
 
-    public Vector2 CalculateFinalVelocity(float clampAbsolute=0)
+    public Vector2 CalculateFinalVelocity(float clampAbsolute = 0)
     {
         var now = DateTime.UtcNow;
         var relevantVelocities = velocities.Where(v => (now - v.time).TotalMilliseconds <= ConsiderationTimeframeMs).ToList();
@@ -39,10 +39,10 @@ namespace DrawnUi.Maui.Draw;
 
         if (clampAbsolute != 0)
         {
-            return new Vector2( DrawnExtensions.Clamp(weightedSumX / weightSum, -clampAbsolute, clampAbsolute), 
+            return new Vector2(DrawnExtensions.Clamp(weightedSumX / weightSum, -clampAbsolute, clampAbsolute),
                 DrawnExtensions.Clamp(weightedSumY / weightSum, -clampAbsolute, clampAbsolute));
         }
-        
+
         return new Vector2(weightedSumX / weightSum, weightedSumY / weightSum);
     }
 }
@@ -160,13 +160,11 @@ public partial class SkiaScroll
     }
     float _viewportOffsetX;
 
-    public event EventHandler<ScaledPoint> Scrolled;
+
 
     protected virtual void InitializeViewport(float scale)
     {
         _loadMoreTriggeredAt = 0;
-
-        _lastPosViewportScale = -1;
 
         ContentOffsetBounds = GetContentOffsetBounds();
 
@@ -207,7 +205,7 @@ public partial class SkiaScroll
                 OnStop = () =>
                 {
                     UpdateLoadingLock(false);
-                    _isSnapping = false;
+                    IsSnapping = false;
                 },
                 OnVectorUpdated = (value) =>
                 {
@@ -252,23 +250,23 @@ public partial class SkiaScroll
                 }
             };
 
-            //_scrollerX = new(this)
-            //{
-            //    OnStop = () =>
-            //    {
-            //        _isSnapping = false;
-            //        SkiaImageLoadingManager.Instance.IsLoadingLocked = false;
-            //    }
-            //};
+            _scrollerX = new(this)
+            {
+                OnStop = () =>
+                {
+                    IsSnapping = false;
+                    //SkiaImageLoadingManager.Instance.IsLoadingLocked = false;
+                }
+            };
 
-            //_scrollerY = new(this)
-            //{
-            //    OnStop = () =>
-            //    {
-            //        _isSnapping = false;
-            //        SkiaImageLoadingManager.Instance.IsLoadingLocked = false;
-            //    }
-            //};
+            _scrollerY = new(this)
+            {
+                OnStop = () =>
+                {
+                    IsSnapping = false;
+                    //SkiaImageLoadingManager.Instance.IsLoadingLocked = false;
+                }
+            };
         }
 
         if (_animatorBounce.IsRunning)

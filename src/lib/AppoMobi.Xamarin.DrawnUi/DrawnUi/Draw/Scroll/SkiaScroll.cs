@@ -958,7 +958,6 @@ namespace DrawnUi.Maui.Draw
         /// </summary>
         protected ScrollFlingAnimator _animatorFling;
 
-        /*
         /// <summary>
         /// Direct scroller for ordered scroll, snap etc
         /// </summary>
@@ -968,7 +967,6 @@ namespace DrawnUi.Maui.Draw
         /// Direct scroller for ordered scroll, snap etc
         /// </summary>
         protected RangeAnimator _scrollerY;
-        */
 
         protected float _scrollMinX;
         protected float _scrollMinY;
@@ -1649,14 +1647,12 @@ namespace DrawnUi.Maui.Draw
 
         protected virtual bool CheckNeedToSnap()
         {
-            var ret = true;
-
-            if (_isSnapping
-                || IsUserFocused
-                || this.SnapToChildren == SnapToChildrenType.Disabled
-                || _animatorBounce.IsRunning ||
-                _animatorFling.IsRunning && (Math.Abs(_animatorFling.CurrentVelocity.Y) > _minVelocitySnap || Math.Abs(_animatorFling.CurrentVelocity.X) > _minVelocitySnap))
-                ret = false;
+            bool ret = !(IsSnapping || Snapped
+                                    || IsUserFocused
+                                    || OrderedScrollTo.IsValid //already scrolling somewhere
+                                    || this.SnapToChildren == SnapToChildrenType.Disabled
+                                    || _animatorBounce.IsRunning
+                                    || _animatorFling.IsRunning && (Math.Abs(_animatorFling.CurrentVelocity.Y) > _minVelocitySnap || Math.Abs(_animatorFling.CurrentVelocity.X) > _minVelocitySnap));
 
             //Trace.WriteLine($"CheckNeedToSnap {ret}");
 
@@ -2096,6 +2092,39 @@ namespace DrawnUi.Maui.Draw
 
 
 
+        private bool _IsSnapping;
+        public bool IsSnapping
+        {
+            get
+            {
+                return _IsSnapping;
+            }
+            set
+            {
+                if (_IsSnapping != value)
+                {
+                    _IsSnapping = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _Snapped;
+        public bool Snapped
+        {
+            get
+            {
+                return _Snapped;
+            }
+            set
+            {
+                if (_Snapped != value)
+                {
+                    _Snapped = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         /// <summary>
         /// Input offset parameters in PIXELS. We render the scroll Content using pixal snapping but the prepared content will be scrolled (offset) using subpixels for a smooth look.
@@ -2111,9 +2140,23 @@ namespace DrawnUi.Maui.Draw
             if (!IsContentActive)
                 return;
 
+            if (!IsSnapping)
+                Snapped = false;
+
+            var isScroling = _animatorFling.IsRunning || _animatorBounce.IsRunning
+                                                      || _scrollerX.IsRunning || _scrollerY.IsRunning || IsUserPanning;
+
             ContentAvailableSpace = GetContentAvailableRect(destination);
 
-            InternalViewportOffset = ScaledPoint.FromPixels(offsetPixels, scale);
+            //we scroll at subpixels but stop only at pixel-snapped
+            //if (IsScrolling && !isScroling && !IsUserPanning || onceAfterInitializeViewport)
+            //{
+            //    var roundY = (float)Math.Round(offsetPixels.Y) - offsetPixels.Y;
+            //    var roundX = (float)Math.Round(offsetPixels.X) - offsetPixels.X;
+            //    offsetPixels.Offset(roundX, roundY);
+            //}
+
+            InternalViewportOffset = ScaledPoint.FromPixels(new((float)Math.Round(offsetPixels.X), (float)Math.Round(offsetPixels.Y)), scale);
 
             var childRect = ContentAvailableSpace;
             childRect.Offset(InternalViewportOffset.Pixels.X, InternalViewportOffset.Pixels.Y);
@@ -2202,13 +2245,52 @@ namespace DrawnUi.Maui.Draw
 
             //POST EVENTS
             Scrolled?.Invoke(this, InternalViewportOffset);
+
             OnScrolled();
 
+            if (isScroling)
+            {
+                IsScrolling = true;
+            }
+            else
+            {
+                if (IsScrolling)
+                {
+                    ScrollingEnded?.Invoke(this, InternalViewportOffset);
+                    OnScrollingEnded();
+                }
+                IsScrolling = false;
+            }
+
+            //Super.Log($"[SCROLL] {InternalViewportOffset.Pixels.Y}");
             //ExecuteDelayedScrollOrders(); //todo move toonscrolled?
         }
 
+        public virtual void OnScrollingEnded()
+        {
 
+        }
 
+        public event EventHandler<ScaledPoint> ScrollingEnded;
+
+        public event EventHandler<ScaledPoint> Scrolled;
+
+        private bool _IsScrolling;
+        public bool IsScrolling
+        {
+            get
+            {
+                return _IsScrolling;
+            }
+            set
+            {
+                if (_IsScrolling != value)
+                {
+                    _IsScrolling = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
 
         public override ScaledRect GetOnScreenVisibleArea()
@@ -2366,6 +2448,9 @@ namespace DrawnUi.Maui.Draw
             //}
         }
 
+        int _updatedViewportForPixX;
+        int _updatedViewportForPixY;
+
         protected override void Draw(SkiaDrawingContext context, SKRect destination,
             float scale)
         {
@@ -2385,28 +2470,22 @@ namespace DrawnUi.Maui.Draw
 
             if (!CheckIsGhost())
             {
-                //comparing floats on purpose
-                var needReposition = _lastPosViewportScale != _zoomedScale
-                                     || _updatedViewportForPtsY != ViewportOffsetY
-                                 || _updatedViewportForPtsX != ViewportOffsetX
-                                 || _destination != Destination;
+                var posX = (int)Math.Round(ViewportOffsetX * _zoomedScale);
+                var posY = (int)Math.Round(ViewportOffsetY * _zoomedScale);
+
+                var needReposition =
+                    _updatedViewportForPixY != posY
+                    || _updatedViewportForPixX != posX
+                    || _destination != Destination;
 
                 //reposition viewport (scroll)
                 if (needReposition)
                 {
-                    //_offsetMoved = _updatedViewportForPtsY - ViewportOffsetY;
-                    //var timeDiff = context.FrameTimeNanos - _offsetMovedTime;
-                    //_offsetMovedTime = context.FrameTimeNanos;
-                    //var time = TimeSpan.FromTicks(timeDiff / 1000);
-                    //Debug.WriteLine($"[PositionViewport] diff {(_offsetMoved * _zoomedScale):0.00} in {time.TotalMilliseconds} ms");
-
-                    _lastPosViewportScale = _zoomedScale;
-                    _updatedViewportForPtsX = ViewportOffsetX;
-                    _updatedViewportForPtsY = ViewportOffsetY;
-
+                    _updatedViewportForPixX = posX;
+                    _updatedViewportForPixY = posY;
                     _destination = Destination;
 
-                    PositionViewport(DrawingRect, new(_updatedViewportForPtsX * _zoomedScale, _updatedViewportForPtsY * _zoomedScale), _zoomedScale, (float)scale);
+                    PositionViewport(DrawingRect, new(posX, posY), _zoomedScale, (float)scale);
 
                     RenderObject = null;
                 }
@@ -2416,6 +2495,8 @@ namespace DrawnUi.Maui.Draw
                     {
                         PaintWithEffects(ctx, DrawingRect, scale, CreatePaintArguments());
                     });
+
+                //Paint(context, DrawingRect, scale, CreatePaintArguments());
             }
 
             FinalizeDraw(context, scale);
