@@ -810,7 +810,9 @@ namespace DrawnUi.Maui.Draw
 
         #endregion
 
-        public void OnFocusChanged(bool focus)
-        { }
+        public virtual bool OnFocusChanged(bool focus)
+        {
+            return false;
+        }
     }
 }

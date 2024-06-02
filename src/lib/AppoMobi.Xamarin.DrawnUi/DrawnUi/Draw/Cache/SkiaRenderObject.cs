@@ -1,4 +1,5 @@
 ﻿namespace DrawnUi.Maui.Draw;
+
 public class CachedObject : IDisposable
 {
     public SKPoint TranslateInputCoords(SKRect drawingRect)
@@ -80,6 +81,11 @@ public class CachedObject : IDisposable
         Bounds = bounds;
         Image = surface.Snapshot();
     }
+
+    /// <summary>
+    /// An existing surface was reused for creating this object
+    /// </summary>
+    public bool SurfaceIsRecycled { get; set; }
 
     public SKPicture Picture { get; set; }
 

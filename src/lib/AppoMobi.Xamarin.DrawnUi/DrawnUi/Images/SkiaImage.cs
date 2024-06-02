@@ -81,7 +81,8 @@ public class SkiaImage : SkiaControl
         return null;
     }
 
-    public override bool IsClippedToBounds => true;
+    public override bool WillClipBounds => true;
+
 
     public CancellationTokenSource CancelLoading;
 
@@ -1376,7 +1377,7 @@ propertyChanged: NeedChangeColorFIlter);
                 //not setting NeedMeasure=false; to force remeasurement on next frame
                 AspectScale = SKPoint.Empty;
 
-                return ScaledSize.Empty;
+                return ScaledSize.Default;
                 //return ScaledSize.FromPixels(0, 0, request.Scale);
             }
         }
@@ -2806,7 +2807,7 @@ propertyChanged: NeedChangeColorFIlter);
                    //not setting NeedMeasure=false; to force remeasurement on next frame
                    AspectScale = SKPoint.Empty;
    
-                   return ScaledSize.Empty;
+                   return ScaledSize.Default;
                    //return ScaledSize.FromPixels(0, 0, request.Scale);
                }
            }

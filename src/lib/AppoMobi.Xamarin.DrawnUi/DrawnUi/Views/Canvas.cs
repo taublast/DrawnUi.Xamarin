@@ -168,22 +168,17 @@ public class Canvas : DrawnView, IGestureListener
     }
 
 
-
     public float AdaptWidthContraintToRequest(double widthConstraint)
     {
-        var width = WidthRequest;
-
-        if (WidthRequest > 0)//&& width < widthConstraint)
-            widthConstraint = width;
+        if (widthConstraint >= 0)//&& width < widthConstraint)
+            widthConstraint -= Margin.HorizontalThickness;
 
         return (float)widthConstraint;
     }
     public float AdaptHeightContraintToRequest(double heightConstraint)
     {
-        var widthPixels = HeightRequest;
-
-        if (HeightRequest > 0)// && widthPixels < heightConstraint)
-            heightConstraint = widthPixels;
+        if (heightConstraint >= 0)// && widthPixels < heightConstraint)
+            heightConstraint -= Margin.VerticalThickness;
 
         return (float)heightConstraint;
     }
@@ -198,7 +193,7 @@ public class Canvas : DrawnView, IGestureListener
         if (widthConstraintPts < 0 || heightConstraintPts < 0)
         {
             //not setting NeedMeasure=false;
-            return ScaledSize.Empty;
+            return ScaledSize.Default;
         }
 
         widthConstraintPts = AdaptWidthContraintToRequest(widthConstraintPts);
@@ -220,7 +215,7 @@ public class Canvas : DrawnView, IGestureListener
                 {
                     child.OnBeforeMeasure(); //could set IsVisible or whatever inside
                     var willDraw = MeasureChild(child, rectForChild.Width, rectForChild.Height, RenderingScale);
-                    if (willDraw != ScaledSize.Empty)
+                    if (!willDraw.IsEmpty)
                     {
                         if (willDraw.Pixels.Width > maxWidth)
                             maxWidth = willDraw.Pixels.Width;
@@ -230,9 +225,9 @@ public class Canvas : DrawnView, IGestureListener
                 }
 
                 ContentSize = ScaledSize.FromPixels(maxWidth, maxHeight, (float)RenderingScale);
+
                 widthConstraintPts = AdaptWidthContraintToContentRequest(widthConstraintPts, ContentSize, Padding.Left + Padding.Right);
                 heightConstraintPts = AdaptHeightContraintToContentRequest(heightConstraintPts, ContentSize, Padding.Top + Padding.Bottom);
-
             }
         }
 
@@ -270,8 +265,8 @@ public class Canvas : DrawnView, IGestureListener
             sideConstraintsUnits,
             NeedAutoWidth,
             MinimumWidthRequest,
-            -1.0,//MaximumWidthRequest,
-            1);
+            MaximumWidthRequest,
+            1, false);
     }
 
     public float AdaptHeightContraintToContentRequest(float heightConstraintUnits, ScaledSize measuredContent, double sideConstraintsUnits)
@@ -282,8 +277,8 @@ public class Canvas : DrawnView, IGestureListener
             sideConstraintsUnits,
             NeedAutoHeight,
             MinimumHeightRequest,
-            -1.0,//MaximumHeightRequest,
-            1);
+            MaximumHeightRequest,
+            1, false);
     }
 
 
@@ -306,6 +301,7 @@ public class Canvas : DrawnView, IGestureListener
 
         return new Size(widthRequest, heightRequest); ;
     }
+
 
     private ScaledSize _contentSize = new();
     public ScaledSize ContentSize
@@ -336,13 +332,12 @@ public class Canvas : DrawnView, IGestureListener
     {
         child.OnBeforeMeasure();
         if (!child.CanDraw)
-            return ScaledSize.Empty; //child set himself invisible
+            return ScaledSize.Default; //child set himself invisible
 
         return child.Measure((float)availableWidth, (float)availableHeight, (float)scale);
     }
 
     #endregion
-
 
     #region GESTURES
 
@@ -354,10 +349,19 @@ public class Canvas : DrawnView, IGestureListener
 
     bool _isPanning;
 
+
+    private SKPoint _panningOffset;
+
+    /// <summary>
+    /// IGestureListener implementation
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="args1"></param>
+    /// <param name="args1"></param>
+    /// <param name=""></param>
     public virtual void OnGestureEvent(TouchActionType type, TouchActionEventArgs args, TouchActionResult touchAction)
     {
-
-        //ProcessGestures(type, args, touchAction);
+        //var args = SkiaGesturesParameters.Create(touchAction, args1);
 
         if (touchAction == TouchActionResult.Panning)
         {
@@ -369,13 +373,22 @@ public class Canvas : DrawnView, IGestureListener
             }
 
             var threshold = FirstPanThreshold * RenderingScale;
+
             if (!_isPanning)
             {
                 //filter first panning movement on super sensitive screens
                 if (Math.Abs(args.Distance.Total.X) < threshold && Math.Abs(args.Distance.Total.Y) < threshold)
                 {
+                    _panningOffset = SKPoint.Empty;
                     return;
                 }
+
+                if (_panningOffset == SKPoint.Empty)
+                {
+                    _panningOffset = new SKPoint(args.Distance.Total.X, args.Distance.Total.Y);
+                }
+
+                //args.PanningOffset = _panningOffset;
 
                 _isPanning = true;
             }

@@ -1,10 +1,11 @@
+using ExCSS;
 using System.Drawing;
 using System.Numerics;
 using Color = Xamarin.Forms.Color;
 
 namespace DrawnUi.Maui.Draw;
 
- /// <summary>
+/// <summary>
 /// Cycles content, so the scroll never ands but cycles from the start
 /// </summary>
 public class SkiaScrollLooped : SkiaScroll
@@ -16,7 +17,8 @@ public class SkiaScrollLooped : SkiaScroll
 
     public static bool Debug = false;
 
-    public override bool IsClippedToBounds => true;
+    public override bool WillClipBounds => true;
+
 
     public override bool ShouldInvalidateByChildren => false;
 
@@ -332,7 +334,6 @@ public class SkiaScrollLooped : SkiaScroll
         _isSnapping = false;
     }
 
-    //Using this to draw a second fake copy of content to loop the cycle
     protected override void OnDrawn(SkiaDrawingContext context,
         SKRect destination,
         float zoomedScale,
@@ -369,7 +370,7 @@ public class SkiaScrollLooped : SkiaScroll
                     if (pixelsContentOffsetY > 0)
                         childRect.Bottom += hiddenContentHeightPixels;
 
-                    DrawWithClipAndTransforms(context, DrawingRect, true,
+                    DrawWithClipAndTransforms(context, DrawingRect, DrawingRect, true,
                         true, (ctx) =>
                         {
                             if (Debug)
@@ -382,7 +383,7 @@ public class SkiaScrollLooped : SkiaScroll
 
                                 DrawViews(context, childRect, zoomedScale, debug);
 
-                                context.Canvas.RestoreToCount(count);
+                                context.Canvas.Restore();
                             }
                             else
                             {
@@ -416,7 +417,7 @@ public class SkiaScrollLooped : SkiaScroll
                     var childRect = destination.Clone();
                     childRect.Offset(offsetX, 0);
 
-                    DrawWithClipAndTransforms(context, DrawingRect, true,
+                    DrawWithClipAndTransforms(context, DrawingRect, DrawingRect, true,
                         true, (ctx) =>
                         {
                             DrawViews(context, childRect, zoomedScale, debug);
@@ -430,8 +431,6 @@ public class SkiaScrollLooped : SkiaScroll
 
         base.OnDrawn(context, destination, zoomedScale, scale);
     }
-
-
 
 
     public override Vector2 ClampOffset(float x, float y, bool strict = false)

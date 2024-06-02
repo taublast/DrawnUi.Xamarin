@@ -10,8 +10,9 @@ namespace DrawnUi.Maui.Draw;
 public partial class ContentLayout : SkiaControl, ISkiaGestureListener, IVisibilityAware
 {
 
-    public virtual void OnFocusChanged(bool focus)
+    public virtual bool OnFocusChanged(bool focus)
     {
+        return false;
     }
 
     public virtual void OnAppeared()
@@ -89,7 +90,7 @@ public partial class ContentLayout : SkiaControl, ISkiaGestureListener, IVisibil
             }
             else
             {
-                ContentSize = ScaledSize.Empty;
+                ContentSize = ScaledSize.Default;
             }
 
             var width = AdaptWidthConstraintToContentRequest(constraints.Request.Width, ContentSize, constraints.Margins.Left + constraints.Margins.Right);

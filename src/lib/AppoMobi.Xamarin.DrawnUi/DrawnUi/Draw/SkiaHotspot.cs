@@ -19,6 +19,8 @@ namespace DrawnUi.Maui.Draw
 
         protected override void Draw(SkiaDrawingContext context, SKRect destination, float scale)
         {
+
+
             var canvas = context.Canvas;
 
             if (IsRootView() && !IsOverlay)
@@ -28,13 +30,13 @@ namespace DrawnUi.Maui.Draw
 
             if (!CheckIsGhost())
             {
-                DrawWithClipAndTransforms(context, DrawingRect, true, true, (ctx) =>
+                DrawWithClipAndTransforms(context, DrawingRect, DrawingRect, true, true, (ctx) =>
                 {
                     PaintTintBackground(canvas, DrawingRect);
                     //Paint(ctx, DrawingRect, scale, CreatePaintArguments());
                 });
 
-                FinalizeDraw(context, scale);
+                FinalizeDrawingWithRenderObject(context, scale);
             }
         }
 
@@ -161,8 +163,10 @@ namespace DrawnUi.Maui.Draw
         #region PROPERTIES
 
 
-        public virtual void OnFocusChanged(bool focus)
-        { }
+        public virtual bool OnFocusChanged(bool focus)
+        {
+            return false;
+        }
 
         public static readonly BindableProperty ShimmerEffectColorProperty = BindableProperty.Create(nameof(ShimmerEffectColor),
             typeof(Color),

@@ -130,9 +130,9 @@ public static class AddGestures
             return base.ProcessGestures(type, args, touchAction, childOffset, childOffsetDirect, alreadyConsumed);
         }
 
-        public void OnFocusChanged(bool focus)
+        public virtual bool OnFocusChanged(bool focus)
         {
-
+            return false;
         }
     }
 

@@ -11,7 +11,7 @@ using Color = Xamarin.Forms.Color;
 namespace DrawnUi.Maui.Draw;
 
 [DebuggerDisplay("{DebugString}")]
-public class TextSpan : BindableObject, IDisposable
+public class TextSpan : Element, IDisposable //we subclassed Element to be able to use internal IElementNode..
 {
 
     #region BINDABLE PROPERTIES
@@ -423,8 +423,6 @@ public class TextSpan : BindableObject, IDisposable
 
         var font = SkiaFontManager.Instance.GetRegisteredFont(_fontFamily);
 
-        //var font = await SkiaFontManager.Instance.GetFont(FontFamily, FontWeight);
-
         _fontFamily = FontFamily;
         _fontWeight = FontWeight;
 
@@ -452,6 +450,7 @@ public class TextSpan : BindableObject, IDisposable
     private bool _isBold;
     private Color _textColor = Color.GreenYellow;
     private Color _backgroundColor = Color.Transparent;
+    private Color _paragraphColor = Color.Transparent;
     private bool _autoFindFont;
     private SKTypeface _typeFace;
     private bool _needShape;
@@ -527,6 +526,17 @@ public class TextSpan : BindableObject, IDisposable
         }
     }
 
+    public Color ParagraphColor
+    {
+        get => _paragraphColor;
+        set
+        {
+            if (Equals(value, _paragraphColor)) return;
+            _paragraphColor = value;
+            OnPropertyChanged(nameof(ParagraphColor));
+        }
+    }
+
     public double FontSize
     {
         get => _fontSize;
@@ -564,7 +574,7 @@ public class TextSpan : BindableObject, IDisposable
 
 
 
-    public object Parent { get; set; }
+    //public object Parent { get; set; }
 
     /// <summary>
     /// If any glyph cannot be rendered with selected font try find system font that supports it and switch to it for the whole span

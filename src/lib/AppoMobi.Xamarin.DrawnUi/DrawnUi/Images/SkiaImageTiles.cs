@@ -4,7 +4,7 @@ namespace DrawnUi.Maui.Draw;
 
 public class SkiaImageTiles : SkiaImage
 {
-    public override bool IsClippedToBounds => true;
+    public override bool WillClipBounds => true;
 
     #region PROPERTIES
 

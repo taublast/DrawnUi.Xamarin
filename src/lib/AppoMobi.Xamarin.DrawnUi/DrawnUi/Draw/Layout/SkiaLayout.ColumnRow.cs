@@ -302,7 +302,7 @@ namespace DrawnUi.Maui.Draw
 
         void LayoutCell(ScaledSize measured, ControlInStack cell, SkiaControl child, float scale)
         {
-            if (measured != ScaledSize.Empty)
+            if (measured != ScaledSize.Default)
             {
                 child.Arrange(cell.Area, measured.Units.Width, measured.Units.Height, scale);
 
@@ -482,7 +482,7 @@ namespace DrawnUi.Maui.Draw
                                         }
                                         else
                                         {
-                                            if (cell.Measured != ScaledSize.Empty)
+                                            if (cell.Measured != ScaledSize.Default)
                                             {
                                                 //add new space
                                                 sizeChange = new SKSize(measured.Pixels.Width + cell.Measured.Pixels.Width,
@@ -490,7 +490,7 @@ namespace DrawnUi.Maui.Draw
 
                                                 newContentSize = ScaledSize.FromPixels(MeasuredSize.Pixels.Width - sizeChange.Width, MeasuredSize.Pixels.Height - sizeChange.Height, scale);
                                             }
-                                            cell.Measured = ScaledSize.Empty;
+                                            cell.Measured = ScaledSize.Default;
                                         }
                                     }
 
@@ -569,12 +569,12 @@ namespace DrawnUi.Maui.Draw
                             if (child == null)
                             {
                                 Trace.WriteLine($"[MeasureStack] FAILED to get child at index {cell.ControlIndex}");
-                                return ScaledSize.Empty;
+                                return ScaledSize.Default;
                             }
 
                             if (!child.CanDraw)
                             {
-                                cell.Measured = ScaledSize.Empty;
+                                cell.Measured = ScaledSize.Default;
                                 continue;
                             }
 
@@ -610,7 +610,7 @@ namespace DrawnUi.Maui.Draw
                                 measured = MeasureAndArrangeCell(rectFitChild, cell, child, scale);
                             }
 
-                            if (measured != ScaledSize.Empty)
+                            if (measured != ScaledSize.Default)
                             {
                                 maxWidth += measured.Pixels.Width + GetSpacingForIndex(column, scale);
 

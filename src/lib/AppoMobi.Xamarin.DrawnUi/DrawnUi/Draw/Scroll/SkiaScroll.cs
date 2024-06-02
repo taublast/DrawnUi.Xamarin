@@ -947,8 +947,10 @@ namespace DrawnUi.Maui.Draw
             }
         }
 
-        public virtual void OnFocusChanged(bool focus)
-        { }
+        public virtual bool OnFocusChanged(bool focus)
+        {
+            return false;
+        }
 
 
         SkiaSpringWithVelocityAnimator _animatorBounce;
@@ -1992,7 +1994,7 @@ namespace DrawnUi.Maui.Draw
                 }
                 else
                 {
-                    ContentSize = ScaledSize.Empty;
+                    ContentSize = ScaledSize.Default;
                 }
 
                 var width = AdaptWidthConstraintToContentRequest(constraints.Request.Width, ContentSize, constraints.Margins.Left + constraints.Margins.Right);
@@ -2001,12 +2003,12 @@ namespace DrawnUi.Maui.Draw
                 if (Header != null)
                     HeaderSize = Header.Measure(request.WidthRequest, request.HeightRequest, request.Scale);
                 else
-                    HeaderSize = ScaledSize.Empty;
+                    HeaderSize = ScaledSize.Default;
 
                 if (Footer != null)
                     FooterSize = Footer.Measure(request.WidthRequest, request.HeightRequest, request.Scale);
                 else
-                    FooterSize = ScaledSize.Empty;
+                    FooterSize = ScaledSize.Default;
 
                 return SetMeasured(width, height, request.Scale);
             }
@@ -2147,6 +2149,8 @@ namespace DrawnUi.Maui.Draw
                                                       || _scrollerX.IsRunning || _scrollerY.IsRunning || IsUserPanning;
 
             ContentAvailableSpace = GetContentAvailableRect(destination);
+
+            InternalViewportOffset = ScaledPoint.FromPixels(offsetPixels, scale);
 
             //we scroll at subpixels but stop only at pixel-snapped
             //if (IsScrolling && !isScroling && !IsUserPanning || onceAfterInitializeViewport)
@@ -2448,12 +2452,14 @@ namespace DrawnUi.Maui.Draw
             //}
         }
 
-        int _updatedViewportForPixX;
-        int _updatedViewportForPixY;
+        float _updatedViewportForPixX;
+        float _updatedViewportForPixY;
 
         protected override void Draw(SkiaDrawingContext context, SKRect destination,
             float scale)
         {
+
+
             isDrawing = true;
             if (IsContentActive)
             {
@@ -2470,8 +2476,8 @@ namespace DrawnUi.Maui.Draw
 
             if (!CheckIsGhost())
             {
-                var posX = (int)Math.Round(ViewportOffsetX * _zoomedScale);
-                var posY = (int)Math.Round(ViewportOffsetY * _zoomedScale);
+                var posX = (ViewportOffsetX * _zoomedScale);
+                var posY = (ViewportOffsetY * _zoomedScale);
 
                 var needReposition =
                     _updatedViewportForPixY != posY
@@ -2487,10 +2493,10 @@ namespace DrawnUi.Maui.Draw
 
                     PositionViewport(DrawingRect, new(posX, posY), _zoomedScale, (float)scale);
 
-                    RenderObject = null;
+                    InvalidateCache();
                 }
 
-                DrawWithClipAndTransforms(context, DrawingRect, true,
+                DrawWithClipAndTransforms(context, DrawingRect, DrawingRect, true,
                     true, (ctx) =>
                     {
                         PaintWithEffects(ctx, DrawingRect, scale, CreatePaintArguments());
@@ -2499,7 +2505,7 @@ namespace DrawnUi.Maui.Draw
                 //Paint(context, DrawingRect, scale, CreatePaintArguments());
             }
 
-            FinalizeDraw(context, scale);
+            FinalizeDrawingWithRenderObject(context, scale);
 
             OnDrawn(context, DrawingRect, _zoomedScale, scale);
 
@@ -3088,7 +3094,8 @@ namespace DrawnUi.Maui.Draw
         #region RENDERiNG
 
 
-        public override bool IsClippedToBounds => true;
+        public override bool WillClipBounds => true;
+
 
 
         bool isDrawing;

@@ -237,7 +237,7 @@ public partial class SkiaViewAccelerated : SKGLView, ISkiaDrawable
 
             if (Device.RuntimePlatform == Device.Android)
             {
-                if (maybeLowEnd && FPS > 200)
+                if (maybeLowEnd && FPS > 160)
                 {
                     maybeLowEnd = false;
                 }

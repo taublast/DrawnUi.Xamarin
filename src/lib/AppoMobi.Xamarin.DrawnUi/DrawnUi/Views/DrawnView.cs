@@ -1207,7 +1207,7 @@ namespace DrawnUi.Maui.Views
             if (widthConstraintPts < 0 || heightConstraintPts < 0)
             {
                 //not setting NeedMeasure=false;
-                return ScaledSize.Empty;
+                return ScaledSize.Default;
             }
 
             var widthPixels = (float)((WidthRequest));
@@ -2087,6 +2087,37 @@ namespace DrawnUi.Maui.Views
 
         #endregion
 
+        private static void NeedInvalidate(BindableObject bindable, object oldvalue, object newvalue)
+        {
+            ((DrawnView)bindable).Invalidate();
+        }
+
+        public static readonly BindableProperty MaximumWidthRequestProperty = BindableProperty.Create(
+            nameof(MaximumWidthRequest),
+            typeof(double),
+            typeof(DrawnView),
+            -1.0,
+            propertyChanged: NeedInvalidate);
+
+        public double MaximumWidthRequest
+        {
+            get { return (double)GetValue(MaximumWidthRequestProperty); }
+            set { SetValue(MaximumWidthRequestProperty, value); }
+        }
+
+        public static readonly BindableProperty MaximumHeightRequestProperty = BindableProperty.Create(
+            nameof(MaximumHeightRequest),
+            typeof(double),
+            typeof(DrawnView),
+            -1.0,
+            propertyChanged: NeedInvalidate);
+
+        public double MaximumHeightRequest
+        {
+            get { return (double)GetValue(MaximumHeightRequestProperty); }
+            set { SetValue(MaximumHeightRequestProperty, value); }
+        }
+
         public static readonly BindableProperty UpdateModeProperty = BindableProperty.Create(
             nameof(UpdateMode),
             typeof(DrawnUi.Maui.Infrastructure.Enums.UpdateMode),
@@ -2204,44 +2235,105 @@ namespace DrawnUi.Maui.Views
             public SkiaControl Item { get; set; }
         }
 
+        private ISkiaDrawable _canvasView;
+        private object _handler;
+
+        public void ReportFocus(ISkiaGestureListener value, ISkiaGestureListener setter = null)
+        {
+            if (_focusedChild != value && !FocusLocked)
+            {
+                if (_focusedChild != null)
+                {
+                    Debug.WriteLine($"[UNFOCUSED] {_focusedChild}");
+                    if (_focusedChild != setter || setter == null)
+                        _focusedChild.OnFocusChanged(false);
+
+                    FocusedItemChanged?.Invoke(this, new(_focusedChild as SkiaControl, false));
+                }
+
+
+
+                if (value != null)
+                {
+                    if (value != setter || setter == null)
+                    {
+                        var accept = value.OnFocusChanged(true);
+                        if (!accept)
+                        {
+                            value = null;
+                        }
+                    }
+
+                    if (value != null)
+                    {
+                        FocusedItemChanged?.Invoke(this, new(value as SkiaControl, true));
+                    }
+                }
+
+                _focusedChild = value;
+                Debug.WriteLine($"[FOCUSED] {_focusedChild}");
+
+                if (_focusedChild == null)
+                {
+                    Debug.WriteLine($"[FOCUSED] {_focusedChild}");
+
+                    //with delay maybe some other control will focus itsself in that time
+                    ResetFocusWithDelay(150);
+                }
+
+
+                OnPropertyChanged(nameof(FocusedChild));
+            }
+        }
+
+        private static RestartingTimer<object> _timerResetFocus;
+
+
+        public void ResetFocusWithDelay(int ms)
+        {
+            if (_timerResetFocus == null)
+            {
+                _timerResetFocus = new(TimeSpan.FromMilliseconds(ms), (arg) =>
+                {
+                    if (FocusedChild == null)
+                    {
+
+                        MainThread.BeginInvokeOnMainThread(() =>
+                        {
+                            try
+                            {
+                                this.Focus();
+                            }
+                            catch (Exception e)
+                            {
+                                Super.Log(e);
+                            }
+
+                            TouchEffect.CloseKeyboard();
+                        });
+
+
+                    }
+                });
+                _timerResetFocus.Start(null);
+            }
+            else
+            {
+                _timerResetFocus.Restart(null);
+            }
+        }
+
         public ISkiaGestureListener FocusedChild
         {
             get
             {
                 return _focusedChild;
             }
-
             set
             {
-                if (_focusedChild != value && !FocusLocked)
-                {
-                    if (_focusedChild != null)
-                    {
-                        //Debug.WriteLine($"[UNFOCUSED] {_focusedChild}");
-                        _focusedChild.OnFocusChanged(false);
-                        FocusedItemChanged?.Invoke(this, new(_focusedChild as SkiaControl, false));
-                    }
-                    _focusedChild = value;
-                    if (_focusedChild != null)
-                    {
-                        //Debug.WriteLine($"[FOCUSED] {_focusedChild}");
-                        _focusedChild.OnFocusChanged(true);
-                        FocusedItemChanged?.Invoke(this, new(_focusedChild as SkiaControl, true));
-                    }
-                    else
-                    {
-                        this.Focus();
-                        TouchEffect.CloseKeyboard();
-                        FocusedItemChanged?.Invoke(this, new(null, false));
-                    }
-                    //Debug.WriteLine($"[FOCUSED] {value}");
-
-                    OnPropertyChanged();
-                }
+                ReportFocus(value);
             }
         }
         ISkiaGestureListener _focusedChild;
-        private ISkiaDrawable _canvasView;
-        private object _handler;
     }
 }

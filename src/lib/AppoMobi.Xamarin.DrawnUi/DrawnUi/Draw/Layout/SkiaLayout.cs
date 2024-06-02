@@ -425,8 +425,10 @@ namespace DrawnUi.Maui.Draw
 
         }
 
-        public virtual void OnFocusChanged(bool focus)
-        { }
+        public virtual bool OnFocusChanged(bool focus)
+        {
+            return false;
+        }
 
 
         public SkiaLayout()
@@ -1009,7 +1011,7 @@ namespace DrawnUi.Maui.Draw
                         //}
                         var measured = MeasureChild(child, rectForChildrenPixels.Width, rectForChildrenPixels.Height, scale);
 
-                        if (measured != ScaledSize.Empty)
+                        if (measured != ScaledSize.Default)
                         {
                             if (measured.Pixels.Width > maxWidth && child.HorizontalOptions.Alignment != LayoutAlignment.Fill)
                                 maxWidth = measured.Pixels.Width;
@@ -1029,7 +1031,7 @@ namespace DrawnUi.Maui.Draw
                             var child = ChildrenFactory.GetChildAt(index, null);
 
                             var measured = MeasureChild(child, rectForChildrenPixels.Width, rectForChildrenPixels.Height, scale);
-                            if (measured != ScaledSize.Empty)
+                            if (measured != ScaledSize.Default)
                             {
                                 if (measured.Pixels.Width > maxWidth && child.HorizontalOptions.Alignment != LayoutAlignment.Fill)
                                     maxWidth = measured.Pixels.Width;
@@ -1059,7 +1061,7 @@ namespace DrawnUi.Maui.Draw
         public virtual ScaledSize MeasureLayout(MeasureRequest request, bool force)
         {
             if (IsDisposing || IsDisposed)
-                return ScaledSize.Empty;
+                return ScaledSize.Default;
 
             lock (lockMeasureLayout)
             {

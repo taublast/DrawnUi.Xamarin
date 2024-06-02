@@ -1,5 +1,7 @@
 ﻿using DrawnUi.Maui.Draw;
+using ExCSS;
 using System.Runtime.CompilerServices;
+using Color = Xamarin.Forms.Color;
 
 namespace DrawnUi.Maui.Draw;
 
@@ -84,8 +86,12 @@ public class SkiaLabelFps : SkiaLabel, ISkiaAnimator
 
     protected override void Draw(SkiaDrawingContext context, SKRect destination, float scale)
     {
-        Text = $"FPS: {Superview.FPS:00.0}";
         base.Draw(context, destination, scale);
+
+        if (Superview == null)
+            return;
+
+        Text = $"FPS: {Superview.FPS:00.0}";
 
         UpdateForceRefresh();
         //if we had zero updates after 2secs just display a zero
@@ -99,6 +105,8 @@ public class SkiaLabelFps : SkiaLabel, ISkiaAnimator
         //		});
         //	_restartingTimer.Kick(null);
         //}
+        FinalizeDrawingWithRenderObject(context, scale);
+
     }
 
 
