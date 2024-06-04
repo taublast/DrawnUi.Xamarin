@@ -5,7 +5,7 @@
     <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     <ProduceReferenceAssemblyInOutDir>true</ProduceReferenceAssemblyInOutDir>
     <LangVersion>latest</LangVersion>
-    <BuildWithMSBuildOnMono>false</BuildWithMSBuildOnMono>
+    <BuildWithMSBuildOnMono>true</BuildWithMSBuildOnMono>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1047,7 +1047,7 @@ namespace DrawnUi.Maui.Draw
             }
             //empty container
             else
-            if (NeedAutoHeight || NeedAutoWidth)
+            if (LockRatio == 0 && (NeedAutoHeight || NeedAutoWidth))
             {
                 return ScaledSize.CreateEmpty(scale);
                 //return SetMeasured(0, 0, scale);
@@ -1093,10 +1093,7 @@ namespace DrawnUi.Maui.Draw
                         if (!canMeasureTemplates)
                             return ScaledSize.CreateEmpty(request.Scale);
                     }
-                    if (Tag == "ValidationStack")
-                    {
-                        var stop = 1;
-                    }
+
                     ContentSize = MeasureStack(constraints.Content, request.Scale);
                     break;
 
@@ -1116,10 +1113,19 @@ namespace DrawnUi.Maui.Draw
                 else
                 {
                     ContentSize = MeasureAbsoluteBase(constraints.Content, request.Scale);
-                }
+                }          
 
-                var width = AdaptWidthConstraintToContentRequest(constraints.Request.Width, ContentSize, constraints.Margins.Left + constraints.Margins.Right);
-                var height = AdaptHeightConstraintToContentRequest(constraints.Request.Height, ContentSize, constraints.Margins.Top + constraints.Margins.Bottom);
+
+                var vConstraints = Margin.VerticalThickness;
+                if (NeedAutoHeight)
+                    vConstraints += Padding.VerticalThickness;
+
+                var hConstraints = Margin.HorizontalThickness;
+                if (NeedAutoWidth)
+                    hConstraints += Padding.HorizontalThickness;
+
+                var width = AdaptWidthConstraintToContentRequest(constraints.Request.Width, ContentSize, hConstraints * request.Scale);
+                var height = AdaptHeightConstraintToContentRequest(constraints.Request.Height, ContentSize, vConstraints * request.Scale);
 
                 //Debug.WriteLine($"[Remeasured] {this.Tag} {this.Uid}");
 

@@ -1397,8 +1397,16 @@ propertyChanged: NeedChangeColorFIlter);
             return SetMeasuredAsEmpty(request.Scale);
         }
 
-        var width = AdaptWidthConstraintToContentRequest(constraints.Request.Width, ContentSize, constraints.Margins.Left + constraints.Margins.Right);
-        var height = AdaptHeightConstraintToContentRequest(constraints.Request.Height, ContentSize, constraints.Margins.Top + constraints.Margins.Bottom);
+        var vConstraints = Margin.VerticalThickness;
+        if (NeedAutoHeight)
+            vConstraints += Padding.VerticalThickness;
+
+        var hConstraints = Margin.HorizontalThickness;
+        if (NeedAutoWidth)
+            hConstraints += Padding.HorizontalThickness;
+
+        var width = AdaptWidthConstraintToContentRequest(constraints.Request.Width, ContentSize, hConstraints * request.Scale);
+        var height = AdaptHeightConstraintToContentRequest(constraints.Request.Height, ContentSize, vConstraints * request.Scale);
 
         if (LoadedSource != null)
         {

@@ -185,6 +185,8 @@ public class Canvas : DrawnView, IGestureListener
 
     public override ScaledSize Measure(float widthConstraintPts, float heightConstraintPts)
     {
+
+
         if (!IsVisible)
         {
             return SetMeasured(0, 0, (float)RenderingScale);
@@ -226,8 +228,8 @@ public class Canvas : DrawnView, IGestureListener
 
                 ContentSize = ScaledSize.FromPixels(maxWidth, maxHeight, (float)RenderingScale);
 
-                widthConstraintPts = AdaptWidthContraintToContentRequest(widthConstraintPts, ContentSize, Padding.Left + Padding.Right);
-                heightConstraintPts = AdaptHeightContraintToContentRequest(heightConstraintPts, ContentSize, Padding.Top + Padding.Bottom);
+                widthConstraintPts = AdaptWidthContraintToContentRequest(widthConstraintPts, ContentSize, Padding.HorizontalThickness);
+                heightConstraintPts = AdaptHeightContraintToContentRequest(heightConstraintPts, ContentSize, Padding.VerticalThickness);
             }
         }
 
@@ -271,7 +273,9 @@ public class Canvas : DrawnView, IGestureListener
 
     public float AdaptHeightContraintToContentRequest(float heightConstraintUnits, ScaledSize measuredContent, double sideConstraintsUnits)
     {
-        return SkiaControl.AdaptConstraintToContentRequest(
+ 
+
+        return AdaptConstraintToContentRequest(
             heightConstraintUnits,
             measuredContent.Units.Height,
             sideConstraintsUnits,
@@ -279,6 +283,46 @@ public class Canvas : DrawnView, IGestureListener
             MinimumHeightRequest,
             MaximumHeightRequest,
             1, false);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float AdaptConstraintToContentRequest(
+         float constraintPixels,
+         double measuredDimension,
+         double sideConstraintsPixels,
+         bool autoSize,
+         double minRequest, double maxRequest, float scale, bool canExpand)
+    {
+
+        var contentDimension = sideConstraintsPixels + measuredDimension;
+
+        if (autoSize && measuredDimension >= 0 && (canExpand || measuredDimension < constraintPixels)
+            || float.IsInfinity(constraintPixels))
+        {
+            constraintPixels = (float)contentDimension;
+        }
+
+        if (minRequest >= 0)
+        {
+            var min = double.MinValue;
+            if (!double.IsInfinity(minRequest))
+            {
+                min = Math.Round(minRequest * scale);
+            }
+            constraintPixels = (float)Math.Max(constraintPixels, min);
+        }
+
+        if (maxRequest >= 0)
+        {
+            var max = double.MaxValue;
+            if (!double.IsInfinity(maxRequest))
+            {
+                max = Math.Round(maxRequest * scale);
+            }
+            constraintPixels = (float)Math.Min(constraintPixels, max);
+        }
+
+        return (float)Math.Round(constraintPixels);
     }
 
 

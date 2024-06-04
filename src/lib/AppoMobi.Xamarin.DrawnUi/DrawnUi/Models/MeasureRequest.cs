@@ -9,10 +9,13 @@ public struct MeasureRequest
         WidthRequest = width;
         HeightRequest = height;
         Scale = scale;
+        IsSame = false;
+        Destination = SKRect.Empty;
     }
 
     public MeasureRequest(SKRect rectForChildrenPixels, float width, float height, float scale)
     {
+        IsSame = false;
         Destination = rectForChildrenPixels;
         WidthRequest = width;
         HeightRequest = height;

@@ -1,6 +1,6 @@
 ﻿using AppoMobi.Specials;
 using DrawnUi.Maui.Infrastructure.Extensions;
-
+using ExCSS;
 using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Globalization;
@@ -164,7 +164,7 @@ public class SkiaLottie : AnimatedFramesRenderer
         nameof(ColorTint),
         typeof(Color),
         typeof(SkiaLottie),
-        Color.Transparent, propertyChanged: ApplySourceProperty);
+        Xamarin.Forms.Color.Transparent, propertyChanged: ApplySourceProperty);
 
     public static readonly BindableProperty SourceProperty = BindableProperty.Create(nameof(Source),
         typeof(string),
@@ -223,6 +223,7 @@ public class SkiaLottie : AnimatedFramesRenderer
             }
     }
 
+    /*
     /// <summary>
     ///     This is not replacing current animation, use SetAnimation for that.
     /// </summary>
@@ -261,16 +262,7 @@ public class SkiaLottie : AnimatedFramesRenderer
                     }
                     else
                     {
-                        //using var stream = await FileSystem.OpenAppPackageFileAsync(fileName);
-
-                        var assembly = Super.AppAssembly;
-                        if (assembly == null)
-                        {
-                            assembly = assembly = Assembly.GetCallingAssembly();
-                        }
-                        var fullPath = $"{assembly.GetName().Name}.{fileName.Replace(@"\", ".").Replace(@"/", ".")}";
-                        using var stream = assembly.GetManifestResourceStream(fullPath);
-
+                        using var stream = await FileSystem.OpenAppPackageFileAsync(fileName);
                         using var reader = new StreamReader(stream);
                         json = await reader.ReadToEndAsync();
                     }
@@ -313,7 +305,7 @@ public class SkiaLottie : AnimatedFramesRenderer
 
         if (assembly == null)
         {
-            assembly = assembly = Assembly.GetCallingAssembly();
+            assembly = Assembly.GetCallingAssembly();
         }
 
         var fullPath = $"{assembly.GetName().Name}.{resourceName}";
@@ -322,6 +314,111 @@ public class SkiaLottie : AnimatedFramesRenderer
 
         return assembly.GetManifestResourceStream(fullPath);
     }
+    */
+
+ 
+     /// <summary>
+///     This is not replacing current animation, use SetAnimation for that.
+/// </summary>
+/// <param name="fileName"></param>
+/// <returns>
+public async Task<Animation> LoadSource(string fileName)
+{
+    if (string.IsNullOrEmpty(fileName))
+        return null;
+
+        await _semaphoreLoadFile.WaitAsync();
+
+    try
+    {
+        string json = null;
+        if (CachedAnimations.TryGetValue(fileName, out json))
+        {
+            Debug.WriteLine($"Loaded {fileName} from cache");
+        }
+        else
+        {
+            if (Uri.TryCreate(fileName, UriKind.Absolute, out var uri) && uri.Scheme != "file")
+            {
+                var client = new WebClient();
+                var data = await client.DownloadDataTaskAsync(uri);
+                json = Encoding.UTF8.GetString(data);
+            }
+            else
+            {
+                if (fileName.SafeContainsInLower(SkiaImageManager.NativeFilePrefix))
+                {
+                    var fullFilename = fileName.Replace(SkiaImageManager.NativeFilePrefix, "");
+                    using var stream = new FileStream(fullFilename, FileMode.Open);
+                    using var reader = new StreamReader(stream);
+                    json = await reader.ReadToEndAsync();
+                }
+                else
+                {
+                    //using var stream = await FileSystem.OpenAppPackageFileAsync(fileName);
+
+                    var assembly = Super.AppAssembly;
+                    if (assembly == null)
+                    {
+                        assembly = assembly = Assembly.GetCallingAssembly();
+                    }
+                    var fullPath = $"{assembly.GetName().Name}.{fileName.Replace(@"\", ".").Replace(@"/", ".")}";
+                    using var stream = assembly.GetManifestResourceStream(fullPath);
+
+                    using var reader = new StreamReader(stream);
+                    json = await reader.ReadToEndAsync();
+                }
+
+                CachedAnimations.TryAdd(fileName, json);
+            }
+        }
+
+        if (ColorTint != Color.Transparent) json = ApplyTint(json, ColorTint);
+
+        if (ProcessJson != null) json = ProcessJson(json);
+
+        return await LoadAnimationFromJson(OnJsonLoaded(json));
+    }
+    catch (Exception e)
+    {
+        Trace.WriteLine($"[SkiaLottie] LoadSource failed to load animation {fileName}");
+        Trace.WriteLine(e);
+        return null;
+    }
+    finally
+    {
+        _semaphoreLoadFile.Release();
+    }
+}
+
+public static Stream StreamFromResourceUrl(string url, Assembly assembly = null)
+{
+    var uri = new Uri(url);
+
+    var parts = uri.OriginalString.Substring(11).Split('?');
+    var resourceName = parts.First();
+
+    if (parts.Count() > 1)
+    {
+        var name = Uri.UnescapeDataString(uri.Query.Substring(10));
+        var assemblyName = new AssemblyName(name);
+        assembly = Assembly.Load(assemblyName);
+    }
+
+    if (assembly == null)
+    {
+        assembly = assembly = Assembly.GetCallingAssembly();
+    }
+
+    var fullPath = $"{assembly.GetName().Name}.{resourceName}";
+
+    Console.WriteLine($"[StreamFromResourceUrl] loading {fullPath}..");
+
+    return assembly.GetManifestResourceStream(fullPath);
+}
+ 
+ 
+
 
     /// <summary>
     ///     Called by LoadAnimationFromResources after file was loaded so we can modify json if needed before it it consumed.
@@ -344,6 +441,7 @@ public class SkiaLottie : AnimatedFramesRenderer
         {
             var bytes = Encoding.UTF8.GetBytes(json);
             var data = SKData.CreateCopy(bytes);
+
             if (Animation.TryCreate(data, out var animation))
                 return animation;
             throw new Exception("SkiaSharp.Skottie.Animation.TryParse failed.");
@@ -637,3 +735,7 @@ public class SkiaLottie : AnimatedFramesRenderer
 
     #endregion
 }
+
+///////////////-----------
+
+
