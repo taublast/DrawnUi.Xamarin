@@ -488,7 +488,10 @@ public static Stream StreamFromResourceUrl(string url, Assembly assembly = null)
             if (wasPlaying && !IsPlaying) Start();
 
             if (kill != null && disposePrevious)
-                Tasks.StartDelayed(TimeSpan.FromSeconds(2), () => { kill.Dispose(); });
+                Tasks.StartDelayed(TimeSpan.FromSeconds(2), () =>
+                {
+                    kill.Dispose();
+                });
 
             Monitor.PulseAll(_lockSource);
 

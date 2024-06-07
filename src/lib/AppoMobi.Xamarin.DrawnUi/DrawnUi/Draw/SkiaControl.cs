@@ -846,7 +846,7 @@ namespace DrawnUi.Maui.Draw
             ScaledSize measuredContent,
             double sideConstraintsPixels)
         {
- 
+
             return AdaptConstraintToContentRequest(
                 heightConstraintPixels,
                 measuredContent.Pixels.Height,
@@ -1541,6 +1541,7 @@ namespace DrawnUi.Maui.Draw
             typeof(double), typeof(SkiaControl),
             0.0,
             propertyChanged: NeedInvalidateMeasure);
+
         /// <summary>
         /// Locks the final size to the min (-1.0 <-> 0.0) or max (0.0 <-> 1.0) of the provided size.
         /// </summary>
@@ -3570,7 +3571,6 @@ namespace DrawnUi.Maui.Draw
                 heightConstraint *= (float)VerticalFillRatio;
             }
 
-   
             if (LockRatio < 0)
             {
                 var size = Math.Min(heightConstraint, widthConstraint);
@@ -3586,8 +3586,6 @@ namespace DrawnUi.Maui.Draw
                 heightConstraint = size;
                 widthConstraint = size;
             }
- 
-
 
             var isSame =
                 !NeedMeasure
@@ -3651,7 +3649,7 @@ namespace DrawnUi.Maui.Draw
             }
             //empty container
             else
-            if (LockRatio==0 && (NeedAutoHeight || NeedAutoWidth))
+            if (LockRatio == 0 && (NeedAutoHeight || NeedAutoWidth))
             {
                 return ScaledSize.CreateEmpty(scale);
                 //return SetMeasured(0, 0, scale);
@@ -3825,7 +3823,7 @@ namespace DrawnUi.Maui.Draw
         {
             get
             {
-                return LockRatio==0 && VerticalOptions.Alignment != LayoutAlignment.Fill && SizeRequest.Height < 0;
+                return LockRatio == 0 && VerticalOptions.Alignment != LayoutAlignment.Fill && SizeRequest.Height < 0;
             }
         }
         public bool NeedAutoWidth

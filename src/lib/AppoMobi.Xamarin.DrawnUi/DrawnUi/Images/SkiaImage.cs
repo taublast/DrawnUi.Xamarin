@@ -467,7 +467,7 @@ public class SkiaImage : SkiaControl
                                         if (bitmap != null && !SkiaImageManager.ReuseBitmaps)
                                             SafeAction(() =>
                                             {
-                                                bitmap.Dispose();
+                                                bitmap?.Dispose();
                                             });
                                         return;
                                     }
