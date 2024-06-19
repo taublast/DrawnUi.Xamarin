@@ -535,38 +535,14 @@ namespace DrawnUi.Maui.Draw
 
                         var paint = span.SetupPaint(scale, PaintDefault);
 
-                        span.CheckGlyphsCanBeRendered(); //will auto-select typeface if needed
-
-                        /*
-                        var glyphAvailability = AreAllGlyphsAvailable(text, paint.Typeface);
-                        var newText = new StringBuilder();
-                        int glyphIndex = 0;
-
-                        for (int i = 0; i < text.Length; i++)
+                        if (span is IDrawnTextSpan drawn)
                         {
-                            // Handle surrogate pairs
-                            int codePointSize = char.IsSurrogatePair(text, i) ? 2 : 1;
 
-                            // Append either the character(s) or the fallback character
-                            if (glyphAvailability[glyphIndex])
-                            {
-                                newText.Append(text, i, codePointSize);
-                            }
-                            else
-                            {
-                                newText.Append(FallbackCharacter);
-                            }
-
-                            // Move to the next glyph index and skip the low surrogate if we have a surrogate pair
-                            glyphIndex++;
-                            if (codePointSize == 2)
-                            {
-                                i++;
-                            }
                         }
-
-                        text = newText.ToString();
-                        */
+                        else
+                        {
+                            span.CheckGlyphsCanBeRendered(); //will auto-select typeface if needed                        
+                        }
 
                         var lines = SplitLines(span.TextFiltered,
                                 paint,
@@ -817,7 +793,7 @@ namespace DrawnUi.Maui.Draw
             var rectForChildren = ContractPixelsRect(destination, scale, Padding);
 
             if (Lines != null)
-                DrawLines(ctx.Canvas, PaintDefault, SKPoint.Empty, Lines, rectForChildren, scale);
+                DrawLines(ctx, PaintDefault, SKPoint.Empty, Lines, rectForChildren, scale);
         }
 
         protected virtual void SpanPostDraw(
@@ -887,7 +863,7 @@ namespace DrawnUi.Maui.Draw
             //todo italic etc
         }
 
-        public void DrawLines(SKCanvas canvas,
+        public void DrawLines(SkiaDrawingContext ctx,
             SKPaint paintDefault,
             SKPoint startOffset,
             IEnumerable<TextLine> lines,
@@ -898,6 +874,7 @@ namespace DrawnUi.Maui.Draw
             paintDefault.Color = TextColor.ToSKColor();
             paintDefault.BlendMode = this.FillBlendMode;
 
+            var canvas = ctx.Canvas;
             SKPaint paintStroke = null;
 
             if (StrokeColor.A != 0 && StrokeWidth > 0)
@@ -1068,6 +1045,7 @@ namespace DrawnUi.Maui.Draw
                     SKRect rectPrecalculatedSpanBounds = SKRect.Empty;
 
                     var paint = paintDefault;
+
                     if (lineSpan.Span != null)
                     {
                         paint = lineSpan.Span.SetupPaint(scale, paintDefault);
@@ -1077,9 +1055,6 @@ namespace DrawnUi.Maui.Draw
                         {
                             if (lineSpan.Span.ParagraphColor != Color.Transparent)
                             {
-                                //todo
-
-
                                 rectPrecalculatedSpanBounds = new SKRect(
                                     alignedLineDrawingStartX,
                                     line.Bounds.Top,
@@ -1095,6 +1070,26 @@ namespace DrawnUi.Maui.Draw
 
                     var offsetAdjustmentX = 0.0f;
 
+                    if (lineSpan.Span is IDrawnTextSpan drawn)
+                    {
+                        SKRect drawnDestination;
+
+                        var drawnX = (float)Math.Round(alignedLineDrawingStartX + offsetX);
+                        if (drawn.VerticalAlignement == DrawImageAlignment.Center)
+                        {
+                            var drawnY = (float)Math.Round(line.Bounds.Bottom - lineSpan.Size.Height - (line.Bounds.Height - lineSpan.Size.Height) / 2f);
+                            drawnDestination = new SKRect(drawnX, drawnY, drawnX + lineSpan.Size.Width, line.Bounds.Bottom);
+                        }
+                        else
+                        {
+                            var drawnY = (float)Math.Round(line.Bounds.Bottom - lineSpan.Size.Height);
+                            drawnDestination = new SKRect(drawnX, drawnY, drawnX + lineSpan.Size.Width, line.Bounds.Bottom);
+                        }
+
+                        drawn.Render(ctx, drawnDestination, (float)scale);
+                        continue;
+                    }
+                    else
                     //draw shaped
                     if (lineSpan.NeedsShaping) //todo add stroke!
                     {
@@ -1469,6 +1464,11 @@ namespace DrawnUi.Maui.Draw
 
             IsCut = decomposedText.WasCut;
             UsingFontSize = paint.TextSize;
+
+            if (Tag == "Debug")
+            {
+                var stop = 1;
+            }
 
             return decomposedText.Lines;
         }
@@ -2078,21 +2078,48 @@ namespace DrawnUi.Maui.Draw
         }
 
 
-        protected DecomposedText DecomposeText(string text, SKPaint paint,
-    SKPoint firstLineOffset,
-    float maxWidth,
-    float maxHeight,//-1
-    int maxLines,//-1
-    bool needsShaping,
-    TextSpan span)
+        protected DecomposedText DecomposeText(string text,
+        SKPaint paint,
+        SKPoint firstLineOffset,
+        float maxWidth,
+        float maxHeight,//-1
+        int maxLines,//-1
+        bool needsShaping,
+        TextSpan span)
         {
+            var ret = new DecomposedText();
 
             if (span != null)
             {
+                if (span is IDrawnTextSpan drawn)
+                {
+                    var drawnMeasured = drawn.Measure(maxWidth, maxHeight, this.RenderingScale);
+                    //todo
+                    ret.Lines = new List<TextLine>()
+                    {
+                        new TextLine()
+                        {
+                            Width =drawnMeasured.Pixels.Width,
+                            Height =drawnMeasured.Pixels.Height,
+                            Value = span.TextFiltered,
+                            Spans = new()
+                            {
+                               new LineSpan()
+                                {
+                                    NeedsShaping = needsShaping,
+                                    Glyphs = Array.Empty<LineGlyph>(),
+                                    Text = span.TextFiltered,
+                                    Span = span,
+                                    Size = drawnMeasured.Pixels
+                                }
+                            }
+                        }
+                    }.ToArray();
+                    return ret;
+                }
                 needsShaping = span.NeedShape;
             }
 
-            var ret = new DecomposedText();
             bool isCut = false;
             float totalHeight = 0;
             var countLines = 0;
@@ -2284,6 +2311,7 @@ namespace DrawnUi.Maui.Draw
 
                 while (stackWords.Count > 0)
                 {
+
                     var word = stackWords.Pop();
 
                     if (KeepSpacesOnLineBreaks && lineIndex > 0)
@@ -2365,11 +2393,6 @@ namespace DrawnUi.Maui.Draw
                             lenInsideWord++;
                             cycle = textLine.Substring(posInsideWord, lenInsideWord);
                             MeasureText(paint, cycle, ref bounds);
-
-                            if (textLine == "orange")
-                            {
-                                var stop = 1;
-                            }
 
                             if (Math.Round(bounds.Width) > limitWidth)
                             {

@@ -797,7 +797,7 @@ namespace DrawnUi.Maui.Views
 
         public virtual void OnSuperviewShouldRenderChanged(bool state)
         {
-            foreach (var view in Views) //will crash?
+            foreach (var view in Views.ToList())
             {
                 view.OnSuperviewShouldRenderChanged(state);
             }
@@ -1758,7 +1758,9 @@ namespace DrawnUi.Maui.Views
                 }
             }
         }
-        bool _needCheckParentVisibility;
+
+        bool _needCheckParentVisibility = true;
+
         private long _globalRefresh;
 
 

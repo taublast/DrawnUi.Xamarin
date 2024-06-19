@@ -352,6 +352,8 @@ public class ViewsAdapter : IDisposable
     private float _forScale;
     private int _forColumns;
 
+    object _lockTemplates = new();
+
     /// <summary>
     /// Main method to initialize templates, can use InitializeTemplatesInBackground as an option. 
     /// </summary>
@@ -433,13 +435,15 @@ public class ViewsAdapter : IDisposable
                 return ret;
             }
 
+
+
             var layoutChanged =
                 _parent.RenderingScale != _forScale;// || _parent.MaxColumns != _forColumns || _parent.MaxRows != _forRows;
 
             if (layoutChanged || _templatedViewsPool == null || _dataContexts != dataContexts || CheckTemplateChanged())
             {
                 //temporarily fixed to android until issue found
-                //lock (_lockTemplates)
+                lock (_lockTemplates)
                 {
                     //kill provider ability to provide deprecated templates
                     _wrappers.Clear();
@@ -519,7 +523,7 @@ public class ViewsAdapter : IDisposable
 
     public ViewsIterator GetViewsIterator()
     {
-        //lock (_lockTemplates)
+        lock (_lockTemplates)
         {
             if (_parent.IsTemplated)
             {

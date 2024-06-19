@@ -109,6 +109,30 @@ namespace DrawnUi.Maui.Draw
         //    base.OnParentVisibilityChanged(newvalue);
         //}
 
+        public override void OnSuperviewShouldRenderChanged(bool state)
+        {
+            if (UpdateWhenReturnedFromBackground)
+            {
+                Update();
+            }
+
+            try
+            {
+                if (IsTemplated && !ChildrenFactory.TemplatesAvailable)
+                    return;
+
+                using var children = ChildrenFactory.GetViewsIterator();
+                foreach (var view in children)
+                {
+                    view.OnSuperviewShouldRenderChanged(state);
+                }
+            }
+            catch (System.Exception e)
+            {
+                Super.Log(e);
+            }
+        }
+
         public override void OnPrintDebug()
         {
             Trace.WriteLine($"ViewsAdapter tpls: {ChildrenFactory.PoolSize}/{ChildrenFactory.PoolMaxSize}");
@@ -1113,7 +1137,7 @@ namespace DrawnUi.Maui.Draw
                 else
                 {
                     ContentSize = MeasureAbsoluteBase(constraints.Content, request.Scale);
-                }          
+                }
 
 
                 var vConstraints = Margin.VerticalThickness;

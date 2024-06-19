@@ -2,6 +2,7 @@
 //global using AppoMobi.Specials;
 //global using SkiaSharp.Views.Maui;
 //global using SkiaSharp.Views.Maui.Controls;
+global using AppoMobi.Specials;
 global using DrawnUi.Maui.Draw;
 global using DrawnUi.Maui.Extensions;
 global using DrawnUi.Maui.Infrastructure;

@@ -2452,12 +2452,12 @@ namespace DrawnUi.Maui.Draw
                 if (parent is SkiaControl skia)
                 {
 
-                    if (skia.IgnoreChildrenInvalidations && skia.UseCache == SkiaCacheType.None)
+                    if (skia.IgnoreChildrenInvalidations && skia.UsingCacheType == SkiaCacheType.None)
                     {
                         return;
                     }
 
-                    if (skia.ShouldInvalidateByChildren || skia.UseCache != SkiaCacheType.None)
+                    if (skia.ShouldInvalidateByChildren || skia.UsingCacheType != SkiaCacheType.None)
                     {
                         parent.InvalidateByChild(this);
                     }
@@ -2563,7 +2563,7 @@ namespace DrawnUi.Maui.Draw
                 }
                 else
                 {
-                    Tasks.StartDelayed(TimeSpan.FromSeconds(3.5), () =>
+                    Tasks.StartDelayed(TimeSpan.FromSeconds(5), () =>
                     {
                         disposable?.Dispose();
                     });
@@ -3386,7 +3386,7 @@ namespace DrawnUi.Maui.Draw
                 content.BindingContext = BindingContext;
             }
 
-            foreach (var content in this.VisualEffects)
+            foreach (var content in this.VisualEffects.ToList())
             {
                 content.Attach(this);
             }
@@ -4271,7 +4271,7 @@ namespace DrawnUi.Maui.Draw
         /// <param name="scale"></param>
         protected void FinalizeDraw(SkiaDrawingContext context, double scale)
         {
-            if (UseCache == SkiaCacheType.None)
+            if (UsingCacheType == SkiaCacheType.None)
                 NeedUpdate = false; //otherwise CreateRenderingObject will set this to false
 
             //trying to find exact location on the canvas
@@ -4435,7 +4435,7 @@ namespace DrawnUi.Maui.Draw
                     {
                         if (_renderObject != null)
                         {
-                            if (UseCache == SkiaCacheType.ImageDoubleBuffered)
+                            if (UsingCacheType == SkiaCacheType.ImageDoubleBuffered)
                             {
                                 RenderObjectPrevious = _renderObject;
                             }
@@ -4669,8 +4669,9 @@ namespace DrawnUi.Maui.Draw
         {
             get
             {
+                //disable GPU for Xamarin
                 if (UseCache == SkiaCacheType.GPU
-                    && (Superview == null || Superview.CanvasView == null || !Superview.CanvasView.IsHardwareAccelerated))
+                                            && (Superview == null || Superview.CanvasView == null || !Superview.CanvasView.IsHardwareAccelerated))
                     return SkiaCacheType.Image;
 
                 //if (UseCache == SkiaCacheType.ImageDoubleBuffered)
@@ -4715,7 +4716,7 @@ namespace DrawnUi.Maui.Draw
                         return true;
                 }
 
-                if (UseCache == SkiaCacheType.ImageDoubleBuffered)
+                if (UsingCacheType == SkiaCacheType.ImageDoubleBuffered)
                 {
                     lock (LockDraw)
                     {
@@ -4996,7 +4997,7 @@ namespace DrawnUi.Maui.Draw
 
                 NeedUpdate = false; //if some child changes this while rendering to cache we will erase resulting RenderObject
 
-                var useCache = UseCache;
+                var useCache = UsingCacheType;
 
                 if (useCache == SkiaCacheType.GPU
                     || useCache == SkiaCacheType.Image
@@ -5157,8 +5158,10 @@ namespace DrawnUi.Maui.Draw
                     _paintWithEffects = new();
                 }
 
-                var effectColor = VisualEffects.OfType<IColorEffect>().FirstOrDefault();
-                var effectImage = VisualEffects.OfType<IImageEffect>().FirstOrDefault();
+                var effects = VisualEffects.ToList();
+
+                var effectColor = effects.OfType<IColorEffect>().FirstOrDefault();
+                var effectImage = effects.OfType<IImageEffect>().FirstOrDefault();
 
                 if (effectImage != null)
                     _paintWithEffects.ImageFilter = effectImage.CreateFilter(destination);
@@ -5173,7 +5176,7 @@ namespace DrawnUi.Maui.Draw
                 var restore = ctx.Canvas.SaveLayer(_paintWithEffects);
 
                 bool hasDrawnControl = false;
-                var renderers = VisualEffects.OfType<IRenderEffect>().ToList();
+                var renderers = effects.OfType<IRenderEffect>().ToList();
                 var chainRestore = 0;
                 if (renderers.Count > 0)
                 {
@@ -5260,6 +5263,7 @@ namespace DrawnUi.Maui.Draw
 
             WasDrawn = true;
         }
+
 
         private bool _wasDrawn;
         [EditorBrowsable(EditorBrowsableState.Never)]

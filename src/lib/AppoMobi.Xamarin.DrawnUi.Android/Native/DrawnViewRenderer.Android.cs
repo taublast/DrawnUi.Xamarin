@@ -4,7 +4,6 @@ using Xamarin.Forms;
 using Xamarin.Forms.Platform.Android;
 
 [assembly: ExportRenderer(typeof(DrawnView), typeof(DrawnViewRenderer))]
-
 namespace AppoMobi.Xamarin.DrawnUi.Droid;
 
 public class DrawnViewRenderer : ViewRenderer

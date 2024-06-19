@@ -1,4 +1,6 @@
-﻿using DrawnUi.Maui.Infrastructure.Enums;
+﻿//#define LEGACY
+
+using DrawnUi.Maui.Infrastructure.Enums;
 using System.Runtime.CompilerServices;
 using Xamarin.Essentials;
 
@@ -57,10 +59,13 @@ public partial class DrawnView
         }
     }
 
+
     public virtual void SetupRenderingLoop()
     {
+#if !LEGACY
         Super.Native.UnregisterLooperCallback(OnChoreographer);
         Super.Native.RegisterLooperCallback(OnChoreographer);
+#endif
     }
 
     protected virtual void PlatformHardwareAccelerationChanged()
@@ -68,6 +73,50 @@ public partial class DrawnView
 
     }
 
+
+
+
+#if LEGACY
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool CheckCanDraw()
+    {
+        if (UpdateLocked && StopDrawingWhenUpdateIsLocked)
+            return false;
+
+        return CanvasView != null
+               && !IsRendering
+               && IsDirty
+               && IsVisible;
+    }
+
+    public virtual void Update()
+    {
+        IsDirty = true;
+        if (!OrderedDraw && CheckCanDraw())
+        {
+            OrderedDraw = true;
+            InvalidateCanvas();
+        }
+    }
+
+    protected async void InvalidateCanvas()
+    {
+        if (Device.RuntimePlatform == Device.Android)
+        {
+
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                InvalidateCanvasAndroid();
+            });
+
+        }
+        else
+        {
+            InvalidateCanvasPlatform();
+        }
+    }
+
+#else
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool CheckCanDraw()
     {
@@ -95,7 +144,7 @@ public partial class DrawnView
     {
         IsDirty = true;
     }
-
+#endif
 
     public bool NeedRedraw { get; set; }
 

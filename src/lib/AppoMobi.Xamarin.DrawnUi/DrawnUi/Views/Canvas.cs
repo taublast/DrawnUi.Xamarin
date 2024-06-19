@@ -273,7 +273,7 @@ public class Canvas : DrawnView, IGestureListener
 
     public float AdaptHeightContraintToContentRequest(float heightConstraintUnits, ScaledSize measuredContent, double sideConstraintsUnits)
     {
- 
+
 
         return AdaptConstraintToContentRequest(
             heightConstraintUnits,

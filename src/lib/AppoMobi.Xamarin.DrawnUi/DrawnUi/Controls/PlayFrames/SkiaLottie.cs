@@ -316,108 +316,108 @@ public class SkiaLottie : AnimatedFramesRenderer
     }
     */
 
- 
-     /// <summary>
-///     This is not replacing current animation, use SetAnimation for that.
-/// </summary>
-/// <param name="fileName"></param>
-/// <returns>
-public async Task<Animation> LoadSource(string fileName)
-{
-    if (string.IsNullOrEmpty(fileName))
-        return null;
+
+    /// <summary>
+    ///     This is not replacing current animation, use SetAnimation for that.
+    /// </summary>
+    /// <param name="fileName"></param>
+    /// <returns>
+    public async Task<Animation> LoadSource(string fileName)
+    {
+        if (string.IsNullOrEmpty(fileName))
+            return null;
 
         await _semaphoreLoadFile.WaitAsync();
 
-    try
-    {
-        string json = null;
-        if (CachedAnimations.TryGetValue(fileName, out json))
+        try
         {
-            Debug.WriteLine($"Loaded {fileName} from cache");
-        }
-        else
-        {
-            if (Uri.TryCreate(fileName, UriKind.Absolute, out var uri) && uri.Scheme != "file")
+            string json = null;
+            if (CachedAnimations.TryGetValue(fileName, out json))
             {
-                var client = new WebClient();
-                var data = await client.DownloadDataTaskAsync(uri);
-                json = Encoding.UTF8.GetString(data);
+                Debug.WriteLine($"Loaded {fileName} from cache");
             }
             else
             {
-                if (fileName.SafeContainsInLower(SkiaImageManager.NativeFilePrefix))
+                if (Uri.TryCreate(fileName, UriKind.Absolute, out var uri) && uri.Scheme != "file")
                 {
-                    var fullFilename = fileName.Replace(SkiaImageManager.NativeFilePrefix, "");
-                    using var stream = new FileStream(fullFilename, FileMode.Open);
-                    using var reader = new StreamReader(stream);
-                    json = await reader.ReadToEndAsync();
+                    var client = new WebClient();
+                    var data = await client.DownloadDataTaskAsync(uri);
+                    json = Encoding.UTF8.GetString(data);
                 }
                 else
                 {
-                    //using var stream = await FileSystem.OpenAppPackageFileAsync(fileName);
-
-                    var assembly = Super.AppAssembly;
-                    if (assembly == null)
+                    if (fileName.SafeContainsInLower(SkiaImageManager.NativeFilePrefix))
                     {
-                        assembly = assembly = Assembly.GetCallingAssembly();
+                        var fullFilename = fileName.Replace(SkiaImageManager.NativeFilePrefix, "");
+                        using var stream = new FileStream(fullFilename, FileMode.Open);
+                        using var reader = new StreamReader(stream);
+                        json = await reader.ReadToEndAsync();
                     }
-                    var fullPath = $"{assembly.GetName().Name}.{fileName.Replace(@"\", ".").Replace(@"/", ".")}";
-                    using var stream = assembly.GetManifestResourceStream(fullPath);
+                    else
+                    {
+                        //using var stream = await FileSystem.OpenAppPackageFileAsync(fileName);
 
-                    using var reader = new StreamReader(stream);
-                    json = await reader.ReadToEndAsync();
+                        var assembly = Super.AppAssembly;
+                        if (assembly == null)
+                        {
+                            assembly = assembly = Assembly.GetCallingAssembly();
+                        }
+                        var fullPath = $"{assembly.GetName().Name}.{fileName.Replace(@"\", ".").Replace(@"/", ".")}";
+                        using var stream = assembly.GetManifestResourceStream(fullPath);
+
+                        using var reader = new StreamReader(stream);
+                        json = await reader.ReadToEndAsync();
+                    }
+
+                    CachedAnimations.TryAdd(fileName, json);
                 }
-
-                CachedAnimations.TryAdd(fileName, json);
             }
+
+            if (ColorTint != Color.Transparent) json = ApplyTint(json, ColorTint);
+
+            if (ProcessJson != null) json = ProcessJson(json);
+
+            return await LoadAnimationFromJson(OnJsonLoaded(json));
+        }
+        catch (Exception e)
+        {
+            Trace.WriteLine($"[SkiaLottie] LoadSource failed to load animation {fileName}");
+            Trace.WriteLine(e);
+            return null;
+        }
+        finally
+        {
+            _semaphoreLoadFile.Release();
+        }
+    }
+
+    public static Stream StreamFromResourceUrl(string url, Assembly assembly = null)
+    {
+        var uri = new Uri(url);
+
+        var parts = uri.OriginalString.Substring(11).Split('?');
+        var resourceName = parts.First();
+
+        if (parts.Count() > 1)
+        {
+            var name = Uri.UnescapeDataString(uri.Query.Substring(10));
+            var assemblyName = new AssemblyName(name);
+            assembly = Assembly.Load(assemblyName);
         }
 
-        if (ColorTint != Color.Transparent) json = ApplyTint(json, ColorTint);
+        if (assembly == null)
+        {
+            assembly = assembly = Assembly.GetCallingAssembly();
+        }
 
-        if (ProcessJson != null) json = ProcessJson(json);
+        var fullPath = $"{assembly.GetName().Name}.{resourceName}";
 
-        return await LoadAnimationFromJson(OnJsonLoaded(json));
-    }
-    catch (Exception e)
-    {
-        Trace.WriteLine($"[SkiaLottie] LoadSource failed to load animation {fileName}");
-        Trace.WriteLine(e);
-        return null;
-    }
-    finally
-    {
-        _semaphoreLoadFile.Release();
-    }
-}
+        Console.WriteLine($"[StreamFromResourceUrl] loading {fullPath}..");
 
-public static Stream StreamFromResourceUrl(string url, Assembly assembly = null)
-{
-    var uri = new Uri(url);
-
-    var parts = uri.OriginalString.Substring(11).Split('?');
-    var resourceName = parts.First();
-
-    if (parts.Count() > 1)
-    {
-        var name = Uri.UnescapeDataString(uri.Query.Substring(10));
-        var assemblyName = new AssemblyName(name);
-        assembly = Assembly.Load(assemblyName);
+        return assembly.GetManifestResourceStream(fullPath);
     }
 
-    if (assembly == null)
-    {
-        assembly = assembly = Assembly.GetCallingAssembly();
-    }
 
-    var fullPath = $"{assembly.GetName().Name}.{resourceName}";
-
-    Console.WriteLine($"[StreamFromResourceUrl] loading {fullPath}..");
-
-    return assembly.GetManifestResourceStream(fullPath);
-}
- 
- 
 
 
     /// <summary>

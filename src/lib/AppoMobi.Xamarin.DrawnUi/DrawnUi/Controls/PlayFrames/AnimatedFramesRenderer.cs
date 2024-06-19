@@ -63,7 +63,9 @@ public class AnimatedFramesRenderer : SkiaControl
     }
 
     protected virtual void RenderFrame(SkiaDrawingContext ctx, SKRect destination, float scale, object arguments)
-    { }
+    {
+
+    }
 
     protected override void OnLayoutChanged()
     {

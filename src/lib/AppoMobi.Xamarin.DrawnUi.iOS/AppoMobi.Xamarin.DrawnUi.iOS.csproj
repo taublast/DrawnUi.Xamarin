@@ -130,10 +130,10 @@
       <Version>8.0.3</Version>
     </PackageReference>
     <PackageReference Include="SkiaSharp.Skottie">
-      <Version>2.88.7</Version>
+      <Version>2.88.8</Version>
     </PackageReference>
     <PackageReference Include="SkiaSharp.Views.Forms">
-      <Version>2.88.7</Version>
+      <Version>2.88.8</Version>
     </PackageReference>
     <PackageReference Include="Xamarin.Forms" Version="5.0.0.2612" />
     <PackageReference Include="Xamarin.Essentials" Version="1.7.0" />

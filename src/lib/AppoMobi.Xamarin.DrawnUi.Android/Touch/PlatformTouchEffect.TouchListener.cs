@@ -16,91 +16,6 @@ namespace AppoMobi.Maui.Gestures;
 public partial class PlatformTouchEffect
 {
 
-    /*
-
-   #region SWIPES
-
-   private static int SWIPE_THRESHOLD = 100;
-   private static int SWIPE_VELOCITY_THRESHOLD = 100;
-
-   public override bool OnScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY)
-   {
-       //Debug.WriteLine($"[TOUCH] !!! SCROLLING !!! {distanceY}");
-       return base.OnScroll(e1, e2, distanceX, distanceY);
-   }
-
-   public override bool OnFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
-   {
-       //return base.OnFling(e1, e2, velocityX, velocityY);
-
-       //System.Diagnostics.Debug.WriteLine($"[OnFling] Android Flee: vX {velocityX:0.000}");
-
-       var result = false;
-       try
-       {
-           float diffY = e2.GetY() - e1.GetY();
-           float diffX = e2.GetX() - e1.GetX();
-           if (Math.Abs(diffX) > Math.Abs(diffY))
-           {
-               if (Math.Abs(diffX) > SWIPE_THRESHOLD && Math.Abs(velocityX) > SWIPE_VELOCITY_THRESHOLD)
-               {
-                   if (diffX > 0)
-                   {
-                       onSwipeRight();
-                   }
-                   else
-                   {
-                       onSwipeLeft();
-                   }
-                   result = true;
-               }
-           }
-           else if (Math.Abs(diffY) > SWIPE_THRESHOLD && Math.Abs(velocityY) > SWIPE_VELOCITY_THRESHOLD)
-           {
-               if (diffY > 0)
-               {
-                   onSwipeBottom();
-               }
-               else
-               {
-                   onSwipeTop();
-               }
-               result = true;
-           }
-       }
-       catch (Exception exception)
-       {
-           Console.WriteLine(exception);
-       }
-       return result;
-   }
-
-   private TouchActionType _swipe;
-
-   public virtual void onSwipeRight()
-   {
-       _swipe = TouchActionType.SwipeRight;
-   }
-
-   public virtual void onSwipeLeft()
-   {
-       _swipe = TouchActionType.SwipeLeft;
-   }
-
-   public virtual void onSwipeTop()
-   {
-       _swipe = TouchActionType.SwipeTop;
-   }
-
-   public virtual void onSwipeBottom()
-   {
-       _swipe = TouchActionType.SwipeBottom;
-   }
-
-   #endregion
-
-   */
-
     public class TouchListener : GestureDetector.SimpleOnGestureListener, View.IOnTouchListener
     {
 
@@ -178,27 +93,25 @@ public partial class PlatformTouchEffect
 
         public bool OnTouch(View sender, MotionEvent motionEvent)
         {
-            //System.Diagnostics.Debug.WriteLine($"[TOUCH] Android: {motionEvent.Action} {motionEvent.RawY:0}");
-
-            //var _parent = GetParent(sender);
-
-            if (_parent.FormsEffect.TouchMode == TouchHandlingStyle.Disabled)
-                return false;
-
-            _parent.CountFingers = motionEvent.PointerCount;
-
-            // Get the pointer index
-            int pointerIndex = motionEvent.ActionIndex;
-
-            // Get the id that identifies a finger over the course of its progress
-            int id = motionEvent.GetPointerId(pointerIndex);
-
-            //Pixels relative to the view, not the screen 
-            var coorsInsideView = new PointF(motionEvent.GetX(pointerIndex), motionEvent.GetY(pointerIndex));
-            _parent.isInsideView = coorsInsideView.X >= 0 && coorsInsideView.X <= sender.Width && coorsInsideView.Y >= 0 && coorsInsideView.Y <= sender.Height;
-
             try
             {
+
+                if (_parent.FormsEffect.TouchMode == TouchHandlingStyle.Disabled)
+                    return false;
+
+                _parent.CountFingers = motionEvent.PointerCount;
+
+                // Get the pointer index
+                int pointerIndex = motionEvent.ActionIndex;
+
+                // Get the id that identifies a finger over the course of its progress
+                int id = motionEvent.GetPointerId(pointerIndex);
+
+                //Pixels relative to the view, not the screen 
+                var coorsInsideView = new PointF(motionEvent.GetX(pointerIndex), motionEvent.GetY(pointerIndex));
+                _parent.isInsideView = coorsInsideView.X >= 0 && coorsInsideView.X <= sender.Width && coorsInsideView.Y >= 0 && coorsInsideView.Y <= sender.Height;
+
+
                 //todo detect multitouch!!!
 
                 if (scaleGestureDetector != null)

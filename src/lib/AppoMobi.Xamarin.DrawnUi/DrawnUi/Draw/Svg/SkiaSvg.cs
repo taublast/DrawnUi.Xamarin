@@ -1,7 +1,10 @@
 ﻿
+using AppoMobi.Specials;
+using ExCSS;
 using SkiaSharp.Views.Forms;
 using Svg.Skia;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
@@ -610,8 +613,9 @@ namespace DrawnUi.Maui.Draw
 
             try
             {
-                string text;
-                if (Uri.TryCreate(fileName, UriKind.Absolute, out var uri))
+                string text = null;
+
+                if (Uri.TryCreate(fileName, UriKind.Absolute, out var uri) && uri.Scheme != "file")
                 {
                     var client = new WebClient();
                     var data = await client.DownloadDataTaskAsync(uri);
@@ -619,21 +623,30 @@ namespace DrawnUi.Maui.Draw
                 }
                 else
                 {
-                    //using var stream = await FileSystem.OpenAppPackageFileAsync(fileName);
-                    //using var reader = new StreamReader(stream);
-                    //json = await reader.ReadToEndAsync();
-
-                    var assembly = Super.AppAssembly;
-                    if (assembly == null)
+                    if (fileName.SafeContainsInLower(SkiaImageManager.NativeFilePrefix))
                     {
-                        assembly = Assembly.GetCallingAssembly();
+                        var fullFilename = fileName.Replace(SkiaImageManager.NativeFilePrefix, "");
+                        using var stream = new FileStream(fullFilename, FileMode.Open);
+                        using var reader = new StreamReader(stream);
+                        text = await reader.ReadToEndAsync();
                     }
-                    var fullPath = $"{assembly.GetName().Name}.{fileName.Replace(@"\", ".").Replace(@"/", ".")}";
-                    using var stream = assembly.GetManifestResourceStream(fullPath);
+                    else
+                    {
+                        //using var stream = await FileSystem.OpenAppPackageFileAsync(fileName);
 
-                    using var reader = new StreamReader(stream);
-                    text = await reader.ReadToEndAsync();
+                        var assembly = Super.AppAssembly;
+                        if (assembly == null)
+                        {
+                            assembly = assembly = Assembly.GetCallingAssembly();
+                        }
+                        var fullPath = $"{assembly.GetName().Name}.{fileName.Replace(@"\", ".").Replace(@"/", ".")}";
+                        using var stream = assembly.GetManifestResourceStream(fullPath);
+
+                        using var reader = new StreamReader(stream);
+                        text = await reader.ReadToEndAsync();
+                    }
                 }
+
 
                 UpdateImageFromString(text);
                 UpdateIcon();
