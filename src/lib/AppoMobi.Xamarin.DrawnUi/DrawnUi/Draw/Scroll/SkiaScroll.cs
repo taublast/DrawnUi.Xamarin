@@ -2006,7 +2006,7 @@ namespace DrawnUi.Maui.Draw
                     hConstraints += Padding.HorizontalThickness;
 
                 var width = AdaptWidthConstraintToContentRequest(constraints.Request.Width, ContentSize, hConstraints * request.Scale);
-                var height = AdaptHeightConstraintToContentRequest(constraints.Request.Height, ContentSize, vConstraints*request.Scale);
+                var height = AdaptHeightConstraintToContentRequest(constraints.Request.Height, ContentSize, vConstraints * request.Scale);
 
                 if (Header != null)
                     HeaderSize = Header.Measure(request.WidthRequest, request.HeightRequest, request.Scale);
@@ -2160,16 +2160,6 @@ namespace DrawnUi.Maui.Draw
 
             InternalViewportOffset = ScaledPoint.FromPixels(offsetPixels, scale);
 
-            //we scroll at subpixels but stop only at pixel-snapped
-            //if (IsScrolling && !isScroling && !IsUserPanning || onceAfterInitializeViewport)
-            //{
-            //    var roundY = (float)Math.Round(offsetPixels.Y) - offsetPixels.Y;
-            //    var roundX = (float)Math.Round(offsetPixels.X) - offsetPixels.X;
-            //    offsetPixels.Offset(roundX, roundY);
-            //}
-
-            InternalViewportOffset = ScaledPoint.FromPixels(new((float)Math.Round(offsetPixels.X), (float)Math.Round(offsetPixels.Y)), scale);
-
             var childRect = ContentAvailableSpace;
             childRect.Offset(InternalViewportOffset.Pixels.X, InternalViewportOffset.Pixels.Y);
 
@@ -2198,8 +2188,6 @@ namespace DrawnUi.Maui.Draw
             if (Content is IInsideViewport viewport)
             {
                 SKRect absoluteViewPort = DrawingRect;
-                //var absoluteViewPort = Viewport.Pixels;
-                //absoluteViewPort.Offset(this.DrawingRect.Left, DrawingRect.Top);
 
                 if (Header != null)
                 {

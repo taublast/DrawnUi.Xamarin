@@ -482,7 +482,12 @@ public class SkiaImage : SkiaControl
                                         return;
                                     }
 
-                                    TraceLog($"[SkiaImage] Error loading {url} as {source} for tag {Tag} try {RetriesOnError - RetriesLeft + 1}");
+                                    var line =
+                                        $"[SkiaImage] Error loading {url} as {source} for tag {Tag} try {RetriesOnError - RetriesLeft + 1}";
+
+                                    Debug.WriteLine(line);
+
+                                    TraceLog(line);
 
                                     //ClearBitmap(); //erase old image anyway even if EraseChangedContent is false
 
@@ -495,6 +500,7 @@ public class SkiaImage : SkiaControl
                                 }
                                 catch (TaskCanceledException)
                                 {
+                                    Debug.WriteLine($"[SkiaImage] Canceled loading {url} as {source} for tag {Tag}");
                                 }
                                 catch (Exception e)
                                 {

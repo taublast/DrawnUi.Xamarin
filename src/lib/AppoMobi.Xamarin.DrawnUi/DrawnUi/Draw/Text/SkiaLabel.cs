@@ -2772,19 +2772,6 @@ namespace DrawnUi.Maui.Draw
             set { SetValue(LineBreakModeProperty, value); }
         }
 
-        public static readonly BindableProperty FormattedTextProperty = BindableProperty.Create(
-            nameof(FormattedText),
-            typeof(FormattedString),
-            typeof(SkiaLabel),
-            defaultValue: null,
-            propertyChanged: NeedInvalidateMeasure);
-
-        public FormattedString FormattedText
-        {
-            get { return (FormattedString)GetValue(FormattedTextProperty); }
-            set { SetValue(FormattedTextProperty, value); }
-        }
-
         public static readonly BindableProperty TextProperty = BindableProperty.Create(
             nameof(Text), typeof(string), typeof(SkiaLabel),
             string.Empty,

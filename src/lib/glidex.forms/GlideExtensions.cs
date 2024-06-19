@@ -3,6 +3,7 @@ using Android.App;
 using Android.Content;
 using Android.Graphics;
 using Android.Graphics.Drawables;
+using Android.OS;
 using Android.Views;
 using Android.Widget;
 using Bumptech.Glide;
@@ -65,9 +66,11 @@ namespace Android.Glide
                 RequestManager request = With(context);
                 RequestBuilder? builder = null;
 
+
                 switch (source)
                 {
                 case FileImageSource fileSource:
+
                 builder = HandleFileImageSource(request, fileSource, context);
                 break;
 
@@ -94,6 +97,7 @@ namespace Android.Glide
                     .Override(Target.SizeOriginal, Target.SizeOriginal)
                     .Submit();
 
+
                 var result = await Task.Run(() => future.Get(), token);
 
                 if (result is BitmapDrawable drawable)
@@ -102,6 +106,7 @@ namespace Android.Glide
             }
             catch (Exception exc)
             {
+                Console.WriteLine(exc);
                 //Since developers can't catch this themselves, I think we should log it and silently fail
                 Forms.Warn("Unexpected exception in glidex: {0}", exc);
             }
@@ -239,6 +244,7 @@ namespace Android.Glide
             RequestBuilder builder;
 
             var fileName = source.File;
+
             var drawable = ResourceManager.GetDrawableId(context, fileName);
             if (drawable != 0)
             {
