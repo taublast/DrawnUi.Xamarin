@@ -337,14 +337,20 @@ public class SkiaImage : SkiaControl
     /// You would want to set InstancedBitmap prop for a usual approach.
     /// </summary>
     /// <param name="bitmap"></param>
-    public LoadedImageSource SetBitmapInternal(SKBitmap bitmap)
+    public LoadedImageSource SetBitmapInternal(SKBitmap bitmap, bool protectFromDispose = false)
     {
-        return SetImage(new LoadedImageSource(bitmap));
+        return SetImage(new LoadedImageSource(bitmap)
+        {
+            ProtectFromDispose = protectFromDispose
+        });
     }
 
-    public LoadedImageSource SetImageInternal(SKImage image)
+    public LoadedImageSource SetImageInternal(SKImage image, bool protectFromDispose = false)
     {
-        return SetImage(new LoadedImageSource(image));
+        return SetImage(new LoadedImageSource(image)
+        {
+            ProtectFromDispose = protectFromDispose
+        });
     }
 
     private bool _IsLoading;

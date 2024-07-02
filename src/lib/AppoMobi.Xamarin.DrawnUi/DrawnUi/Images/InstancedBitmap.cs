@@ -2,8 +2,6 @@
 
 public class LoadedImageSource : IDisposable
 {
-    public Guid Id { get; } = Guid.NewGuid();
-
     public LoadedImageSource Clone()
     {
         if (IsDisposed)
@@ -31,9 +29,16 @@ public class LoadedImageSource : IDisposable
         }
     }
 
+    public Guid Id { get; } = Guid.NewGuid();
+
+    /// <summary>
+    /// As this can be disposed automatically by the consuming control like SkiaImage etc we can manually prohibit this for cases this instance is used elsewhere. 
+    /// </summary>
+    public bool ProtectFromDispose { get; set; }
+
     public void Dispose()
     {
-        if (!IsDisposed)
+        if (!IsDisposed && !ProtectFromDispose)
         {
             IsDisposed = true;
 
@@ -68,6 +73,7 @@ public class LoadedImageSource : IDisposable
     public int Height => Bitmap?.Height ?? Image?.Height ?? 0;
 
     public bool IsDisposed { get; protected set; }
+
     public SKBitmap Bitmap { get; set; }
     public SKImage Image { get; set; }
 
