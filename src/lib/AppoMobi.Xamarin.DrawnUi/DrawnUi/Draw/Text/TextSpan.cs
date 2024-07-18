@@ -554,7 +554,7 @@ public class TextSpan : Element, IDisposable //we subclassed Element to be able 
 
     public TextSpan()
     {
-        _typeFace = SKTypeface.Default;
+        _typeFace = SKFontManager.DefaultTypeface;
 
         Paint = new()
         {
