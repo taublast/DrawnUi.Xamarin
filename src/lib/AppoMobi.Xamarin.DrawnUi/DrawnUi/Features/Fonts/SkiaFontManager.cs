@@ -138,8 +138,9 @@ public class SkiaFontManager
 
 			if (font == null)
 				Console.WriteLine($"[SKIA] Couldn't create font {alias}");
+			else
+				return font;
 
-			return font;
 		}
 
 		return SkiaFontManager.DefaultTypeface;
