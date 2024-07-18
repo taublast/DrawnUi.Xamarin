@@ -142,7 +142,7 @@ public class SkiaFontManager
 			return font;
 		}
 
-		return SKFontManager.DefaultTypeface;
+		return SkiaFontManager.DefaultTypeface;
 	}
 
 	public SKTypeface GetEmbeededFont(string filename, Assembly assembly, string alias = null)
