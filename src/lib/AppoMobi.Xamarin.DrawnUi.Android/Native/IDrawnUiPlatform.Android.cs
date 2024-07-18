@@ -22,36 +22,37 @@ using Application = Xamarin.Forms.Application;
 
 namespace AppoMobi.Xamarin.DrawnUi.Droid
 {
-    [Preserve(AllMembers = true)]
-    public class DrawnUi : IDrawnUiPlatform
-    {
-        public DrawnUi()
-        {
+	[Preserve(AllMembers = true)]
+	public class DrawnUi : IDrawnUiPlatform
+	{
+		public DrawnUi()
+		{
 
-        }
+		}
 
-        public bool CheckNativeVisibility(object handler)
-        {
-            if (handler is Android.Views.View nativeView)
-            {
-                if (nativeView.Visibility != Android.Views.ViewStates.Visible)
-                {
-                    return false;
-                }
-            }
+		public bool CheckNativeVisibility(object handler)
+		{
+			if (handler is Android.Views.View nativeView)
+			{
+				if (nativeView.Visibility != Android.Views.ViewStates.Visible)
+				{
+					return false;
+				}
+			}
 
-            return true;
-        }
+			return true;
+		}
 
-        public static void Initialize<T>(Activity activity) where T : Application
-        {
-            Activity = activity;
+		public static void Initialize<T>(Activity activity) where T : Application
+		{
+			Activity = activity;
 
-            Super.AppAssembly = typeof(T).Assembly;
+			Super.AppAssembly = typeof(T).Assembly;
 
-            if (!DisableCache)
-                Android.Glide.Forms.Init(activity);
+			if (!DisableCache)
+				Android.Glide.Forms.Init(activity);
 
+			/*
             Tasks.StartDelayed(TimeSpan.FromMilliseconds(250), async () =>
             {
                 _frameCallback = new FrameCallback((nanos) =>
@@ -81,91 +82,100 @@ namespace AppoMobi.Xamarin.DrawnUi.Droid
                     await Task.Delay(100);
                 }
             });
+            */
+			Looper = new(() =>
+			{
+				OnFrame?.Invoke(null, null);
+			});
 
-        }
+			Looper.StartOnMainThread(120);
+		}
 
-        private static FrameCallback _frameCallback;
-        static bool _loopStarting = false;
-        static bool _loopStarted = false;
-        public static event EventHandler ChoreographerCallback;
+		private static FrameCallback _frameCallback;
+		static bool _loopStarting = false;
+		static bool _loopStarted = false;
+		public static event EventHandler OnFrame;
 
-        public void RegisterLooperCallback(EventHandler callback)
-        {
-            ChoreographerCallback += callback;
-        }
 
-        public void UnregisterLooperCallback(EventHandler callback)
-        {
-            ChoreographerCallback -= callback;
-        }
+		static Looper Looper { get; set; }
 
-        public static Activity Activity { get; protected set; }
+		public void RegisterLooperCallback(EventHandler callback)
+		{
+			OnFrame += callback;
+		}
 
-        public static bool DisableCache;
+		public void UnregisterLooperCallback(EventHandler callback)
+		{
+			OnFrame -= callback;
+		}
 
-        async Task<SKBitmap> IDrawnUiPlatform.LoadImageOnPlatformAsync(ImageSource source, CancellationToken cancel)
-        {
-            if (source == null)
-                return null;
+		public static Activity Activity { get; protected set; }
 
-            Bitmap androidBitmap = null;
-            try
-            {
-                if (DisableCache)
-                {
-                    var handler = source.GetHandler();
-                    androidBitmap = await handler.LoadImageAsync(source, Android.App.Application.Context, cancel);
-                }
-                else
-                {
-                    androidBitmap = await source.LoadOriginalViaGlide(Android.App.Application.Context, cancel);
-                }
+		public static bool DisableCache;
 
-                if (androidBitmap != null)
-                {
-                    return androidBitmap.ToSKBitmap();
-                }
-            }
-            catch (Exception e)
-            {
-                Super.Log($"[LoadSKBitmapAsync] {e}");
-            }
+		async Task<SKBitmap> IDrawnUiPlatform.LoadImageOnPlatformAsync(ImageSource source, CancellationToken cancel)
+		{
+			if (source == null)
+				return null;
 
-            return null;
-        }
+			Bitmap androidBitmap = null;
+			try
+			{
+				if (DisableCache)
+				{
+					var handler = source.GetHandler();
+					androidBitmap = await handler.LoadImageAsync(source, Android.App.Application.Context, cancel);
+				}
+				else
+				{
+					androidBitmap = await source.LoadOriginalViaGlide(Android.App.Application.Context, cancel);
+				}
 
-        void IDrawnUiPlatform.ClearImagesCache()
-        {
-            if (DisableCache)
-                return;
+				if (androidBitmap != null)
+				{
+					return androidBitmap.ToSKBitmap();
+				}
+			}
+			catch (Exception e)
+			{
+				Super.Log($"[LoadSKBitmapAsync] {e}");
+			}
 
-            var glide = Glide.Get(Activity);
+			return null;
+		}
 
-            Task.Run(async () =>
-            {
-                glide.ClearDiskCache();
-            }).ConfigureAwait(false);
+		void IDrawnUiPlatform.ClearImagesCache()
+		{
+			if (DisableCache)
+				return;
 
-            Device.BeginInvokeOnMainThread(() =>
-            {
-                glide.ClearMemory();
-            });
-        }
+			var glide = Glide.Get(Activity);
 
-        public class FrameCallback : Java.Lang.Object, Choreographer.IFrameCallback
-        {
-            public FrameCallback(Action<long> callback)
-            {
-                _callback = callback;
-            }
+			Task.Run(async () =>
+			{
+				glide.ClearDiskCache();
+			}).ConfigureAwait(false);
 
-            Action<long> _callback;
+			Device.BeginInvokeOnMainThread(() =>
+			{
+				glide.ClearMemory();
+			});
+		}
 
-            public void DoFrame(long frameTimeNanos)
-            {
-                _callback?.Invoke(frameTimeNanos);
-            }
+		public class FrameCallback : Java.Lang.Object, Choreographer.IFrameCallback
+		{
+			public FrameCallback(Action<long> callback)
+			{
+				_callback = callback;
+			}
 
-        }
-    }
+			Action<long> _callback;
+
+			public void DoFrame(long frameTimeNanos)
+			{
+				_callback?.Invoke(frameTimeNanos);
+			}
+
+		}
+	}
 }

@@ -5049,7 +5049,7 @@ namespace DrawnUi.Maui.Draw
                             && context.Superview?.CanvasView is SkiaViewAccelerated accelerated)
                         {
                             //hardware accelerated - might crash Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR)
-                            surface = SKSurface.Create(accelerated.GRContext, true, cacheSurfaceInfo)
+                            surface = SKSurface.Create(accelerated.GRContext, false, cacheSurfaceInfo)
                                       ?? SKSurface.Create(cacheSurfaceInfo);
                         }
                         else

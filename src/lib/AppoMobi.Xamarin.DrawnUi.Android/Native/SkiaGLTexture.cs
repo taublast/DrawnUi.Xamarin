@@ -136,68 +136,65 @@ namespace AppoMobi.Xamarin.DrawnUi.Droid.Native
 
         public void OnDrawFrame(IGL10 gl)
         {
-            lock (lockDraw)
+
+            GLES10.GlClear(GLES10.GlColorBufferBit | GLES10.GlDepthBufferBit | GLES10.GlStencilBufferBit);
+
+            // create the contexts if not done already
+            if (context == null)
             {
-                GLES10.GlClear(GLES10.GlColorBufferBit | GLES10.GlDepthBufferBit | GLES10.GlStencilBufferBit);
-
-                // create the contexts if not done already
-                if (context == null)
-                {
-                    var glInterface = GRGlInterface.Create();
-                    context = GRContext.CreateGl(glInterface);
-                }
-
-                // manage the drawing surface
-                if (renderTarget == null || lastSize != newSize || !renderTarget.IsValid)
-                {
-                    // create or update the dimensions
-                    lastSize = newSize;
-
-                    // read the info from the buffer
-                    var buffer = new int[3];
-                    GLES20.GlGetIntegerv(GLES20.GlFramebufferBinding, buffer, 0);
-                    GLES20.GlGetIntegerv(GLES20.GlStencilBits, buffer, 1);
-                    GLES20.GlGetIntegerv(GLES20.GlSamples, buffer, 2);
-                    var samples = buffer[2];
-                    var maxSamples = context.GetMaxSurfaceSampleCount(colorType);
-                    if (samples > maxSamples)
-                        samples = maxSamples;
-                    glInfo = new GRGlFramebufferInfo((uint)buffer[0], colorType.ToGlSizedFormat());
-
-                    // destroy the old surface
-                    surface?.Dispose();
-                    surface = null;
-                    canvas = null;
-
-                    // re-create the render target
-                    //renderTarget?.Dispose();
-                    renderTarget = new GRBackendRenderTarget(newSize.Width, newSize.Height, samples, buffer[1], glInfo);
-                }
-
-                // create the surface
-                if (surface == null)
-                {
-                    surface = SKSurface.Create(context, renderTarget, surfaceOrigin, colorType);
-                    canvas = surface.Canvas;
-                }
-
-                var restore = canvas.Save();
-
-                // start drawing
-#pragma warning disable CS0618 // Type or member is obsolete
-                var e = new SKPaintGLSurfaceEventArgs(surface, renderTarget, surfaceOrigin, colorType, glInfo);
-                OnPaintSurface(e);
-                OnDrawFrame(e.Surface, e.RenderTarget);
-#pragma warning restore CS0618 // Type or member is obsolete
-
-                canvas.RestoreToCount(restore);
-
-                // flush the SkiaSharp contents to GL
-                canvas.Flush();
-                context.Flush();
-
-                Monitor.PulseAll(lockDraw);
+                var glInterface = GRGlInterface.Create();
+                context = GRContext.CreateGl(glInterface);
             }
+
+            // manage the drawing surface
+            if (renderTarget == null || lastSize != newSize || !renderTarget.IsValid)
+            {
+                // create or update the dimensions
+                lastSize = newSize;
+
+                // read the info from the buffer
+                var buffer = new int[3];
+                GLES20.GlGetIntegerv(GLES20.GlFramebufferBinding, buffer, 0);
+                GLES20.GlGetIntegerv(GLES20.GlStencilBits, buffer, 1);
+                GLES20.GlGetIntegerv(GLES20.GlSamples, buffer, 2);
+                var samples = buffer[2];
+                var maxSamples = context.GetMaxSurfaceSampleCount(colorType);
+                if (samples > maxSamples)
+                    samples = maxSamples;
+                glInfo = new GRGlFramebufferInfo((uint)buffer[0], colorType.ToGlSizedFormat());
+
+                // destroy the old surface
+                surface?.Dispose();
+                surface = null;
+                canvas = null;
+
+                // re-create the render target
+                renderTarget?.Dispose();
+                renderTarget = new GRBackendRenderTarget(newSize.Width, newSize.Height, samples, buffer[1], glInfo);
+            }
+
+            // create the surface
+            if (surface == null)
+            {
+                surface = SKSurface.Create(context, renderTarget, surfaceOrigin, colorType);
+                canvas = surface.Canvas;
+            }
+
+            var restore = canvas.Save();
+
+
+            var e = new SKPaintGLSurfaceEventArgs(surface, renderTarget, surfaceOrigin, colorType, glInfo);
+            OnPaintSurface(e);
+
+
+            canvas.RestoreToCount(restore);
+
+            // flush the SkiaSharp contents to GL
+            canvas.Flush();
+            context.Flush();
+
+
+
         }
 
         public void OnSurfaceChanged(IGL10 gl, int width, int height)
