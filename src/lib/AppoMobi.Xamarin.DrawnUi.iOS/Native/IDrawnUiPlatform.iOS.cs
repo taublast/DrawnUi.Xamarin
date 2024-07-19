@@ -7,6 +7,8 @@ using Foundation;
 using SkiaSharp;
 using SkiaSharp.Views.iOS;
 using System;
+using System.IO;
+using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -105,6 +107,13 @@ namespace AppoMobi.Xamarin.DrawnUi.Apple
             UIImage iosImage = null;
             try
             {
+                if (source is UriImageSource uri)
+                {
+                    using var client = new WebClient();
+                    var data = await client.DownloadDataTaskAsync(uri.Uri);
+                    return SKBitmap.Decode(data);
+                }
+
                 var handler = GetHandler(source);
                 iosImage = await handler.LoadImageAsync(source, cancel, 1.0f);
 
