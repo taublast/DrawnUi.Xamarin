@@ -1,4 +1,5 @@
-﻿using AppoMobi.Forms.Gestures;
+﻿
+using AppoMobi.Maui.Gestures;
 
 namespace DrawnUi.Maui.Draw;
 
@@ -8,12 +9,12 @@ namespace DrawnUi.Maui.Draw;
 /// </summary>
 public class SkiaCheckbox : SkiaToggle
 {
-    #region DEFAULT CONTENT
+	#region DEFAULT CONTENT
 
-    protected override void CreateDefaultContent()
-    {
-        // TODO
-        /*
+	protected override void CreateDefaultContent()
+	{
+		// TODO
+		/*
         //todo can make different upon platform!
         if (!DefaultChildrenCreated && this.Views.Count == 0)
         {
@@ -62,71 +63,70 @@ public class SkiaCheckbox : SkiaToggle
 
         }
         */
-    }
+	}
 
-    #endregion
+	#endregion
 
-    protected override void OnLayoutChanged()
-    {
-        base.OnLayoutChanged();
+	protected override void OnLayoutChanged()
+	{
+		base.OnLayoutChanged();
 
-        ApplyProperties();
-    }
+		ApplyProperties();
+	}
 
-    public virtual void ApplyOff()
-    {
-        if (ViewOn != null)
-        {
-            ViewOn.IsVisible = false;
-        }
-    }
+	public virtual void ApplyOff()
+	{
+		if (ViewOn != null)
+		{
+			ViewOn.IsVisible = false;
+		}
+	}
 
-    public virtual void ApplyOn()
-    {
-        if (ViewOn != null)
-        {
-            ViewOn.IsVisible = true;
-        }
-    }
+	public virtual void ApplyOn()
+	{
+		if (ViewOn != null)
+		{
+			ViewOn.IsVisible = true;
+		}
+	}
 
-    public SkiaControl ViewOff;
-    public SkiaControl ViewOn;
+	public SkiaControl ViewOff;
+	public SkiaControl ViewOn;
 
 
-    protected virtual void FindViews()
-    {
-        ViewOn = FindView<SkiaControl>("ViewOn");
-        ViewOff = FindView<SkiaControl>("ViewOff");
-    }
+	protected virtual void FindViews()
+	{
+		ViewOn = FindView<SkiaControl>("ViewOn");
+		ViewOff = FindView<SkiaControl>("ViewOff");
+	}
 
-    public override void ApplyProperties()
-    {
-        if (ViewOn == null)
-        {
-            FindViews();
-        }
+	public override void ApplyProperties()
+	{
+		if (ViewOn == null)
+		{
+			FindViews();
+		}
 
-        if (IsToggled)
-        {
-            ApplyOn();
-        }
-        else
-        {
-            ApplyOff();
-        }
-    }
+		if (IsToggled)
+		{
+			ApplyOn();
+		}
+		else
+		{
+			ApplyOff();
+		}
+	}
 
-    public override ISkiaGestureListener ProcessGestures(TouchActionType type, TouchActionEventArgs args, TouchActionResult touchAction,
-        SKPoint childOffset, SKPoint childOffsetDirect, ISkiaGestureListener alreadyConsumed)
-    {
-        if (touchAction == TouchActionResult.Tapped)
-        {
-            IsToggled = !IsToggled;
-            return this;
-        }
+	public override ISkiaGestureListener ProcessGestures(SkiaGesturesParameters args, GestureEventProcessingInfo apply)
+	{
+		if (args.Type == TouchActionResult.Tapped)
+		{
+			IsToggled = !IsToggled;
+			return this;
+		}
 
-        return base.ProcessGestures(type, args, touchAction, childOffset, childOffsetDirect, alreadyConsumed);
-    }
+		return base.ProcessGestures(args, apply);
+	}
 
 
 }

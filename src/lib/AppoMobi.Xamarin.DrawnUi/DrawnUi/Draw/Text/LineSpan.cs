@@ -4,11 +4,6 @@ public struct LineSpan
 {
     public LineSpan()
     {
-        Size = SKSize.Empty;
-        Text = string.Empty;
-        Span = null;
-        Glyphs = null;
-        NeedsShaping = false;
     }
 
     public string Text { get; set; }
@@ -19,7 +14,7 @@ public struct LineSpan
 
     public bool NeedsShaping { get; set; }
 
-    public SKSize Size { get; set; } 
+    public SKSize Size { get; set; }
 
     //public SKRect DrawingRect { get; set; }
 

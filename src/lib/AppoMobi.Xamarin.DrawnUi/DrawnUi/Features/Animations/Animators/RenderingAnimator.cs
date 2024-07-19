@@ -49,24 +49,42 @@ public class RenderingAnimator : SkiaValueAnimator, IOverlayEffect
 
     protected static void DrawWithClipping(SkiaDrawingContext context, IDrawnBase control, SKPoint selfDrawingLocation, Action draw)
     {
-        if (control.ClipEffects)
+
+        void Render()
         {
-            using (SKPath clipInsideParent = new SKPath())
+            if (control.ClipEffects)
             {
-                ApplyControlClipping(control, clipInsideParent, selfDrawingLocation);
+                using (SKPath clipInsideParent = new SKPath())
+                {
+                    ApplyControlClipping(control, clipInsideParent, selfDrawingLocation);
 
-                context.Canvas.Save();
-                context.Canvas.ClipPath(clipInsideParent, SKClipOperation.Intersect, true);
+                    var count = context.Canvas.Save();
 
-                draw();
+                    SkiaControl.ClipSmart(context.Canvas, clipInsideParent);
+                    draw();
 
-                context.Canvas.Restore();
+                    context.Canvas.RestoreToCount(count);
+                }
             }
+            else
+            {
+                draw();
+            }
+        }
+
+        if (control is SkiaControl skiaControl)
+        {
+            skiaControl.DrawWithClipAndTransforms(context, context.Canvas.LocalClipBounds, control.DrawingRect, false,
+                true, (ctx) =>
+                {
+                    Render();
+                });
         }
         else
         {
-            draw();
+            Render();
         }
+
     }
 
     protected static void ApplyControlClipping(IDrawnBase control, SKPath clipInsideParent, SKPoint selfDrawingLocation)
@@ -85,5 +103,6 @@ public class RenderingAnimator : SkiaValueAnimator, IOverlayEffect
             clipContent.Offset((float)(control.TranslationX * control.RenderingScale), (float)(control.TranslationY * control.RenderingScale));
             clipInsideParent.AddPath(clipContent);
         }
+        clipContent.Dispose();
     }
 }

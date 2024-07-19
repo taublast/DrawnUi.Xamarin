@@ -1,6 +1,4 @@
-﻿using DrawnUi.Maui.Infrastructure;
-
-namespace DrawnUi.Maui.Draw;
+﻿namespace DrawnUi.Maui.Draw;
 
 public class PerpetualPendulumAnimator : PendulumAnimator
 {

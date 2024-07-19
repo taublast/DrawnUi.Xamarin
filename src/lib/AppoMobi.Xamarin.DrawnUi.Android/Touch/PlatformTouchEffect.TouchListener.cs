@@ -1,7 +1,7 @@
 ﻿using Android.Content;
 using Android.Views;
-using AppoMobi.Forms.Gestures;
 using AppoMobi.Framework.Forms.UI.Touch;
+using AppoMobi.Maui.Gestures;
 using AppoMobi.Maui.Gestures;
 using System;
 using System.Drawing;
@@ -16,219 +16,177 @@ namespace AppoMobi.Maui.Gestures;
 public partial class PlatformTouchEffect
 {
 
-    public class TouchListener : GestureDetector.SimpleOnGestureListener, View.IOnTouchListener
-    {
+	public class TouchListener : GestureDetector.SimpleOnGestureListener, View.IOnTouchListener
+	{
 
-        //public static bool UseLowCpu = false;
+		//public static bool UseLowCpu = false;
 
-        public bool PinchEnabled = true;
+		public bool PinchEnabled = true;
 
-        #region ROTATION
+		#region ROTATION
 
-        private static readonly float AngleThreshold = 15f; // Adjust the angle threshold as needed
-        private float _startAngle;
-        bool _isRotating;
+		private static readonly float AngleThreshold = 15f; // Adjust the angle threshold as needed
+		private float _startAngle;
+		bool _isRotating;
 
-        private static float GetAngle(MotionEvent e)
-        {
-            try
-            {
-                float dx = e.GetX(0) - e.GetX(1);
-                float dy = e.GetY(0) - e.GetY(1);
-                return (float)(Math.Atan2(dy, dx) * (180 / Math.PI));
-            }
-            catch (Exception exception)
-            {
-                //exception
-            }
-            return 0;
-        }
+		private static float GetAngle(MotionEvent e)
+		{
+			try
+			{
+				float dx = e.GetX(0) - e.GetX(1);
+				float dy = e.GetY(0) - e.GetY(1);
+				return (float)(Math.Atan2(dy, dx) * (180 / Math.PI));
+			}
+			catch (Exception exception)
+			{
+				//exception
+			}
+			return 0;
+		}
 
-        #endregion
+		#endregion
 
-        #region PINCH
+		#region PINCH
 
-        ScaleListener _scaleListener;
+		ScaleListener _scaleListener;
 
-        ScaleGestureDetector scaleGestureDetector;
+		ScaleGestureDetector scaleGestureDetector;
 
-        public void OnScaleChanged(object sender, ScaleEventArgs e)
-        {
-            //Debug.WriteLine($"[TOUCH] Android: OnScaleChanged {e.Scale:0.000}");
-            _parent.Pinch = e;
-        }
+		public void OnScaleChanged(object sender, ScaleEventArgs e)
+		{
+			//Debug.WriteLine($"[TOUCH] Android: OnScaleChanged {e.Scale:0.000}");
+			_parent.Pinch = e;
+		}
 
-        #endregion
+		#endregion
 
-        public TouchListener(PlatformTouchEffect platformEffect, Context ctx)
-        {
-            _parent = platformEffect; //todo remove on dispose
+		public TouchListener(PlatformTouchEffect platformEffect, Context ctx)
+		{
+			_parent = platformEffect; //todo remove on dispose
 
-            //!!! todo ADD CLEANUP !!!
-            _scaleListener = new(ctx, this);
-            scaleGestureDetector = new ScaleGestureDetector(ctx, _scaleListener);
-        }
+			//!!! todo ADD CLEANUP !!!
+			_scaleListener = new(ctx, this);
+			scaleGestureDetector = new ScaleGestureDetector(ctx, _scaleListener);
+		}
 
-        private volatile PlatformTouchEffect _parent;
+		private volatile PlatformTouchEffect _parent;
 
 
-        void LockInput(View sender)
-        {
-            sender.Parent?.RequestDisallowInterceptTouchEvent(true);
-            //    Debug.WriteLine($"[****MODE2*] LOCKED");
-        }
+		void LockInput(View sender)
+		{
+			sender.Parent?.RequestDisallowInterceptTouchEvent(true);
+			//    Debug.WriteLine($"[****MODE2*] LOCKED");
+		}
 
-        void UnlockInput(View sender)
-        {
-            sender.Parent?.RequestDisallowInterceptTouchEvent(false);
-            //      Debug.WriteLine($"[****MODE2*] UN-LOCKED");
-        }
+		void UnlockInput(View sender)
+		{
+			sender.Parent?.RequestDisallowInterceptTouchEvent(false);
+			//      Debug.WriteLine($"[****MODE2*] UN-LOCKED");
+		}
 
 
 
 
-        public bool IsPinching { get; set; }
+		public bool IsPinching { get; set; }
 
-        DateTime _lastEventTime = DateTime.Now;
+		DateTime _lastEventTime = DateTime.Now;
 
-        public bool OnTouch(View sender, MotionEvent motionEvent)
-        {
-            try
-            {
+		public bool OnTouch(View sender, MotionEvent motionEvent)
+		{
+			//System.Diagnostics.Debug.WriteLine($"[TOUCH] Android: {motionEvent.Action} {motionEvent.RawY:0}");
 
-                if (_parent.FormsEffect.TouchMode == TouchHandlingStyle.Disabled)
-                    return false;
+			//var _parent = GetParent(sender);
 
-                _parent.CountFingers = motionEvent.PointerCount;
+			if (_parent.FormsEffect.TouchMode == TouchHandlingStyle.Disabled)
+				return false;
 
-                // Get the pointer index
-                int pointerIndex = motionEvent.ActionIndex;
+			_parent.CountFingers = motionEvent.PointerCount;
 
-                // Get the id that identifies a finger over the course of its progress
-                int id = motionEvent.GetPointerId(pointerIndex);
+			// Get the pointer index
+			int pointerIndex = motionEvent.ActionIndex;
 
-                //Pixels relative to the view, not the screen 
-                var coorsInsideView = new PointF(motionEvent.GetX(pointerIndex), motionEvent.GetY(pointerIndex));
-                _parent.isInsideView = coorsInsideView.X >= 0 && coorsInsideView.X <= sender.Width && coorsInsideView.Y >= 0 && coorsInsideView.Y <= sender.Height;
+			// Get the id that identifies a finger over the course of its progress
+			int id = motionEvent.GetPointerId(pointerIndex);
 
+			//Pixels relative to the view, not the screen 
+			var coorsInsideView = new PointF(motionEvent.GetX(pointerIndex), motionEvent.GetY(pointerIndex));
+			_parent.isInsideView = coorsInsideView.X >= 0 && coorsInsideView.X <= sender.Width && coorsInsideView.Y >= 0 && coorsInsideView.Y <= sender.Height;
 
-                //todo detect multitouch!!!
+			try
+			{
+				switch (motionEvent.ActionMasked)
+				{
 
-                if (scaleGestureDetector != null)
-                    scaleGestureDetector.OnTouchEvent(motionEvent);
+				//detect additional pointers (i.e., fingers) going down on the screen after the initial touch.
+				//typically used in multi-touch scenarios when multiple fingers are involved.
+				case MotionEventActions.PointerDown:
+				_parent.FireEvent(id, TouchActionType.Pressed, coorsInsideView);
+				break;
 
-                if (IsPinching)
-                {
-                    _parent.FireEvent(id,
-                        TouchActionType.Pinch, _parent.Pinch.Center);
+				case MotionEventActions.Down:
+				//case MotionEventActions.PointerDown:
 
-                    return true;
-                }
+				if (_parent.FormsEffect.TouchMode == TouchHandlingStyle.Lock)
+					LockInput(sender);
+				else
+					UnlockInput(sender);
 
-                switch (motionEvent.ActionMasked)
-                {
-                //detect additional pointers (i.e., fingers) going down on the screen after the initial touch.
-                //typically used in multi-touch scenarios when multiple fingers are involved.
-                case MotionEventActions.PointerDown:
-                _isRotating = true;
-                _startAngle = GetAngle(motionEvent);
-                break;
+				_parent.FireEvent(id, TouchActionType.Pressed, coorsInsideView);
 
-                case MotionEventActions.Down:
-                //case MotionEventActions.PointerDown:
+				break;
 
-                if (_parent.FormsEffect.TouchMode == TouchHandlingStyle.Lock)
-                    LockInput(sender);
-                else
-                    UnlockInput(sender);
+				case MotionEventActions.Move:
 
-                _parent.FireEvent(id, TouchActionType.Pressed, coorsInsideView);
+				// Multiple Move events are bundled, so handle them in a loop
+				for (pointerIndex = 0; pointerIndex < motionEvent.PointerCount; pointerIndex++)
+				{
+					id = motionEvent.GetPointerId(pointerIndex);
 
-                break;
+					coorsInsideView = new PointF(motionEvent.GetX(pointerIndex), motionEvent.GetY(pointerIndex));
 
-                case MotionEventActions.Move:
+					_parent.FireEvent(id, TouchActionType.Moved, coorsInsideView);
+				}
 
-                ///skip gestures..
-                //if (UseLowCpu)
-                //{
-                //    var now = DateTime.Now;
-                //    if ((now - _lastEventTime).TotalMilliseconds < 16)
-                //    {
-                //        break;
-                //    }
-                //    _lastEventTime = now;
-                //}
+				break;
 
-                //if (_parent.FormsEffect.TouchMode == TouchHandlingStyle.Lock)
-                //    LockInput(sender);
-                //else
-                //    UnlockInput(sender);
+				case MotionEventActions.PointerUp:
+				_parent.FireEvent(id, TouchActionType.Released,
+					coorsInsideView);
+				break;
 
-                // Multiple Move events are bundled, so handle them in a loop
-                for (pointerIndex = 0; pointerIndex < motionEvent.PointerCount; pointerIndex++)
-                {
-                    id = motionEvent.GetPointerId(pointerIndex);
+				case MotionEventActions.Up:
+				UnlockInput(sender);
 
-                    coorsInsideView = new PointF(motionEvent.GetX(pointerIndex), motionEvent.GetY(pointerIndex));
+				_parent.FireEvent(id, TouchActionType.Released,
+					coorsInsideView);
 
+				break;
+				case MotionEventActions.Cancel:
 
-                    _parent.FireEvent(id, TouchActionType.Moved, coorsInsideView);
+				//Debug.WriteLine($"[TOUCH] Android native: {motionEvent.ActionMasked} - {_parent.capture}");
 
-                }
+				UnlockInput(sender);
 
-                if (_isRotating)
-                {
-                    float currentAngle = GetAngle(motionEvent);
-                    float deltaAngle = currentAngle - _startAngle;
+				_parent.FireEvent(id, TouchActionType.Cancelled, coorsInsideView);
 
-                    if (Math.Abs(deltaAngle) > AngleThreshold)
-                    {
-                        _parent.FireEvent(id, TouchActionType.Rotated, coorsInsideView);
-                        _startAngle = currentAngle;
-                    }
-                }
+				break;
 
-                break;
+				default:
 
-                case MotionEventActions.Up:
-                //case MotionEventActions.Pointer1Up:
-                _isRotating = false;
+				UnlockInput(sender);
 
-                UnlockInput(sender);
+				break;
 
-                _parent.FireEvent(id, TouchActionType.Released,
-                    coorsInsideView);
+				}
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"[TOUCH] Android: {motionEvent} - {e}");
+			}
 
-                break;
-                case MotionEventActions.Cancel:
+			return true;
+		}
 
-                //Debug.WriteLine($"[TOUCH] Android native: {motionEvent.ActionMasked} - {_parent.capture}");
 
-                UnlockInput(sender);
-
-                _parent.FireEvent(id, TouchActionType.Cancelled, coorsInsideView);
-
-                break;
-
-                default:
-
-                UnlockInput(sender);
-
-                break;
-
-                }
-
-
-
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"[TOUCH] Android: {motionEvent} - {e}");
-            }
-
-            return true;
-        }
-
-
-    }
+	}
 }

@@ -1,7 +1,7 @@
 ﻿using System.Drawing;
 using Size = System.Drawing.Size;
 
-namespace AppoMobi.Forms.Gestures;
+namespace AppoMobi.Maui.Gestures;
 
 public static class PointFExtensions
 {

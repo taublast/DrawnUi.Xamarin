@@ -1,7 +1,6 @@
 ﻿using AppoMobi.Specials;
 using DrawnUi.Maui.Draw;
 using System.Diagnostics;
-using DrawnUi.Maui.Infrastructure;
 
 namespace DrawnUi.Maui.Draw;
 

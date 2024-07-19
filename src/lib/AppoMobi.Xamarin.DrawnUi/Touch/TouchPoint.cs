@@ -1,7 +1,7 @@
 ﻿using System;
 using SkiaSharp;
 
-namespace AppoMobi.Forms.Gestures
+namespace AppoMobi.Maui.Gestures
 {
     public class TouchPoint
     {

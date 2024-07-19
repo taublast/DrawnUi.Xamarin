@@ -1,4 +1,4 @@
-﻿using AppoMobi.Forms.Gestures;
+﻿using AppoMobi.Maui.Gestures;
 using Xamarin.Essentials;
 
 namespace DrawnUi.Maui.Models;

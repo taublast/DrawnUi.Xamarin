@@ -1,7 +1,6 @@
-﻿using AppoMobi.Forms.Gestures;
-using AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons;
+﻿using AppoMobi.Maui.Gestures;
 
-namespace DrawnUi.Maui.Draw;
+namespace DrawnUi.Maui.Controls;
 
 /// <summary>
 /// Switch-like control, can include any content inside. It's aither you use default content (todo templates?..)
@@ -9,12 +8,12 @@ namespace DrawnUi.Maui.Draw;
 /// </summary>
 public class SkiaRadioButton : SkiaToggle, ISkiaRadioButton
 {
-    #region DEFAULT CONTENT
+	#region DEFAULT CONTENT
 
-    protected override void CreateDefaultContent()
-    {
-        // TODO
-        /*
+	protected override void CreateDefaultContent()
+	{
+		// TODO
+		/*
         //todo can make different upon platform!
         if (!DefaultChildrenCreated && this.Views.Count == 0)
         {
@@ -48,156 +47,189 @@ public class SkiaRadioButton : SkiaToggle, ISkiaRadioButton
                     VerticalOptions = LayoutOptions.Fill,
                 });
 
-              
+                var hotspot = new SkiaHotspot()
+                {
+                    TransformView = this.Thumb,
+                };
+                hotspot.Tapped += (s, e) =>
+                {
+                    IsToggled = !IsToggled;
+                };
+                this.AddSubView(hotspot);
 
                 ApplyProperties();
             }
 
         }
         */
-    }
+	}
 
-    #endregion
+	#endregion
 
-    protected override void OnLayoutChanged()
-    {
-        base.OnLayoutChanged();
+	protected override void OnLayoutChanged()
+	{
+		base.OnLayoutChanged();
 
-        ApplyProperties();
-    }
+		ApplyProperties();
+	}
 
-    public SkiaControl GroupParent
-    {
-        get
-        {
-            return Parent as SkiaControl;
-        }
-    }
+	public SkiaControl GroupParent
+	{
+		get
+		{
+			return Parent as SkiaControl;
+		}
+	}
 
-    public virtual void ApplyOff()
-    {
-        if (ViewOn != null)
-        {
-            ViewOn.IsVisible = false;
-        }
-    }
+	public virtual void ApplyOff()
+	{
+		if (ViewOn != null)
+		{
+			ViewOn.IsVisible = false;
+		}
+	}
 
-    public virtual void ApplyOn()
-    {
-        if (ViewOn != null)
-        {
-            ViewOn.IsVisible = true;
-        }
-    }
+	public virtual void ApplyOn()
+	{
+		if (ViewOn != null)
+		{
+			ViewOn.IsVisible = true;
+		}
+	}
 
-    public SkiaControl ViewOff;
-    public SkiaControl ViewOn;
+	public SkiaControl ViewOff;
+	public SkiaControl ViewOn;
+	public SkiaLabel ViewText;
 
 
-    protected virtual void FindViews()
-    {
-        ViewOn = FindView<SkiaControl>("ViewOn");
-        ViewOff = FindView<SkiaControl>("ViewOff");
-    }
+	protected virtual void FindViews()
+	{
+		ViewOn = FindView<SkiaControl>("On");
+		ViewOff = FindView<SkiaControl>("Off");
+		ViewText = FindView<SkiaLabel>("Text");
+	}
 
-    public override void ApplyProperties()
-    {
-        if (ViewOn == null)
-        {
-            FindViews();
-        }
+	public override void ApplyProperties()
+	{
+		if (ViewOn == null)
+		{
+			FindViews();
+		}
 
-        if (IsToggled)
-        {
-            ApplyOn();
-        }
-        else
-        {
-            ApplyOff();
-        }
-    }
+		if (ViewText != null)
+		{
+			ViewText.Text = this.Text;
+		}
 
-    public override ISkiaGestureListener ProcessGestures(TouchActionType type, TouchActionEventArgs args, TouchActionResult touchAction,
-        SKPoint childOffset, SKPoint childOffsetDirect, ISkiaGestureListener alreadyConsumed)
-    {
-        if (touchAction == TouchActionResult.Tapped)
-        {
-            IsToggled = !IsToggled;
-            return this;
-        }
+		if (IsToggled)
+		{
+			ApplyOn();
+		}
+		else
+		{
+			ApplyOff();
+		}
+	}
 
-        return base.ProcessGestures(type, args, touchAction, childOffset, childOffsetDirect, alreadyConsumed);
-    }
+	public override ISkiaGestureListener ProcessGestures(SkiaGesturesParameters args, GestureEventProcessingInfo apply)
+	{
+		if (args.Type == TouchActionResult.Tapped)
+		{
+			if (!IsToggled)
+			{
+				IsToggled = true;
+				return this;
+			}
+		}
 
-    protected override void NotifyWasToggled()
-    {
-        base.NotifyWasToggled();
+		return base.ProcessGestures(args, apply);
+	}
 
-        if (!_lockIsToggled)
-        {
-            Manager.ReportValueChange(this, IsToggled);
-        }
-    }
+	protected override void NotifyWasToggled()
+	{
+		base.NotifyWasToggled();
 
-    protected virtual void OnGroupChanged()
-    {
-        UpdateGroup();
-    }
+		if (!_lockIsToggled)
+		{
+			Manager.ReportValueChange(this, IsToggled);
+		}
+	}
 
-    public virtual void UpdateGroup()
-    {
-        Manager.RemoveFromGroups(this);
+	protected virtual void OnGroupChanged()
+	{
+		UpdateGroup();
+	}
 
-        if (string.IsNullOrEmpty(GroupName))
-        {
-            Manager.AddToGroup(this, GroupName);
-        }
-        else
-        {
-            Manager.AddToGroup(this, Parent as SkiaControl);
-        }
-    }
+	public virtual void UpdateGroup()
+	{
+		Manager.RemoveFromGroups(this);
 
-    public override void OnParentChanged(IDrawnBase newvalue, IDrawnBase oldvalue)
-    {
-        base.OnParentChanged(newvalue, oldvalue);
+		if (!string.IsNullOrEmpty(GroupName))
+		{
+			Manager.AddToGroup(this, GroupName);
+		}
+		else
+		if (this.Parent is SkiaControl control)
+		{
+			Manager.AddToGroup(this, control);
+		}
+	}
 
-        UpdateGroup();
-    }
+	public override void OnParentChanged(IDrawnBase newvalue, IDrawnBase oldvalue)
+	{
+		base.OnParentChanged(newvalue, oldvalue);
 
-    RadioButtonGroupManager Manager => RadioButtonGroupManager.Instance;
+		UpdateGroup();
+	}
 
-    bool _lockIsToggled;
+	RadioButtonGroupManager Manager => RadioButtonGroupManager.Instance;
 
-    public void SetValueInternal(bool value)
-    {
-        _lockIsToggled = true;
-        IsToggled = value;
-        _lockIsToggled = false;
-    }
+	bool _lockIsToggled;
 
-    public bool GetValueInternal()
-    {
-        return IsToggled;
-    }
+	public void SetValueInternal(bool value)
+	{
+		_lockIsToggled = true;
+		IsToggled = value;
+		_lockIsToggled = false;
+	}
 
-    public static readonly BindableProperty GroupNameProperty = BindableProperty.Create(nameof(GroupName),
-        typeof(string),
-        typeof(SkiaRadioButton),
-        string.Empty,
-        propertyChanged: NeedUpdateGroup);
+	public bool GetValueInternal()
+	{
+		return IsToggled;
+	}
 
-    private static void NeedUpdateGroup(BindableObject bindable, object oldvalue, object newvalue)
-    {
-        if (bindable is SkiaRadioButton control)
-        {
-            control.OnGroupChanged();
-        }
-    }
+	public static readonly BindableProperty GroupNameProperty = BindableProperty.Create(nameof(GroupName),
+		typeof(string),
+		typeof(SkiaRadioButton),
+		string.Empty,
+		propertyChanged: NeedUpdateGroup);
 
-    public string GroupName
-    {
-        get { return (string)GetValue(GroupNameProperty); }
-        set { SetValue(GroupNameProperty, value); }
-    }
+	private static void NeedUpdateGroup(BindableObject bindable, object oldvalue, object newvalue)
+	{
+		if (bindable is SkiaRadioButton control)
+		{
+			control.OnGroupChanged();
+		}
+	}
+
+	public string GroupName
+	{
+		get { return (string)GetValue(GroupNameProperty); }
+		set { SetValue(GroupNameProperty, value); }
+	}
+
+	public static readonly BindableProperty TextProperty = BindableProperty.Create(
+		nameof(Text),
+		typeof(string),
+		typeof(SkiaButton),
+		string.Empty, propertyChanged: NeedUpdateProperties);
+
+	/// <summary>
+	/// Bind to your own content!
+	/// </summary>
+	public string Text
+	{
+		get { return (string)GetValue(TextProperty); }
+		set { SetValue(TextProperty, value); }
+	}
 }

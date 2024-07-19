@@ -1,4 +1,4 @@
-﻿using AppoMobi.Forms.Gestures;
+﻿using AppoMobi.Maui.Gestures;
 using DrawnUi.Maui.Draw;
 using System.ComponentModel;
 

@@ -1,5 +1,5 @@
 ﻿
-using AppoMobi.Forms.Gestures;
+using AppoMobi.Maui.Gestures;
 using System.Windows.Input;
 
 namespace AppoMobi.Framework.Forms.UI.Touch

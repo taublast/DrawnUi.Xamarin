@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace DrawnUi.Maui.Draw;
 
-public struct LinearInterpolationTimingParameters : ITimingParameters
+public struct LinearInterpolationTimingParameters : ITimingVectorParameters
 {
     private readonly Vector2 start;
     private readonly Vector2 end;
@@ -35,14 +35,13 @@ public class RangeVectorAnimator : SkiaVectorAnimator
 
     public void Initialize(Vector2 start, Vector2 end, float durationSecs, Easing easing)
     {
-
+        _end = end;
         Parameters = new LinearInterpolationTimingParameters(start, end, durationSecs, easing);
     }
 
+    private Vector2 _end;
 
     public LinearInterpolationTimingParameters Parameters { get; set; }
-
-
 
     protected override bool UpdateValue(long deltaT, long deltaFromStart)
     {
@@ -50,7 +49,7 @@ public class RangeVectorAnimator : SkiaVectorAnimator
 
         if (secs > Parameters.DurationSecs)
         {
-            Vector = Parameters.ValueAt(Parameters.DurationSecs);
+            Vector = _end; //Parameters.ValueAt(Parameters.DurationSecs);
             return true;
         }
 

@@ -148,12 +148,12 @@ public partial class SkiaView : SKCanvasView, ISkiaDrawable
 
 			if (Device.RuntimePlatform == Device.Android)
 			{
-				if (maybeLowEnd && FPS > 60)
+				if (maybeLowEnd && FPS > 120)
 				{
 					maybeLowEnd = false;
 				}
 
-				if (maybeLowEnd && isDirty && _fps < 30) //kick refresh for low-end devices
+				if (maybeLowEnd && isDirty && _fps < 60) //kick refresh for low-end devices
 				{
 					InvalidateSurface();
 					return;

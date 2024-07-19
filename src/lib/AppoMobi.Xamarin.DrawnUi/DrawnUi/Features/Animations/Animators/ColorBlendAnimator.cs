@@ -1,7 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
-namespace DrawnUi.Maui.Draw;
+﻿namespace DrawnUi.Maui.Draw;
 
 public class ColorBlendAnimator : ProgressAnimator
 {
@@ -37,18 +34,18 @@ public class ColorBlendAnimator : ProgressAnimator
 		if (progress < 0f || progress > 1f)
 			throw new ArgumentOutOfRangeException(nameof(progress), "Progress must be between 0.0f and 1.0f.");
 
-		float r = Blend((float)start.R, (float)end.R, progress);
-		float g = Blend((float)start.G, (float)end.G, progress);
-		float b = Blend((float)start.B, (float)end.B, progress);
-		float a = Blend((float)start.A, (float)end.A, progress);
+		float r = Blend(start.R, end.R, progress);
+		float g = Blend(start.G, end.G, progress);
+		float b = Blend(start.B, end.B, progress);
+		float a = Blend(start.A, end.A, progress);
 
 		return new Color(r, g, b, a);
 	}
 
 	// Helper function to blend individual components
-	private static float Blend(float start, float end, float progress)
+	private static float Blend(double start, double end, float progress)
 	{
-		return start + (end - start) * progress;
+		return (float)(start + (end - start) * progress);
 	}
 
 	CancellationTokenSource cancellationTokenSource;

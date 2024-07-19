@@ -64,6 +64,7 @@ public class SkiaLottie : AnimatedFramesRenderer
 
 		if (needSeek)
 		{
+			needSeek = false;
 			if (!IsPlaying)
 			{
 				SeekToDefaultFrame();

@@ -1,4 +1,4 @@
-﻿namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons;
+﻿namespace DrawnUi.Maui.Controls;
 
 public interface ISkiaRadioButton : ISkiaControl
 {

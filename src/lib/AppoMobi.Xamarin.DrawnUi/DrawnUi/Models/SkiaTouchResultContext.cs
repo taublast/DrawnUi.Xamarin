@@ -1,4 +1,4 @@
-﻿using AppoMobi.Forms.Gestures;
+﻿using AppoMobi.Maui.Gestures;
 
 namespace DrawnUi.Maui.Infrastructure;
 

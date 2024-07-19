@@ -2,38 +2,33 @@
 
 public enum LayoutType
 {
-    /// <summary>
-    /// Fastest rendering
-    /// </summary>
-    Absolute,
+	/// <summary>
+	/// Fastest rendering
+	/// </summary>
+	Absolute,
 
-    /// <summary>
-    /// Vertical stack
-    /// </summary>
-    Column,
+	/// <summary>
+	/// Vertical stack
+	/// </summary>
+	Column,
 
-    /// <summary>
-    /// Horizontal stack
-    /// </summary>
-    Row,
+	/// <summary>
+	/// Horizontal stack
+	/// </summary>
+	Row,
 
-    /// <summary>
-    /// Use usual grid properties like Grid.Column, ColumnSpacing etc
-    /// </summary>
-    Grid,
+	/// <summary>
+	/// Think of wrap panel
+	/// </summary>
+	Wrap,
 
-    /// <summary>
-    /// todo
-    /// </summary>
-    MasonryColumns,
+	/// <summary>
+	/// Use usual grid properties like Grid.Stack, ColumnSpacing etc
+	/// </summary>
+	Grid,
 
-    /// <summary>
-    /// todo
-    /// </summary>
-
-    MasonryRows,
-    /// <summary>
-    /// todo
-    /// </summary>
-    Flex
+	/// <summary>
+	/// TODO
+	/// </summary>
+	Masonry,
 }

@@ -4,62 +4,62 @@ namespace DrawnUi.Maui.Draw;
 
 public class ChainAdjustLightnessEffect : BaseChainedEffect
 {
-    public static readonly BindableProperty ValueProperty = BindableProperty.Create(
-        nameof(Value),
-        typeof(float),
-        typeof(ChainAdjustBrightnessEffect),
-        1f,
-        propertyChanged: NeedUpdate);
+	public static readonly BindableProperty ValueProperty = BindableProperty.Create(
+		nameof(Value),
+		typeof(float),
+		typeof(ChainAdjustBrightnessEffect),
+		1f,
+		propertyChanged: NeedUpdate);
 
-    public float Value
-    {
-        get => (float)GetValue(ValueProperty);
-        set => SetValue(ValueProperty, value);
-    }
+	public float Value
+	{
+		get => (float)GetValue(ValueProperty);
+		set => SetValue(ValueProperty, value);
+	}
 
-    public override ChainEffectResult Draw(SKRect destination, SkiaDrawingContext ctx, Action<SkiaDrawingContext> drawControl)
-    {
-        if (NeedApply)
-        {
-            if (Paint == null)
-            {
-                Paint = new()
-                {
-                    ColorFilter = CreateLightnessFilter(Value)
-                };
-            }
+	public override ChainEffectResult Draw(SKRect destination, SkiaDrawingContext ctx, Action<SkiaDrawingContext> drawControl)
+	{
+		if (NeedApply)
+		{
+			if (Paint == null)
+			{
+				Paint = new()
+				{
+					ColorFilter = CreateLightnessFilter(Value)
+				};
+			}
 
-            var restore = ctx.Canvas.SaveLayer(Paint);
+			ctx.Canvas.SaveLayer(Paint);
 
-            drawControl(ctx);
+			drawControl(ctx);
 
-            return ChainEffectResult.Create(true, restore);
-        }
+			return ChainEffectResult.Create(true);
+		}
 
-        return base.Draw(destination, ctx, drawControl);
-    }
+		return base.Draw(destination, ctx, drawControl);
+	}
 
-    /// <summary>
-    /// -1 -> 0 -> 1
-    /// </summary>
-    /// <param name="value"></param>
-    /// <returns></returns>
-    private SKColorFilter CreateLightnessFilter(float value)
-    {
-        var brightness = DrawnExtensions.Clamp(value - 1, -1f, 1f);
+	/// <summary>
+	/// -1 -> 0 -> 1
+	/// </summary>
+	/// <param name="value"></param>
+	/// <returns></returns>
+	public static SKColorFilter CreateLightnessFilter(float value)
+	{
+		var brightness = DrawnExtensions.Clamp(value - 1, -1f, 1f);
 
-        float b = brightness;
-        float[] colorMatrix = {
-            1, 0, 0, 0, b,
-            0, 1, 0, 0, b,
-            0, 0, 1, 0, b,
-            0, 0, 0, 1, 0
-        };
+		float b = brightness;
+		float[] colorMatrix = {
+			1, 0, 0, 0, b,
+			0, 1, 0, 0, b,
+			0, 0, 1, 0, b,
+			0, 0, 0, 1, 0
+		};
 
-        return SKColorFilter.CreateColorMatrix(colorMatrix);
-    }
+		return SKColorFilter.CreateColorMatrix(colorMatrix);
+	}
 
 
 
-    public override bool NeedApply => base.NeedApply && Value != 1f;
+	public override bool NeedApply => base.NeedApply && Value != 1f;
 }

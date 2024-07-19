@@ -27,17 +27,17 @@ public class ChainAdjustContrastEffect : BaseChainedEffect
                 };
             }
 
-            var restore = ctx.Canvas.SaveLayer(Paint);
+            ctx.Canvas.SaveLayer(Paint);
 
             drawControl(ctx);
 
-            return ChainEffectResult.Create(true, restore);
+            return ChainEffectResult.Create(true);
         }
 
         return base.Draw(destination, ctx, drawControl);
     }
 
-    private SKColorFilter CreateContrastFilter(float contrast)
+    public static SKColorFilter CreateContrastFilter(float contrast)
     {
         float t = (1 - contrast) / 2;
         float[] colorMatrix = {

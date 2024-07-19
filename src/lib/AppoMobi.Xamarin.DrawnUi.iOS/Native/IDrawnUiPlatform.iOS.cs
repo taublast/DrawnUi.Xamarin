@@ -1,4 +1,4 @@
-﻿using AppoMobi.Forms.Gestures;
+﻿using AppoMobi.Maui.Gestures;
 using AppoMobi.Specials;
 using CoreAnimation;
 using DrawnUi.Maui.Draw;

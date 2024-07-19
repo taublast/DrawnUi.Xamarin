@@ -71,8 +71,11 @@
   <ItemGroup>
     <Compile Include="Native\DrawnViewRenderer.Android.cs" />
     <Compile Include="Native\FixedSKGLViewRenderer.cs" />
+    <Compile Include="Native\FixedSKGLViewRendererBase.cs" />
     <Compile Include="Native\IDrawnUiPlatform.Android.cs" />
     <Compile Include="Native\SkiaGLTexture.cs" />
+    <Compile Include="Native\SkiaGLTextureRenderer.cs" />
+    <Compile Include="Native\SkiaGLTextureView.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Touch\PlatformTouchEffect.Android.cs" />

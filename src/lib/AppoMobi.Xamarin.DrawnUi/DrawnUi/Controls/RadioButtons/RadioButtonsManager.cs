@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons
+namespace DrawnUi.Maui.Controls
 {
     public class RadioButtonGroupManager
     {
@@ -37,6 +37,7 @@ namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons
                 GroupsByName[groupName] = new();
             }
             GroupsByName[groupName].Add(control);
+            MakeAtLeastOneSelected(GroupsByName[groupName]);
         }
 
         // Adds a control to a parent-based group (Group B).
@@ -47,6 +48,7 @@ namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons
                 GroupsByParent[parent] = new();
             }
             GroupsByParent[parent].Add(control);
+            MakeAtLeastOneSelected(GroupsByParent[parent]);
         }
 
         // Removes a control from a named group (Group A).
@@ -56,7 +58,7 @@ namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons
             {
                 GroupsByName[groupName].Remove(control);
                 // After removal, check and ensure that at least one button is selected.
-                EnsureAtLeastOneSelected(GroupsByName[groupName]);
+                MakeAtLeastOneSelected(GroupsByName[groupName]);
             }
         }
 
@@ -67,7 +69,7 @@ namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons
             {
                 GroupsByParent[parent].Remove(control);
                 // After removal, check and ensure that at least one button is selected.
-                EnsureAtLeastOneSelected(GroupsByParent[parent]);
+                MakeAtLeastOneSelected(GroupsByParent[parent]);
             }
         }
 
@@ -81,7 +83,7 @@ namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons
                 if (group.Contains(control))
                 {
                     group.Remove(control);
-                    EnsureAtLeastOneSelected(group);
+                    MakeAtLeastOneSelected(group);
                     removed = true;
                     break; // Assuming a control can only belong to one group, we stop once found
                 }
@@ -95,7 +97,7 @@ namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons
                     if (group.Contains(control))
                     {
                         group.Remove(control);
-                        EnsureAtLeastOneSelected(group);
+                        MakeAtLeastOneSelected(group);
                         break; // Assuming a control can only belong to one group, we stop once found
                     }
                 }
@@ -103,7 +105,7 @@ namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons
         }
 
 
-        private void EnsureAtLeastOneSelected(List<ISkiaRadioButton> group)
+        private void MakeAtLeastOneSelected(List<ISkiaRadioButton> group)
         {
             // Check if any button is still selected in the group.
             if (!group.Any(c => c.GetValueInternal()))
@@ -124,7 +126,7 @@ namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons
             {
                 if (GroupsByName[groupName].Contains(control))
                 {
-                    SetGroupValuesExcept(groupName, control, newValue, true);
+                    SetGroupValuesExcept(groupName, control, newValue, false);
                     return;
                 }
             }
@@ -133,7 +135,7 @@ namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons
             {
                 if (GroupsByParent[parent].Contains(control))
                 {
-                    SetGroupValuesExcept(parent, control, newValue, false);
+                    SetGroupValuesExcept(parent, control, newValue, true);
                     return;
                 }
             }
@@ -153,9 +155,9 @@ namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Controls.RadioButtons
             }
         }
 
-        private void SetGroupValuesExcept(SkiaControl parent, ISkiaRadioButton exceptControl, bool newValue, bool isGroupB)
+        private void SetGroupValuesExcept(SkiaControl parent, ISkiaRadioButton exceptControl, bool newValue, bool byParent)
         {
-            var group = isGroupB ? GroupsByParent[parent] : null;
+            var group = byParent ? GroupsByParent[parent] : null;
 
             if (newValue)
             {

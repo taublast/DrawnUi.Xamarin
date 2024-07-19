@@ -9,6 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DrawnUi\Draw\SkiaControl.Cache.cs" />
+    <Compile Remove="DrawnUi\Draw\SkiaControl.cs" />
+    <Compile Remove="DrawnUi\Draw\SkiaControl.Effects.cs" />
+    <Compile Remove="DrawnUi\Draw\SkiaControl.Invalidation.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AppoMobi.Specials" Version="8.0.3" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="SkiaSharp.Skottie" Version="2.88.8" />
@@ -21,5 +28,12 @@
 
   <ItemGroup>
     <Folder Include="Resources\Fonts\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="DrawnUi\Draw\SkiaControl.Cache.cs" />
+    <None Include="DrawnUi\Draw\SkiaControl.cs" />
+    <None Include="DrawnUi\Draw\SkiaControl.Effects.cs" />
+    <None Include="DrawnUi\Draw\SkiaControl.Invalidation.cs" />
   </ItemGroup>
 </Project>

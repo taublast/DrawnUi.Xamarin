@@ -1,6 +1,6 @@
 ﻿using Android.Content;
 using Android.Views;
-using AppoMobi.Forms.Gestures;
+using AppoMobi.Maui.Gestures;
 using System;
 
 namespace AppoMobi.Maui.Gestures;

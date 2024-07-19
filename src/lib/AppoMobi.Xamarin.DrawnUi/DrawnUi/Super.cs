@@ -185,6 +185,9 @@ public partial class Super
 		InsetsChanged?.Invoke(null, null);
 	}
 
+	public static bool GpuCacheEnabled { get; set; } = true;
+
+	public static string UserAgent { get; set; } = "Mozilla/5.0 AppleWebKit Chrome Mobile Safari";
 
 
 }

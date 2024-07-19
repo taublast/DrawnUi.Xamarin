@@ -53,36 +53,47 @@ namespace AppoMobi.Xamarin.DrawnUi.Droid
 				Android.Glide.Forms.Init(activity);
 
 			/*
-            Tasks.StartDelayed(TimeSpan.FromMilliseconds(250), async () =>
-            {
-                _frameCallback = new FrameCallback((nanos) =>
-                {
-                    ChoreographerCallback?.Invoke(null, null);
-                    Choreographer.Instance.PostFrameCallback(_frameCallback);
-                });
+		Tasks.StartDelayed(TimeSpan.FromMilliseconds(250), async () =>
+		{
+			_frameCallback = new FrameCallback((nanos) =>
+			{
+				OnFrame?.Invoke(null, null);
+				Choreographer.Instance.PostFrameCallback(_frameCallback);
+			});
 
-                while (!_loopStarted)
-                {
-                    MainThread.BeginInvokeOnMainThread(async () =>
-                    {
-                        if (_loopStarting)
-                            return;
-                        _loopStarting = true;
+			while (!_loopStarted)
+			{
+				try
+				{
+					MainThread.BeginInvokeOnMainThread(async () =>
+					{
+						if (_loopStarting)
+							return;
 
-                        if (MainThread.IsMainThread) //Choreographer is available
-                        {
-                            if (!_loopStarted)
-                            {
-                                _loopStarted = true;
-                                Choreographer.Instance.PostFrameCallback(_frameCallback);
-                            }
-                        }
-                        _loopStarting = false;
-                    });
-                    await Task.Delay(100);
-                }
-            });
-            */
+						_loopStarting = true;
+
+						if (MainThread.IsMainThread) //Choreographer is available
+						{
+							if (!_loopStarted)
+							{
+								_loopStarted = true;
+								Choreographer.Instance.PostFrameCallback(_frameCallback);
+							}
+						}
+						_loopStarting = false;
+					});
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine(e);
+					throw;
+				}
+
+				await Task.Delay(100);
+			}
+		});
+		*/
+
 			Looper = new(() =>
 			{
 				OnFrame?.Invoke(null, null);
