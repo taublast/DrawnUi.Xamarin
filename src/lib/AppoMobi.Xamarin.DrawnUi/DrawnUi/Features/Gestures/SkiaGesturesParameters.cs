@@ -41,10 +41,7 @@ public struct GestureEventProcessingInfo
 		alreadyConsumed = wasConsumed1;
 	}
 
-	public GestureEventProcessingInfo()
-	{
 
-	}
 
 	public static GestureEventProcessingInfo Empty
 	{
