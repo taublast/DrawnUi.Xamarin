@@ -18,16 +18,21 @@ Install the nuget package `__AppoMobi.Xamarin.DrawnUi__` into shared/native Xama
 AppoMobi.Xamarin.DrawnUi.Droid.DrawnUi.Initialize<App>(this);
  ```
 
+Also in Xamarin for many Canvases around the app it's better to use  
+```csharp
+Super.CanUseHardwareAcceleration = false; //RIP XAMARIN
+ ```
+For single `Canvas` this should not be needed.
+
  ## The How To
 
- This light Xamarin version has some limitations and some controls are missing in comparision to the [original MAUI Library](https://github.com/taublast/DrawnUi.Maui). Meanwhile please refer to the [original library documentation](https://github.com/taublast/DrawnUi.Maui/wiki).
+This light Xamarin version has some limitations and some controls are missing in comparision to the [original MAUI Library](https://github.com/taublast/DrawnUi.Maui). Meanwhile please refer to the [original library documentation](https://github.com/taublast/DrawnUi.Maui/wiki).
 
  There is also a sample project in this repo with a drawn About page, would add more with time.
   
 ## To Note
 
 Will not support Xamarin built-in Xaml HotReload, contrary to MAUI, due to Xamarin architecture.  
-Also in Xamarin for many Canvases around the app it's better to use `Super.CanUseHardwareAcceleration = false; //RIP XAMARIN`. For single `Canvas` should not be needed.
 
 `SkiaLabel` `FontSize` property accepts `double` only, setting something like `FontSize="Title"` will result in a `XFC0000` error.
 
