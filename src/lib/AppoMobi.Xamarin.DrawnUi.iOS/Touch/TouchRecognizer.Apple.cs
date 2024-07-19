@@ -28,14 +28,20 @@ namespace AppoMobi.Maui.Gestures
 
 		public void Detach()
 		{
+			try
+			{
+                _view.RemoveGestureRecognizer(recognizer);
 
-			_view.RemoveGestureRecognizer(recognizer);
+                recognizer?.Dispose();
 
-			recognizer?.Dispose();
+                recognizer = null;
 
-			recognizer = null;
-
-			_view.RemoveGestureRecognizer(this);
+                _view.RemoveGestureRecognizer(this);
+            }
+            catch (Exception ex)
+			{
+				Console.WriteLine(ex);
+			}
 		}
 
 		public void Attach()
