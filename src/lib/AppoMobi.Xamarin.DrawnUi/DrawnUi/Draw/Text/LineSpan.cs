@@ -2,9 +2,7 @@
 
 public struct LineSpan
 {
-    public LineSpan()
-    {
-    }
+
 
     public string Text { get; set; }
 
