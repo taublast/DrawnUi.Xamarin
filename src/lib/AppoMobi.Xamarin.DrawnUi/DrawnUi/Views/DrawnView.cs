@@ -2427,5 +2427,10 @@ namespace DrawnUi.Maui.Views
 			}
 		}
 		ISkiaGestureListener _focusedChild;
+
+		public virtual void ClipSmart(SKCanvas canvas, SKPath path, SKClipOperation operation = SKClipOperation.Intersect)
+		{
+			canvas.ClipPath(path, operation, false);
+		}
 	}
 }

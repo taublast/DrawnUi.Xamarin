@@ -375,11 +375,14 @@ namespace DrawnUi.Maui.Draw
 
 			switch (Type)
 			{
+
 			case ShapeType.Path:
+			ShouldClipAntialiased = true;
 			path.AddPath(DrawPathResized);
 			break;
 
 			case ShapeType.Circle:
+			ShouldClipAntialiased = true;
 			path.AddCircle(
 				(float)Math.Round(strokeAwareChildrenSize.Left + strokeAwareChildrenSize.Width / 2.0f),
 				(float)Math.Round(strokeAwareChildrenSize.Top + strokeAwareChildrenSize.Height / 2.0f),
@@ -388,6 +391,8 @@ namespace DrawnUi.Maui.Draw
 			break;
 
 			case ShapeType.Ellipse:
+			ShouldClipAntialiased = true;
+
 			path.AddOval(strokeAwareChildrenSize);
 			break;
 
@@ -395,6 +400,8 @@ namespace DrawnUi.Maui.Draw
 			default:
 			if (CornerRadius != default)
 			{
+				ShouldClipAntialiased = true;
+
 				//path.AddRect(strokeAwareChildrenSize);
 
 				var scaledRadiusLeftTop = (float)(CornerRadius.TopLeft * RenderingScale);
@@ -425,7 +432,11 @@ namespace DrawnUi.Maui.Draw
 
 			}
 			else
+			{
+				ShouldClipAntialiased = false;
 				path.AddRect(strokeAwareChildrenSize);
+
+			}
 
 			break;
 			}

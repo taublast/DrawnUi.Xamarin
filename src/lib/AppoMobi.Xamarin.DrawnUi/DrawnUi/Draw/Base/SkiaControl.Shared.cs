@@ -4625,64 +4625,17 @@ namespace DrawnUi.Maui.Draw
 			ctx.Canvas.SetMatrix(drawingMatrix);
 		}
 
-		public static bool IsSimpleRectangle(SKPath path)
-		{
-			if (path == null)
-				return false;
-
-			if (path.VerbCount != 5)
-				return false;
-
-			var iterator = path.CreateRawIterator();
-			var points = new SKPoint[4];
-			int lineToCount = 0;
-			bool moveToFound = false;
-
-			SKPathVerb verb;
-			while ((verb = iterator.Next(points)) != SKPathVerb.Done)
-			{
-				switch (verb)
-				{
-				case SKPathVerb.Move:
-				if (moveToFound)
-					return false; // Multiple MoveTo commands
-				moveToFound = true;
-				break;
-
-				case SKPathVerb.Line:
-				if (lineToCount < 4)
-				{
-					lineToCount++;
-				}
-				else
-				{
-					return false; // More than 4 LineTo commands
-				}
-				break;
-
-				case SKPathVerb.Close:
-				return lineToCount == 4; // Ensure we have exactly 4 LineTo commands before Close
-
-				default:
-				return false; // Any other command invalidates the rectangle check
-				}
-			}
-
-			return false;
-		}
 
 		/// <summary>
-		/// Use antialiasing if path is not rectangle
+		/// Use antialiasing from ShouldClipAntialiased
 		/// </summary>
 		/// <param name="canvas"></param>
 		/// <param name="path"></param>
 		/// <param name="operation"></param>
-		public static void ClipSmart(SKCanvas canvas, SKPath path, SKClipOperation operation = SKClipOperation.Intersect)
+		public virtual void ClipSmart(SKCanvas canvas, SKPath path, SKClipOperation operation = SKClipOperation.Intersect)
 		{
-			bool isRectangle = IsSimpleRectangle(path);
-			canvas.ClipPath(path, operation, !isRectangle); // Disable anti-aliasing if it's a rectangle
+			canvas.ClipPath(path, operation, ShouldClipAntialiased);
 		}
-
 
 		public virtual bool NeedMeasure
 		{
@@ -6538,9 +6491,12 @@ namespace DrawnUi.Maui.Draw
 		}
 
 
-
-
 		#endregion
+
+		/// <summary>
+		/// This is not a static bindable property. Can be set manually or by control, for example SkiaShape sets this to true for non-rectangular shapes, or rounded corners..
+		/// </summary>
+		public bool ShouldClipAntialiased { get; set; }
 	}
 
 	public static class Snapping
