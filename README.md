@@ -28,9 +28,10 @@ For single `Canvas` this should not be needed.
 
 This light Xamarin version has some limitations and some controls are missing in comparision to the [original MAUI Library](https://github.com/taublast/DrawnUi.Maui). Meanwhile please refer to the [original library documentation](https://github.com/taublast/DrawnUi.Maui/wiki).
 
-There is also a sample project in this repo with a drawn About page, would add more with time.
+There is also a sample project in this repo with a drawn About page:
 
-![image](https://github.com/user-attachments/assets/a030a521-81da-4514-847d-e1a559efeaf2)
+![image](https://github.com/user-attachments/assets/3e622b4d-d628-499b-9eec-2f6648041aae) | 
+
   
 ## To Note
 
