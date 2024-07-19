@@ -3,9 +3,8 @@
     x:Class="DrawnUiSample.Views.AboutPage"
     xmlns="http://xamarin.com/schemas/2014/forms"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:vm="clr-namespace:DrawnUiSample.ViewModels"
     xmlns:views="http://schemas.appomobi.com/drawnUi/2023/draw"
-
+    xmlns:vm="clr-namespace:DrawnUiSample.ViewModels"
     Title="{Binding Title}">
 
     <ContentPage.BindingContext>
@@ -16,14 +15,15 @@
         <ResourceDictionary>
             <Color x:Key="Accent">#96d1ff</Color>
 
-        
-            
+
+
         </ResourceDictionary>
     </ContentPage.Resources>
 
     <views:Canvas
+        BackgroundColor="#CCCCFF"
         Gestures="Lock"
-        HardwareAcceleration="Enabled"
+        HardwareAcceleration="Disabled"
         HorizontalOptions="Fill"
         VerticalOptions="Fill">
 
@@ -34,13 +34,13 @@
             VerticalOptions="Fill">
 
             <views:SkiaLayout
-                UseCache="Operations"
-                BackgroundColor="{StaticResource Accent}"
                 HorizontalOptions="Fill"
                 Type="Column"
+                UseCache="Operations"
                 VerticalOptions="Fill">
 
                 <views:SkiaImage
+                    Aspect="AspectFit"
                     HeightRequest="64"
                     HorizontalOptions="Center"
                     Source="xamarin_logo.png"
@@ -54,44 +54,45 @@
                 VerticalOptions="Fill">
 
                 <views:SkiaLayout
-                    UseCache="Operations"
                     Padding="30,24,30,24"
                     Spacing="10"
-                    Type="Column">
+                    Type="Column"
+                    UseCache="Operations">
+
+                    <views:SkiaMarkdownLabel
+                        FontSize="20"
+                        Text="Start developing now, this is a drawn `Canvas`!"
+                        UseCache="Operations" />
 
                     <views:SkiaLabel
-                        FontSize="20"
-                        UseCache="Operations"
-                        Text="Start developing now" />
-                    
-                    <views:SkiaLabel
-                        UseCache="Operations"
                         Padding="0,0,0,0"
                         FontSize="16"
-                        Text="Make changes to your XAML file and save to see your UI update in the running app with XAML Hot Reload. Give it a try!" />
-                    
+                        Text="Bla-bla this is an example of embedding drawn controls inside a usual app. Give it a try!"
+                        UseCache="Operations" />
+
                     <views:SkiaLabel
-                        UseCache="Operations"
                         Padding="0,24,0,0"
-                        FontSize="16">
+                        FontSize="16"
+                        UseCache="Operations">
                         <views:SkiaLabel.Spans>
                             <views:TextSpan Text="Learn more at " />
                             <views:TextSpan
-                                IsBold="True"
                                 FontSize="13"
-                                TextColor="Blue"
-                                Text="https://aka.ms/xamarin-quickstart" />
+                                IsBold="True"
+                                Text="https://aka.ms/xamarin-quickstart"
+                                TextColor="Blue" />
                         </views:SkiaLabel.Spans>
                     </views:SkiaLabel>
 
                     <views:SkiaButton
-                        Tag="Button"
-                        WidthRequest="-1"
                         Margin="0,10,0,0"
                         CommandTapped="{Binding OpenWebCommand}"
-                        Text="Learn more"
+                        CornerRadius="6"
+                        Tag="Button"
+                        Text="Drawn Button"
                         TextColor="White"
-                        TintColor="{StaticResource Primary}" />
+                        TintColor="{StaticResource Primary}"
+                        WidthRequest="-1" />
 
                 </views:SkiaLayout>
 
