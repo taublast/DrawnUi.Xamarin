@@ -26,7 +26,8 @@ AppoMobi.Xamarin.DrawnUi.Droid.DrawnUi.Initialize<App>(this);
   
 ## To Note
 
-Will not support Xamarin built-in Xaml HotReload, contrary to MAUI, due to Xamarin architecture.
+Will not support Xamarin built-in Xaml HotReload, contrary to MAUI, due to Xamarin architecture.  
+Also in Xamarin for many Canvases around the app it's better to use `Super.CanUseHardwareAcceleration = false; //RIP XAMARIN`. For single `Canvas` should not be needed.
 
 `SkiaLabel` `FontSize` property accepts `double` only, setting something like `FontSize="Title"` will result in a `XFC0000` error.
 

@@ -619,7 +619,7 @@ namespace DrawnUi.Maui.Draw
 				string json;
 				if (Uri.TryCreate(fileName, UriKind.Absolute, out var uri))
 				{
-					var client = new WebClient();
+					using var client = new WebClient();
 					var data = await client.DownloadDataTaskAsync(uri);
 					json = Encoding.UTF8.GetString(data);
 				}

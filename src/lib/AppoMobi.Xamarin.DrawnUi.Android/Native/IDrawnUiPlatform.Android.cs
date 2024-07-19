@@ -11,6 +11,7 @@ using DrawnUi.Maui.Views;
 using SkiaSharp;
 using SkiaSharp.Views.Android;
 using System;
+using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -134,6 +135,13 @@ namespace AppoMobi.Xamarin.DrawnUi.Droid
 			{
 				if (DisableCache)
 				{
+					if (source is UriImageSource uri)
+					{
+						using var client = new WebClient();
+						var data = await client.DownloadDataTaskAsync(uri.Uri);
+						return SKBitmap.Decode(data);
+					}
+
 					var handler = source.GetHandler();
 					androidBitmap = await handler.LoadImageAsync(source, Android.App.Application.Context, cancel);
 				}
