@@ -2434,7 +2434,7 @@ namespace DrawnUi.Maui.Draw
 			}
 		}
 
-		public virtual ScaledRect GetOnScreenVisibleArea(float inflateByPixels = 0)
+		public override ScaledRect GetOnScreenVisibleArea(float inflateByPixels = 0)
 		{
 			if (Virtualisation != VirtualisationType.Disabled) //true by default
 			{

@@ -341,7 +341,7 @@ namespace DrawnUi.Maui.Views
 		}
 
 
-		public ScaledRect GetOnScreenVisibleArea(float inflateByPixels = 0)
+		public virtual ScaledRect GetOnScreenVisibleArea(float inflateByPixels = 0)
 		{
 			var bounds = new SKRect(0 - inflateByPixels, 0 - inflateByPixels, (int)(Width * RenderingScale + inflateByPixels), (int)(Height * RenderingScale + inflateByPixels));
 
