@@ -404,16 +404,18 @@ public partial class SkiaScroll
 							velocity = Math.Sign(remainingVelocity) * MaxBounceVelocity;
 						}
 
-						//Bounce(new Vector2((float)ViewportOffsetX, (float)ViewportOffsetY), _axis, new Vector2(velocityX, velocityY));
-
-						if (animator == _animatorFlingY)
+						var swipeThreshold = ThesholdSwipeOnUp * RenderingScale;
+						if (Math.Abs(velocity) > swipeThreshold)
 						{
-							BounceY((float)ViewportOffsetY, _axis.Y, velocity);
-						}
-						else
-						if (animator == _animatorFlingX)
-						{
-							BounceX((float)ViewportOffsetX, _axis.X, velocity);
+							if (animator == _animatorFlingY)
+							{
+								BounceY((float)ViewportOffsetY, _axis.Y, velocity);
+							}
+							else
+							if (animator == _animatorFlingX)
+							{
+								BounceX((float)ViewportOffsetX, _axis.X, velocity);
+							}
 						}
 					}
 				}
