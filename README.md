@@ -33,17 +33,41 @@ There is also a sample project in this repo with a drawn About page:
 ![image](https://github.com/user-attachments/assets/3e622b4d-d628-499b-9eec-2f6648041aae) | 
 
   
-## To Note
+## Xamarin Limitations
 
-Will not support Xamarin built-in Xaml HotReload, contrary to MAUI, due to Xamarin architecture.  
+Contrary to MAUI version:
+
+* Will not support Xamarin built-in Xaml HotReload, due to Xamarin architecture.  
+
+* For same reasons `ItemTemplate` is not set when defined in `<DataTemplate>` XAML so set it like this:
+
+```xml
+    <draw:SkiaLayout
+        CommandChildTapped="{Binding CommandOpenFile}"
+        HorizontalOptions="Fill"
+        ItemTemplate="{Binding CreateUploadCell}"
+        ItemsSource="{Binding Uploads}"
+        Type="Column" />
+```
+
+and 
+```csharp
+    public DataTemplate CreateUploadCell => new DataTemplate(() =>
+    {
+        return new CellUpload();
+    });
+
+```
 
 `SkiaLabel` `FontSize` property accepts `double` only, setting something like `FontSize="Title"` will result in a `XFC0000` error.
 
-Loading resources is different from MAUI version:
+* Loading resources is different from MAUI version:
 
-* `SkiaImage` read files from native projects by default. With "resource://" prefix you can load file from shared project, for example `   Source="resource://Resources.Images.breath.jpg"`. You can of course pass an internet url too.
+`SkiaImage` read files from native projects by default. With "resource://" prefix you can load file from shared project, for example `   Source="resource://Resources.Images.breath.jpg"`. You can of course pass an internet url too.
 
 `SkiaLottie` and `SkiaSvg` `Source` property will always read files from shared project, files must be inlcuded with build action as `Embeeded resource`, for example `Source = "Resources\Lottie\plus.json"`. You can specify an internet url too.
+
+## To Note
 
 _Uses a modified [Glidex.Forms](https://github.com/jonathanpeppers/glidex) project created by Jonathan Peppers for caching images on Android._
 
