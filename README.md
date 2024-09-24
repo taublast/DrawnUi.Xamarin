@@ -37,8 +37,6 @@ There is also a sample project in this repo with a drawn About page:
 
 Contrary to MAUI version:
 
-* Will not support Xamarin built-in Xaml HotReload, due to Xamarin architecture.  
-
 * For same reasons `ItemTemplate` is not set when defined in `<DataTemplate>` XAML so set it like this:
 
 ```xml

@@ -3,7 +3,7 @@
   
   <metadata>
     <id>AppoMobi.Xamarin.DrawnUi</id>
-    <version>1.8.20</version>
+    <version>1.8.21</version>
     <owners>Nick Kovalsky aka AppoMobi</owners>
     <authors>Nick Kovalsky aka AppoMobi</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -21,9 +21,9 @@
       <dependency id="SkiaSharp.Views.Forms" version="2.88.8"/>
       <dependency id="SkiaSharp.Skottie" version="2.88.8"/>
       <dependency id="Svg.Skia" version="1.0.0.18"/>
-      <dependency id="Markdig" version="0.35.0"/>
+      <dependency id="Markdig" version="0.37.0"/>
       <dependency id="Xamarin.Forms" version="5.0.0.2612"/>
-      <dependency id="Xamarin.Essentials" version="1.7.3"/>
+      <dependency id="Xamarin.Essentials" version="1.8.0"/>
     </group>
 
     <group targetFramework="MonoAndroid13">
@@ -33,9 +33,9 @@
       <dependency id="SkiaSharp.Views.Forms" version="2.88.8"/>
       <dependency id="SkiaSharp.Skottie" version="2.88.8"/>
       <dependency id="Svg.Skia" version="1.0.0.18"/>
-      <dependency id="Markdig" version="0.35.0"/>
+      <dependency id="Markdig" version="0.37.0"/>
       <dependency id="Xamarin.Forms" version="5.0.0.2612"/>
-      <dependency id="Xamarin.Essentials" version="1.7.3"/>
+      <dependency id="Xamarin.Essentials" version="1.8.0"/>
     </group>
 
     <group targetFramework="Xamarin.iOS10">
@@ -44,9 +44,9 @@
       <dependency id="SkiaSharp.Views.Forms" version="2.88.8"/>
       <dependency id="SkiaSharp.Skottie" version="2.88.8"/>
       <dependency id="Svg.Skia" version="1.0.0.18"/>
-      <dependency id="Markdig" version="0.35.0"/>
+      <dependency id="Markdig" version="0.37.0"/>
       <dependency id="Xamarin.Forms" version="5.0.0.2612"/>
-      <dependency id="Xamarin.Essentials" version="1.7.3"/>
+      <dependency id="Xamarin.Essentials" version="1.8.0"/>
     </group>
 
   </dependencies>
