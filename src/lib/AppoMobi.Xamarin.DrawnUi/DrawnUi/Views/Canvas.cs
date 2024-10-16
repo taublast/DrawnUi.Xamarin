@@ -405,8 +405,6 @@ public class Canvas : DrawnView, IGestureListener
     /// <param name=""></param>
     public virtual void OnGestureEvent(TouchActionType type, TouchActionEventArgs args1, TouchActionResult touchAction)
     {
-        InvalidateChildren(); //xamarin fix
-
         var args = SkiaGesturesParameters.Create(touchAction, args1);
 
         if (args.Type == TouchActionResult.Panning)
@@ -473,7 +471,7 @@ public class Canvas : DrawnView, IGestureListener
             IsHiddenInViewTree = false; //if we get a gesture, we are visible by design
             bool manageChildFocus = false;
 
-            Debug.WriteLine($"[Touch] Canvas got {args.Type}");
+            //Debug.WriteLine($"[Touch] Canvas got {args.Type}");
 
             if (DebugGesturesColor != SkiaControl.TransparentColor && args.Type == TouchActionResult.Down)
             {
