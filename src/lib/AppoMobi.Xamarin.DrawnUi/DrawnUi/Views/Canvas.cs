@@ -406,11 +406,15 @@ public class Canvas : DrawnView, IGestureListener
     {
         var args = SkiaGesturesParameters.Create(touchAction, args1);
 
+        Console.WriteLine($"[Touch] OnGestureEvent {Tag} got {args.Type}");
+
         if (args.Type == TouchActionResult.Panning)
         {
-            //filter micro-gestures
+
+            ////filter micro-gestures
             if ((Math.Abs(args.Event.Distance.Delta.X) < 1 && Math.Abs(args.Event.Distance.Delta.Y) < 1)
-                || (Math.Abs(args.Event.Distance.Velocity.X / RenderingScale) < 1 && Math.Abs(args.Event.Distance.Velocity.Y / RenderingScale) < 1))
+                || (Math.Abs(args.Event.Distance.Velocity.X / RenderingScale) < 1
+                    && Math.Abs(args.Event.Distance.Velocity.Y / RenderingScale) < 1))
             {
                 return;
             }
@@ -419,6 +423,7 @@ public class Canvas : DrawnView, IGestureListener
 
             if (!_isPanning)
             {
+
                 //filter first panning movement on super sensitive screens
                 if (Math.Abs(args.Event.Distance.Total.X) < threshold && Math.Abs(args.Event.Distance.Total.Y) < threshold)
                 {
@@ -470,7 +475,7 @@ public class Canvas : DrawnView, IGestureListener
             IsHiddenInViewTree = false; //if we get a gesture, we are visible by design
             bool manageChildFocus = false;
 
-            //Debug.WriteLine($"[Touch] Canvas got {args.Type}");
+            Console.WriteLine($"[Touch] Canvas {Tag} got {args.Type}");
 
             if (DebugGesturesColor != SkiaControl.TransparentColor && args.Type == TouchActionResult.Down)
             {

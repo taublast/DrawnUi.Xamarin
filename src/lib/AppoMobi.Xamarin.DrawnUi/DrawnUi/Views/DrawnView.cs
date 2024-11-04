@@ -1,8 +1,6 @@
 ﻿using AppoMobi.Maui.Gestures;
 using DrawnUi.Maui.Infrastructure.Extensions;
-using DrawnUi.Maui.Views;
 using SkiaSharp.Views.Forms;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -10,10 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
 using Xamarin.Essentials;
-using Xamarin.Forms.PlatformConfiguration.iOSSpecific;
-using Xamarin.Forms.Xaml.Diagnostics;
 using VisualElement = Xamarin.Forms.VisualElement;
 
 namespace DrawnUi.Maui.Views
@@ -24,6 +19,7 @@ namespace DrawnUi.Maui.Views
     {
         protected virtual void Draw(SkiaDrawingContext context, SKRect destination, float scale)
         {
+
             ++renderedFrames;
 
             //Debug.WriteLine($"[DRAW] {Tag}");
@@ -781,18 +777,18 @@ namespace DrawnUi.Maui.Views
             switch (e.DisplayInfo.Rotation)
             {
                 case DisplayRotation.Rotation90:
-                    DeviceRotation = 90;
-                    break;
+                DeviceRotation = 90;
+                break;
                 case DisplayRotation.Rotation180:
-                    DeviceRotation = 180;
-                    break;
+                DeviceRotation = 180;
+                break;
                 case DisplayRotation.Rotation270:
-                    DeviceRotation = 270;
-                    break;
+                DeviceRotation = 270;
+                break;
                 case DisplayRotation.Rotation0:
                 default:
-                    DeviceRotation = 0;
-                    break;
+                DeviceRotation = 0;
+                break;
             }
 
             if (Parent != null)
@@ -869,15 +865,14 @@ namespace DrawnUi.Maui.Views
 
         protected void FixDensity()
         {
-            if (RenderingScale <= 0.0)
+            if (_renderingScale <= 0.0)
             {
-                RenderingScale = (float)GetDensity();
-
-                if (RenderingScale <= 0.0)
+                var scale = (float)GetDensity();
+                if (scale <= 0.0)
                 {
-                    RenderingScale = (float)(CanvasView.CanvasSize.Width / this.Width);
+                    scale = (float)(CanvasView.CanvasSize.Width / this.Width);
                 }
-                OnDensityChanged();
+                RenderingScale = scale;
             }
         }
 
@@ -1784,7 +1779,17 @@ namespace DrawnUi.Maui.Views
 
         public static readonly BindableProperty RenderingScaleProperty = BindableProperty.Create(nameof(RenderingScale), typeof(float), typeof(DrawnView),
             -1.0f,
-            propertyChanged: RedrawCanvas);
+            propertyChanged: (b, o, n) =>
+            {
+                var control = b as DrawnView;
+                {
+                    if (control != null && !control.IsDisposed)
+                    {
+                        control.OnDensityChanged();
+                    }
+                }
+            });
+
         public float RenderingScale
         {
             get
@@ -1798,9 +1803,12 @@ namespace DrawnUi.Maui.Views
             }
             set
             {
+                _renderingScale = value;
                 SetValue(RenderingScaleProperty, value);
             }
         }
+
+        private float _renderingScale = -1;
 
 
         private static void OnHardwareModeChanged(BindableObject bindable, object oldvalue, object newvalue)
@@ -1976,33 +1984,33 @@ namespace DrawnUi.Maui.Views
                 {
                     case GradientType.Sweep:
 
-                        return SKShader.CreateSweepGradient(
-                             new SKPoint(destination.Left + destination.Width / 2.0f,
-                                destination.Top + destination.Height / 2.0f),
-                            colors.ToArray(),
-                            colorPositions,
-                            gradient.TileMode, (float)Value1, (float)(Value1 + Value2));
+                    return SKShader.CreateSweepGradient(
+                         new SKPoint(destination.Left + destination.Width / 2.0f,
+                            destination.Top + destination.Height / 2.0f),
+                        colors.ToArray(),
+                        colorPositions,
+                        gradient.TileMode, (float)Value1, (float)(Value1 + Value2));
 
                     case GradientType.Circular:
-                        return SKShader.CreateRadialGradient(
-                            new SKPoint(destination.Left + destination.Width / 2.0f,
-                                destination.Top + destination.Height / 2.0f),
-                            Math.Max(destination.Width, destination.Height) / 2.0f,
-                            colors.ToArray(),
-                            colorPositions,
-                            gradient.TileMode);
+                    return SKShader.CreateRadialGradient(
+                        new SKPoint(destination.Left + destination.Width / 2.0f,
+                            destination.Top + destination.Height / 2.0f),
+                        Math.Max(destination.Width, destination.Height) / 2.0f,
+                        colors.ToArray(),
+                        colorPositions,
+                        gradient.TileMode);
 
                     case GradientType.Linear:
                     default:
-                        return SKShader.CreateLinearGradient(
-                            new SKPoint(destination.Left + destination.Width * gradient.StartXRatio,
-                                destination.Top + destination.Height * gradient.StartYRatio),
-                            new SKPoint(destination.Left + destination.Width * gradient.EndXRatio,
-                                destination.Top + destination.Height * gradient.EndYRatio),
-                            colors.ToArray(),
-                            colorPositions,
-                            gradient.TileMode);
-                        break;
+                    return SKShader.CreateLinearGradient(
+                        new SKPoint(destination.Left + destination.Width * gradient.StartXRatio,
+                            destination.Top + destination.Height * gradient.StartYRatio),
+                        new SKPoint(destination.Left + destination.Width * gradient.EndXRatio,
+                            destination.Top + destination.Height * gradient.EndYRatio),
+                        colors.ToArray(),
+                        colorPositions,
+                        gradient.TileMode);
+                    break;
                 }
 
             }
@@ -2182,21 +2190,21 @@ namespace DrawnUi.Maui.Views
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    foreach (SkiaControl newChildren in e.NewItems)
-                    {
-                        newChildren.SetParent(this);
-                    }
+                foreach (SkiaControl newChildren in e.NewItems)
+                {
+                    newChildren.SetParent(this);
+                }
 
-                    break;
+                break;
 
                 case NotifyCollectionChangedAction.Reset:
                 case NotifyCollectionChangedAction.Remove:
-                    foreach (SkiaControl oldChildren in e.OldItems ?? new SkiaControl[0])
-                    {
-                        oldChildren.SetParent(null);
-                    }
+                foreach (SkiaControl oldChildren in e.OldItems ?? new SkiaControl[0])
+                {
+                    oldChildren.SetParent(null);
+                }
 
-                    break;
+                break;
             }
 
             Update();
