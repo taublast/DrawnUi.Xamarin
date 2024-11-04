@@ -1,6 +1,5 @@
 ﻿using AppoMobi.Framework.Forms.UI.Touch;
 using AppoMobi.Maui.Gestures;
-using AppoMobi.Specials;
 using SkiaSharp.Views.Forms;
 using System.Linq;
 using System.Runtime.CompilerServices;

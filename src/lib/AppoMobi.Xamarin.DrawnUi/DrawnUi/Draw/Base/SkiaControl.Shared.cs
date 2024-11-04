@@ -1,6 +1,4 @@
 ﻿using AppoMobi.Maui.Gestures;
-using DrawnUi.Maui.Controls;
-using DrawnUi.Maui.Infrastructure.Extensions;
 using DrawnUi.Maui.Views;
 using ExCSS;
 using SkiaSharp.Views.Forms;
@@ -12,10 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Input;
-using Xamarin.Forms.Xaml.Diagnostics;
 using Color = Xamarin.Forms.Color;
 using Size = Xamarin.Forms.Size;
 using SKBlendMode = SkiaSharp.SKBlendMode;
@@ -23,7 +19,6 @@ using SKCanvas = SkiaSharp.SKCanvas;
 using SKClipOperation = SkiaSharp.SKClipOperation;
 using SKColor = SkiaSharp.SKColor;
 using SKFilterQuality = SkiaSharp.SKFilterQuality;
-using SKImageFilter = SkiaSharp.SKImageFilter;
 using SKMatrix = SkiaSharp.SKMatrix;
 using SKPaint = SkiaSharp.SKPaint;
 using SKPaintStyle = SkiaSharp.SKPaintStyle;
@@ -31,7 +26,6 @@ using SKPath = SkiaSharp.SKPath;
 using SKPathOp = SkiaSharp.SKPathOp;
 using SKPoint = SkiaSharp.SKPoint;
 using SKRect = SkiaSharp.SKRect;
-using SKShader = SkiaSharp.SKShader;
 using SKSize = SkiaSharp.SKSize;
 
 /*
@@ -996,20 +990,20 @@ namespace DrawnUi.Maui.Draw
             switch (LockChildrenGestures)
             {
                 case LockTouch.Enabled:
-                    return true;
+                return true;
 
                 case LockTouch.Disabled:
-                    break;
+                break;
 
                 case LockTouch.PassTap:
-                    if (action != TouchActionResult.Tapped)
-                        return true;
-                    break;
+                if (action != TouchActionResult.Tapped)
+                    return true;
+                break;
 
                 case LockTouch.PassTapAndLongPress:
-                    if (action != TouchActionResult.Tapped && action != TouchActionResult.LongPressing)
-                        return true;
-                    break;
+                if (action != TouchActionResult.Tapped && action != TouchActionResult.LongPressing)
+                    return true;
+                break;
             }
 
             return false;
@@ -2758,12 +2752,12 @@ namespace DrawnUi.Maui.Draw
                 case LayoutAlignment.Fill:
                 default:
 
-                    bottom = top + useMaxHeight;
-                    if (bottom > destination.Bottom)
-                    {
-                        bottom = destination.Bottom;
-                    }
-                    break;
+                bottom = top + useMaxHeight;
+                if (bottom > destination.Bottom)
+                {
+                    bottom = destination.Bottom;
+                }
+                break;
 
             }
 
@@ -5232,6 +5226,55 @@ namespace DrawnUi.Maui.Draw
         }
 
         private SKPath clipPreviousCachePath = new();
+        /// <summary>
+        /// Applies Background and BackgroundColor properties to paint inside destination. Returns false if there is nothing to paint painted.
+        /// </summary>
+        /// <param name="paint"></param>
+        /// <param name="destination"></param>
+        /// <returns></returns>
+        protected virtual bool SetupBackgroundPaint(SKPaint paint, SKRect destination)
+        {
+            if (paint == null)
+                return false;
+
+            var color = this.BackgroundColor;
+            var gradient = FillGradient;
+
+            if (Background != null)
+            {
+                if (Background is SolidColorBrush solid)
+                {
+                    if (solid.Color != null)
+                        color = solid.Color;
+                }
+                else
+                if (Background is GradientBrush gradientBrush)
+                {
+                    gradient = SkiaGradient.FromBrush(gradientBrush);
+                }
+            }
+            else
+            {
+                if (BackgroundColor != null)
+                {
+                    color = BackgroundColor;
+                }
+            }
+
+            if ((color == null || color.A == 0) && gradient == null) return false;
+
+            var backgroundColor = SKColors.Black; //used for gradient shader background
+            if (color != null)
+                backgroundColor = color.ToSKColor();
+
+            paint.Color = backgroundColor;
+            paint.Style = SKPaintStyle.StrokeAndFill;
+            paint.BlendMode = this.FillBlendMode;
+
+            SetupGradient(paint, gradient, destination);
+
+            return true;
+        }
 
         /// <summary>
         /// Pixels, if you see no Scale parameter
@@ -5240,18 +5283,11 @@ namespace DrawnUi.Maui.Draw
         /// <param name="destination"></param>
         public virtual void PaintTintBackground(SKCanvas canvas, SKRect destination)
         {
-            if (BackgroundColor != null && BackgroundColor != TransparentColor)
+
+            var paint = SetupBackgroundPaint(PaintSystem, destination);
+
+            if (paint)
             {
-                if (PaintSystem == null)
-                {
-                    PaintSystem = new SKPaint();
-                }
-                PaintSystem.Style = SKPaintStyle.StrokeAndFill;
-                PaintSystem.Color = BackgroundColor.ToSKColor();
-                PaintSystem.BlendMode = this.FillBlendMode;
-
-                SetupGradient(PaintSystem, FillGradient, destination);
-
                 //clip upon ImageComposite
                 if (IsRenderingWithComposition)
                 {
@@ -5276,7 +5312,6 @@ namespace DrawnUi.Maui.Draw
                     canvas.DrawRect(destination, PaintSystem);
                 }
             }
-
         }
 
         protected SKPath CombineClipping(SKPath add, SKPath path)
@@ -5650,51 +5685,34 @@ namespace DrawnUi.Maui.Draw
         /// <param name="destination"></param>
         public bool SetupGradient(SKPaint paint, SkiaGradient gradient, SKRect destination)
         {
-
-
-            if (gradient != null && paint != null)
+            if (paint != null)
             {
-                if (paint.Color.Alpha == 0)
+                if (gradient != null)
                 {
-                    paint.Color = SKColor.FromHsl(0, 0, 0);
+                    if (paint.Color.Alpha == 0)
+                    {
+                        paint.Color = SKColor.FromHsl(0, 0, 0);
+                    }
+
+                    paint.Color = SKColors.White;
+                    paint.BlendMode = gradient.BlendMode;
+
+                    var kill = paint.Shader;
+                    paint.Shader = CreateGradient(destination, gradient);
+                    kill?.Dispose();
+
+                    return true;
                 }
-
-                paint.Color = SKColors.White;
-                paint.BlendMode = gradient.BlendMode;
-
-                var kill = paint.Shader;
-                paint.Shader = CreateGradient(destination, gradient);
-                kill?.Dispose();
-
-                return true;
-
-                //if (LastGradient == null || LastGradient.Gradient != gradient ||
-                //    LastGradient.Destination != destination)
-                //{
-                //    var kill = LastGradient;
-                //    LastGradient = new()
-                //    {
-                //        Shader = CreateGradient(destination, gradient),
-                //        Destination = destination,
-                //        Gradient = gradient
-                //    };
-                //    kill?.Dispose();
-                //}
-
-                //var old = paint.Shader;
-                //paint.Shader = LastGradient.Shader;
-                //if (old != paint.Shader)
-                //{
-                //    old?.Dispose();
-                //}
-
-                //return true;
+                else
+                {
+                    var kill = paint.Shader;
+                    paint.Shader = null;
+                    kill?.Dispose();
+                }
             }
 
             return false;
         }
-
-
 
         /// <summary>
         /// Creates and sets an ImageFilter for SKPaint
@@ -6056,13 +6074,13 @@ namespace DrawnUi.Maui.Draw
                 switch (e.Action)
                 {
                     case NotifyCollectionChangedAction.Add:
-                        control.OnItemTemplateChanged();
-                        break;
+                    control.OnItemTemplateChanged();
+                    break;
 
                     case NotifyCollectionChangedAction.Reset:
                     case NotifyCollectionChangedAction.Remove:
-                        control.OnItemTemplateChanged();
-                        break;
+                    control.OnItemTemplateChanged();
+                    break;
                 }
             }
         }
@@ -6179,20 +6197,20 @@ namespace DrawnUi.Maui.Draw
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    foreach (SkiaControl newChildren in e.NewItems)
-                    {
-                        AddOrRemoveView(newChildren, true);
-                    }
-                    break;
+                foreach (SkiaControl newChildren in e.NewItems)
+                {
+                    AddOrRemoveView(newChildren, true);
+                }
+                break;
 
                 case NotifyCollectionChangedAction.Reset:
                 case NotifyCollectionChangedAction.Remove:
-                    foreach (SkiaControl oldChildren in e.OldItems ?? Array.Empty<SkiaControl>())
-                    {
-                        AddOrRemoveView(oldChildren, false);
-                    }
+                foreach (SkiaControl oldChildren in e.OldItems ?? Array.Empty<SkiaControl>())
+                {
+                    AddOrRemoveView(oldChildren, false);
+                }
 
-                    break;
+                break;
             }
 
             Update();
@@ -6215,53 +6233,53 @@ namespace DrawnUi.Maui.Draw
             switch (stretch)
             {
                 case TransformAspect.None:
-                    break;
+                break;
 
                 case TransformAspect.Fit:
-                    aspectX = dest.Width < width ? dest.Width / width : 1;
-                    aspectY = dest.Height < height ? dest.Height / height : 1;
-                    break;
+                aspectX = dest.Width < width ? dest.Width / width : 1;
+                aspectY = dest.Height < height ? dest.Height / height : 1;
+                break;
 
                 case TransformAspect.Fill:
-                    aspectX = width < dest.Width ? s1 : 1;
-                    aspectY = height < dest.Height ? s2 : 1;
-                    break;
+                aspectX = width < dest.Width ? s1 : 1;
+                aspectY = height < dest.Height ? s2 : 1;
+                break;
 
                 case TransformAspect.AspectFit:
-                    aspectX = Math.Min(s1, s2);
-                    aspectY = aspectX;
-                    break;
+                aspectX = Math.Min(s1, s2);
+                aspectY = aspectX;
+                break;
 
                 case TransformAspect.AspectFill:
-                    aspectX = width < dest.Width ? Math.Max(s1, s2) : 1;
-                    aspectY = aspectX;
-                    break;
+                aspectX = width < dest.Width ? Math.Max(s1, s2) : 1;
+                aspectY = aspectX;
+                break;
 
                 case TransformAspect.Cover:
-                    aspectX = s1;
-                    aspectY = s2;
-                    break;
+                aspectX = s1;
+                aspectY = s2;
+                break;
 
                 case TransformAspect.AspectCover:
-                    aspectX = Math.Max(s1, s2);
-                    aspectY = aspectX;
-                    break;
+                aspectX = Math.Max(s1, s2);
+                aspectY = aspectX;
+                break;
 
                 case TransformAspect.AspectFitFill:
-                    var imageAspect = width / height;
-                    var viewportAspect = dest.Width / dest.Height;
+                var imageAspect = width / height;
+                var viewportAspect = dest.Width / dest.Height;
 
-                    if (imageAspect > viewportAspect) // Image is wider than viewport
-                    {
-                        aspectX = dest.Width / width;
-                        aspectY = aspectX;
-                    }
-                    else // Image is taller than viewport
-                    {
-                        aspectY = dest.Height / height;
-                        aspectX = aspectY;
-                    }
-                    break;
+                if (imageAspect > viewportAspect) // Image is wider than viewport
+                {
+                    aspectX = dest.Width / width;
+                    aspectY = aspectX;
+                }
+                else // Image is taller than viewport
+                {
+                    aspectY = dest.Height / height;
+                    aspectX = aspectY;
+                }
+                break;
             }
 
             return (aspectX, aspectY);

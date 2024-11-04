@@ -1,5 +1,4 @@
-﻿
-using AppoMobi.Maui.Gestures;
+﻿using AppoMobi.Maui.Gestures;
 using Newtonsoft.Json;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -7,14 +6,228 @@ using System.Windows.Input;
 
 namespace AppoMobi.Framework.Forms.UI.Touch;
 
-public class Hotspot : ContentView, ITouchView
+public class Hotspot : ContentView, ITouchView, IGestureListener
 {
+
+
+    public double RenderingScale
+    {
+        get
+        {
+            return Screen.DisplayInfo.Density;
+        }
+    }
+
+    #region GESTURES
+
+    public static Color DebugGesturesColor { get; set; } = Color.Transparent;// Color.Parse("#ff0000");
+    /// <summary>
+    /// To filter micro-gestures on super sensitive screens, start passing panning only when threshold is once overpassed
+    /// </summary>
+    public static float FirstPanThreshold = 5;
+
+    bool _isPanning;
+
+
+    private SKPoint _panningOffset;
+
+
+    /// <summary>
+    /// IGestureListener implementation
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="args1"></param>
+    /// <param name="args1"></param>
+    /// <param name=""></param>
+    public void OnGestureEvent(TouchActionType type, TouchActionEventArgs args1, TouchActionResult touchAction)
+    {
+        var args = SkiaGesturesParameters.Create(touchAction, args1);
+
+        if (args.Type == TouchActionResult.Panning)
+        {
+            //filter micro-gestures
+            if ((Math.Abs(args.Event.Distance.Delta.X) < 1 && Math.Abs(args.Event.Distance.Delta.Y) < 1)
+                || (Math.Abs(args.Event.Distance.Velocity.X / RenderingScale) < 1 && Math.Abs(args.Event.Distance.Velocity.Y / RenderingScale) < 1))
+            {
+                return;
+            }
+
+            var threshold = FirstPanThreshold * RenderingScale;
+
+            if (!_isPanning)
+            {
+                //filter first panning movement on super sensitive screens
+                if (Math.Abs(args.Event.Distance.Total.X) < threshold && Math.Abs(args.Event.Distance.Total.Y) < threshold)
+                {
+                    _panningOffset = SKPoint.Empty;
+                    return;
+                }
+
+                if (_panningOffset == SKPoint.Empty)
+                {
+                    _panningOffset = args.Event.Distance.Total.ToSKPoint();
+                }
+
+                //args.PanningOffset = _panningOffset;
+
+                _isPanning = true;
+            }
+        }
+
+        if (args.Type == TouchActionResult.Down)
+        {
+            _isPanning = false;
+        }
+
+        ProcessGestures(args);
+    }
+
+    protected VelocityAccumulator VelocityAccumulator { get; } = new();
+
+    protected virtual void ResetPan()
+    {
+        WasSwiping = false;
+        IsUserFocused = true;
+        IsUserPanning = false;
+
+        VelocityAccumulator.Clear();
+    }
+
+    protected bool WasSwiping { get; set; }
+
+    protected bool IsUserFocused { get; set; }
+
+    protected bool IsUserPanning { get; set; }
+
+    public float VelocityY
+    {
+        get
+        {
+            return _velocityY;
+        }
+
+        protected set
+        {
+            if (Math.Abs(value) > MaxVelocity)
+            {
+                value = MaxVelocity * Math.Sign(value);
+            }
+            if (_velocityY != value)
+            {
+                _velocityY = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+    float _velocityY;
+
+    float _velocityX;
+
+    public float VelocityX
+    {
+        get
+        {
+            return _velocityX;
+        }
+
+        protected set
+        {
+            if (Math.Abs(value) > MaxVelocity)
+            {
+                value = MaxVelocity * Math.Sign(value);
+            }
+            if (_velocityX != value)
+            {
+                _velocityX = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public static readonly BindableProperty MaxVelocityProperty = BindableProperty.Create(
+        nameof(MaxVelocity),
+        typeof(float),
+        typeof(Hotspot),
+        5000f);
+
+    /// <summary>
+    /// Limit user input velocity
+    /// </summary>
+    public float MaxVelocity
+    {
+        get { return (float)GetValue(MaxVelocityProperty); }
+        set { SetValue(MaxVelocityProperty, value); }
+    }
+
+    /// <summary>
+    /// Min velocity in points/sec to flee/swipe when finger is up
+    /// </summary>
+    public static float ThesholdSwipeOnUp = 40f;
+
+    protected virtual void ProcessGestures(SkiaGesturesParameters args)
+    {
+        VelocityX = (float)(args.Event.Distance.Velocity.X / RenderingScale);
+        VelocityY = (float)(args.Event.Distance.Velocity.Y / RenderingScale);
+
+        switch (args.Type)
+        {
+            case TouchActionResult.Up:
+            OnUp1(this, args.Event);
+
+            var swipeThreshold = ThesholdSwipeOnUp * RenderingScale;
+            if (Math.Abs(VelocityX) > swipeThreshold || Math.Abs(VelocityY) > swipeThreshold)
+            {
+                if (Math.Abs(args.Event.Distance.Delta.X) > Math.Abs(args.Event.Distance.Delta.Y))
+                {
+                    if (args.Event.Distance.Total.X > 0)
+                        SwipedRight?.Invoke(this, args.Event);
+                    else
+                        SwipedLeft?.Invoke(this, args.Event);
+                }
+                else
+                {
+                    if (args.Event.Distance.Total.Y > 0)
+                        SwipedDown?.Invoke(this, args.Event);
+                    else
+                        SwipedUp?.Invoke(this, args.Event);
+                }
+            }
+
+            break;
+            case TouchActionResult.Down:
+            OnDown1(this, args.Event);
+            break;
+            case TouchActionResult.LongPressing:
+            OnLongPressing(this, args.Event);
+            break;
+            case TouchActionResult.Tapped:
+            OnTapped(this, args.Event);
+            break;
+            case TouchActionResult.Panning:
+
+            _panDirection = DirectionType.Vertical;
+            if (Math.Abs(args.Event.Distance.Delta.X) > Math.Abs(args.Event.Distance.Delta.Y))
+            {
+                _panDirection = DirectionType.Horizontal;
+            }
+
+            OnPanning(this, args.Event);
+            break;
+        }
+    }
+
+    #endregion
+
+
+
     public event EventHandler<TouchActionEventArgs> Tapped;
     public event EventHandler<TouchActionEventArgs> Up;
     public event EventHandler<TouchActionEventArgs> Down;
-    public event EventHandler<TouchActionEventArgs> Panned;
     public event EventHandler<TouchActionEventArgs> Panning;
-    public event EventHandler<TouchActionEventArgs> Swiped;
+    public event EventHandler<TouchActionEventArgs> SwipedLeft;
+    public event EventHandler<TouchActionEventArgs> SwipedRight;
+    public event EventHandler<TouchActionEventArgs> SwipedUp;
+    public event EventHandler<TouchActionEventArgs> SwipedDown;
 
     public virtual void OnUp(TouchActionEventArgs args)
     {
@@ -30,24 +243,10 @@ public class Hotspot : ContentView, ITouchView
 
     protected void SyncTouchMode(TouchHandlingStyle mode)
     {
-        if (_touchHandler != null)
-        {
-            _touchHandler.TouchMode = mode;
-            //            _touchHandler.NativeCommand
-        }
+        TouchEffect.SetShareTouch(this, mode);
     }
 
 
-    //-------------------------------------------------------------
-    // IsDraggable
-    //-------------------------------------------------------------
-    private const string nameIsDraggable = "IsDraggable";
-    public static readonly BindableProperty IsDraggableProperty = BindableProperty.Create(nameIsDraggable, typeof(bool), typeof(Hotspot), false);
-    public bool IsDraggable
-    {
-        get { return (bool)GetValue(IsDraggableProperty); }
-        set { SetValue(IsDraggableProperty, value); }
-    }
 
     //-------------------------------------------------------------
     // TouchMode
@@ -152,13 +351,10 @@ public class Hotspot : ContentView, ITouchView
 
     public Hotspot()
     {
-        AttachGestures();
+
     }
 
-
     private bool lockTap;
-
-    private TouchEffect _touchHandler;
 
     private void OnTapped(object sender, TouchActionEventArgs args)
     {
@@ -210,46 +406,9 @@ public class Hotspot : ContentView, ITouchView
         Debug.WriteLine($"[TOUCH] {args.Type} {JsonConvert.SerializeObject(args)}");
     }
 
-    public bool HasGestures
-    {
-        get
-        {
-            return _touchHandler != null;
-        }
-    }
-
     void AttachGestures()
     {
-        if (HasGestures)
-            return;
-
-        _touchHandler = new TouchEffect
-        {
-            Capture = true
-        };
-        _touchHandler.LongPressing += OnLongPressing;
-        _touchHandler.Tapped += OnTapped;
-        _touchHandler.Down += OnDown1;
-        _touchHandler.Up += OnUp1;
-        _touchHandler.Panning += OnPanning;
-        _touchHandler.Panned += OnPanned;
-        _touchHandler.Swiped += OnSwiped;
-
-        _touchHandler.TouchMode = this.TouchMode;
-        _touchHandler.Draggable = this.IsDraggable;
-
-        this.Effects.Add(_touchHandler);
-    }
-
-    public virtual void OnSwiped(object sender, TouchActionEventArgs args)
-    {
-        Swiped?.Invoke(this, args);
-        CommandSwiped?.Execute(args);
-    }
-
-    public virtual void OnPanned(object sender, TouchActionEventArgs args)
-    {
-        Panned?.Invoke(this, args);
+        TouchEffect.SetForceAttach(this, true);
     }
 
     public virtual void OnPanning(object sender, TouchActionEventArgs args)
@@ -299,24 +458,12 @@ public class Hotspot : ContentView, ITouchView
             return;
         disposed = true;
 
-
         DetachGestures();
     }
 
     protected void DetachGestures()
     {
-        if (!HasGestures)
-            return;
-
-        _touchHandler.LongPressing -= OnLongPressing;
-        _touchHandler.Tapped -= OnTapped;
-        _touchHandler.Down -= OnDown1;
-        _touchHandler.Up -= OnUp1;
-        _touchHandler.Panning -= OnPanning;
-        _touchHandler.Panned -= OnPanned;
-        _touchHandler.Swiped -= OnSwiped;
-
-        _touchHandler.Dispose();
+        TouchEffect.SetForceAttach(this, false);
     }
 
     private bool _panning;
@@ -369,13 +516,9 @@ public class Hotspot : ContentView, ITouchView
             {
                 Dispose();
             }
-        }
-        else
-        if (propertyName == nameof(IsDraggable))
-        {
-            if (_touchHandler != null)
+            else
             {
-                _touchHandler.Draggable = this.IsDraggable;
+                AttachGestures();
             }
         }
         else
@@ -465,9 +608,11 @@ public class Hotspot : ContentView, ITouchView
     }
 
     private bool animating;
+    private DirectionType _panDirection;
 
     private void OnDown1(object sender, TouchActionEventArgs args)
     {
+        ResetPan();
 
         if (TransformView != null)
         {

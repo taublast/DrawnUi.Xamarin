@@ -15,7 +15,6 @@ namespace AppoMobi.Framework.Forms.UI.Touch
         public PanAwareHotspot()
         {
             TouchMode = TouchHandlingStyle.Default;
-            IsDraggable = true;
         }
 
         public override void OnUp(TouchActionEventArgs e)
