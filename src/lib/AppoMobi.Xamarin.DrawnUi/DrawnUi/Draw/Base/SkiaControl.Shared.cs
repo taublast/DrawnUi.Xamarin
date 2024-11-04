@@ -5251,6 +5251,8 @@ namespace DrawnUi.Maui.Draw
                 if (Background is GradientBrush gradientBrush)
                 {
                     gradient = SkiaGradient.FromBrush(gradientBrush);
+                    if (color == null)
+                        color = Color.Black;
                 }
             }
             else
@@ -5261,13 +5263,9 @@ namespace DrawnUi.Maui.Draw
                 }
             }
 
-            if ((color == null || color.A == 0) && gradient == null) return false;
+            if (color == null || color.A == 0 || gradient == null) return false;
 
-            var backgroundColor = SKColors.Black; //used for gradient shader background
-            if (color != null)
-                backgroundColor = color.ToSKColor();
-
-            paint.Color = backgroundColor;
+            paint.Color = color.ToSKColor();
             paint.Style = SKPaintStyle.StrokeAndFill;
             paint.BlendMode = this.FillBlendMode;
 
