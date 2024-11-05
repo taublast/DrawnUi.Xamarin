@@ -1,9 +1,5 @@
-﻿using DrawnUi.Maui.Draw;
-using System.Linq;
-
-using System.Numerics;
+﻿using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace DrawnUi.Maui.Draw
 {
@@ -36,11 +32,6 @@ namespace DrawnUi.Maui.Draw
         protected ScaledSize MeasureAndArrangeCell(SKRect destination, ControlInStack cell, SkiaControl child, float scale)
         {
             cell.Area = destination;
-
-            if (Tag == "StackCategoriesCells")
-            {
-                var stop = 1;
-            }
 
             var measured = MeasureChild(child, cell.Area.Width, cell.Area.Height, scale);
 
@@ -139,10 +130,6 @@ namespace DrawnUi.Maui.Draw
                 var dirty = dirtyChildren.FirstOrDefault();
                 if (smartMeasuring && dirty != null)
                 {
-                    if (Tag == "InsectStack")
-                    {
-                        Super.Log($"[S] Measuring, smart ON");
-                    }
 
                     //measure only changed child
                     var viewIndex = -1;
@@ -280,10 +267,7 @@ namespace DrawnUi.Maui.Draw
                 }
                 else
                 {
-                    if (Tag == "InsectStack")
-                    {
-                        Super.Log($"[S] Measuring, smart OFF");
-                    }
+ 
                 }
                 */
 

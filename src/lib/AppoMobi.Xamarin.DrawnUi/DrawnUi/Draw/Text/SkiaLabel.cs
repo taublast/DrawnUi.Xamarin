@@ -335,11 +335,6 @@ namespace DrawnUi.Maui.Draw
 
         public override ScaledSize Measure(float widthConstraint, float heightConstraint, float scale)
         {
-            if (Tag == "LabelTitle")
-            {
-                var check = this.Text;
-                var check2 = this.TypeFace;
-            }
 
             if (IsDisposed || IsDisposing)
                 return ScaledSize.Default;
@@ -1161,10 +1156,6 @@ namespace DrawnUi.Maui.Draw
 
                             var posX = alignedLineDrawingStartX + offsetX + lineSpan.Glyphs[charIndex].Position + offsetAdjustmentX;
 
-                            //if (Tag == "Debug")
-                            //{
-                            //    Debug.WriteLine($"Drawing span {lineSpan.Span.Text} with {paint.Typeface.FamilyName} -> {glyph.Text} {glyph.Symbol}");
-                            //}
 
                             DrawCharacter(canvas, lineNb - 1, charIndex, print, posX,
                                 baselineY, paint, paintStroke, paintDropShadow, line.Bounds, (float)scale);

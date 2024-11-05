@@ -2646,10 +2646,6 @@ namespace DrawnUi.Maui.Draw
         /// <param name="scale"></param>
         public SKRect CalculateLayout(SKRect destination, float widthRequest, float heightRequest, float scale)
         {
-            //if (widthRequest == 0 || heightRequest == 0)
-            //{
-            //    return new SKRect(0, 0, 0, 0);
-            //}
 
             var rectAvailable = DefineAvailableSize(destination, widthRequest, heightRequest, scale);
 
@@ -3197,8 +3193,6 @@ namespace DrawnUi.Maui.Draw
         /// <param name="scale"></param>
         public virtual void Arrange(SKRect destination, float widthRequest, float heightRequest, float scale)
         {
-
-
             if (!PreArrange(destination, widthRequest, heightRequest, scale))
             {
                 DrawingRect = SKRect.Empty;
@@ -3406,7 +3400,8 @@ namespace DrawnUi.Maui.Draw
                         provideHeight = maxHeight;
                     }
                     measured = MeasureChild(child, provideWidth, provideHeight, scale);
-                    if (maxHeight == 0 || maxWidth == 0)
+
+                    if (maxHeight <= 0 || maxWidth <= 0 || float.IsInfinity(provideHeight) || float.IsInfinity(provideWidth))
                     {
                         PostProcessMeasuredChild(measured, child, false);
                     }
@@ -3428,23 +3423,7 @@ namespace DrawnUi.Maui.Draw
             return ScaledSize.FromPixels(maxWidth, maxHeight, widthCut, heightCut, scale);
         }
 
-        public virtual void ApplyBindingContext()
-        {
 
-            foreach (var content in this.Views)
-            {
-                content.BindingContext = BindingContext;
-            }
-
-            foreach (var content in this.VisualEffects)
-            {
-                content.Attach(this);
-            }
-
-            if (FillGradient != null)
-                FillGradient.BindingContext = BindingContext;
-
-        }
 
         protected bool BindingContextWasSet { get; set; }
         /// <summary>
@@ -3718,8 +3697,6 @@ namespace DrawnUi.Maui.Draw
 
         public virtual SKRect GetDrawingRectWithMargins(SKRect destination, double scale)
         {
-
-
             var constraintLeft = (float)Math.Round(Margins.Left * scale);
             var constraintRight = (float)Math.Round(Margins.Right * scale);
             var constraintTop = (float)Math.Round(Margins.Top * scale);
@@ -5241,7 +5218,7 @@ namespace DrawnUi.Maui.Draw
             {
                 if (Background is SolidColorBrush solid)
                 {
-                    if (solid.Color.A >= 0)
+                    if (solid.Color.A > 0)
                         color = solid.Color;
                 }
                 else
@@ -5254,13 +5231,13 @@ namespace DrawnUi.Maui.Draw
             }
             else
             {
-                if (BackgroundColor.A >= 0)
+                if (BackgroundColor.A > 0)
                 {
                     color = BackgroundColor;
                 }
             }
 
-            if (color.A <= 0 && gradient == null) return false;
+            if (color.A <= 0) return false;
 
             paint.Color = color.ToSKColor();
             paint.Style = SKPaintStyle.StrokeAndFill;
@@ -5278,6 +5255,10 @@ namespace DrawnUi.Maui.Draw
         /// <param name="destination"></param>
         public virtual void PaintTintBackground(SKCanvas canvas, SKRect destination)
         {
+            if (PaintSystem == null)
+            {
+                PaintSystem = new();
+            }
 
             var paint = SetupBackgroundPaint(PaintSystem, destination);
 
@@ -5882,6 +5863,33 @@ namespace DrawnUi.Maui.Draw
 
         static object lockParent = new();
 
+        /// <summary>
+        /// https://github.com/taublast/DrawnUi.Maui/issues/92#issuecomment-2408805077
+        /// </summary>
+        public virtual void ApplyBindingContext()
+        {
+            foreach (var content in this.Views)
+            {
+                content.SetInheritedBindingContext(BindingContext);
+            }
+
+            //AttachEffects();
+
+            if (FillGradient != null)
+                FillGradient.BindingContext = BindingContext;
+        }
+
+        /// <summary>
+        /// This is to be called by layouts to propagate their binding context to children.
+        /// By overriding this method any child could deny a new context or use any other custom logic.
+        /// To force new context for child parent would set child's BindingContext directly skipping the use of this method.
+        /// </summary>
+        /// <param name="context"></param>
+        public virtual void SetInheritedBindingContext(object context)
+        {
+            BindingContext = context;
+        }
+
         public virtual void SetParent(IDrawnBase parent)
         {
             //lock (lockParent)
@@ -5914,24 +5922,15 @@ namespace DrawnUi.Maui.Draw
                 if (parent == null)
                 {
                     Parent = null;
-                    //BindingContext = null;
-
-                    //this.SizeChanged -= OnFormsSizeChanged;
+                    SetInheritedBindingContext(null);
                     return;
                 }
 
-                //if (!parent.Views.Contains(this)) //Slow A
+                parent.Views.Add(this);
+                if (parent is SkiaControl skiaParent2)
                 {
-                    parent.Views.Add(this);
-                    if (parent is SkiaControl skiaParent)
-                    {
-                        skiaParent.InvalidateViewsList();
-                    }
+                    skiaParent2.InvalidateViewsList();
                 }
-                //else
-                //{
-                //    var stop = 1;
-                //}
 
                 Parent = parent;
 
@@ -5942,15 +5941,14 @@ namespace DrawnUi.Maui.Draw
 
                 if (parent is IDrawnBase control)
                 {
-                    if (BindingContext == null)
-                        BindingContext = control.BindingContext;
+                    if (this.BindingContext == null)
+                        SetInheritedBindingContext(control.BindingContext);
                 }
 
                 InvalidateInternal();
             }
 
         }
-
 
         #endregion
 
