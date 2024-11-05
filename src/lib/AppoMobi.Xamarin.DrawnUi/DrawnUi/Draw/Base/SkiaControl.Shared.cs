@@ -3213,6 +3213,7 @@ namespace DrawnUi.Maui.Draw
 
         protected virtual void PostArrange(SKRect destination, float widthRequest, float heightRequest, float scale)
         {
+            //create area to arrange inside
             SKRect arrangingFor = new(0, 0, destination.Width, destination.Height);
 
             if (!IsLayoutDirty &&
@@ -3244,7 +3245,6 @@ namespace DrawnUi.Maui.Draw
 
             //save to cache
             ArrangedDestination = layout;
-            //ArrangedDrawingRect = GetDrawingRectWithMargins(layout, scale);
 
             AdaptCachedLayout(destination, scale);
 
@@ -3267,7 +3267,6 @@ namespace DrawnUi.Maui.Draw
 
             IsLayoutDirty = false;
         }
-
         /// <summary>
         /// PIXELS
         /// </summary>
@@ -3417,11 +3416,11 @@ namespace DrawnUi.Maui.Draw
                 heightCut |= measured.HeightCut;
             }
 
-            if (HorizontalOptions.Alignment == LayoutAlignment.Fill && WidthRequest < 0)
+            if (HorizontalOptions.Alignment == LayoutAlignment.Fill && WidthRequest < 0 && !float.IsInfinity(rectForChildrenPixels.Width))
             {
                 maxWidth = rectForChildrenPixels.Width;
             }
-            if (VerticalOptions.Alignment == LayoutAlignment.Fill && HeightRequest < 0)
+            if (VerticalOptions.Alignment == LayoutAlignment.Fill && HeightRequest < 0 && !float.IsInfinity(rectForChildrenPixels.Height))
             {
                 maxHeight = rectForChildrenPixels.Height;
             }
@@ -3559,7 +3558,6 @@ namespace DrawnUi.Maui.Draw
         }
 
 
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SKSize GetSizeInPoints(SKSize size, float scale)
         {
@@ -3683,7 +3681,6 @@ namespace DrawnUi.Maui.Draw
 
             return ScaledSize.FromPixels(rectForChildrenPixels.Width, rectForChildrenPixels.Height, scale);
         }
-
 
         public static SKRect ContractPixelsRect(SKRect rect, float scale, Thickness amount)
         {
