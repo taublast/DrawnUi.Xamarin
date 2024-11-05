@@ -37,7 +37,7 @@ There is also a sample project in this repo with a drawn About page:
 
 Contrary to MAUI version:
 
-* Xamarin XAML HotReload is found to be working occasionally.
+* Xamarin XAML HotReload is found to be working occasionally. I still struggle to understand why and where it breaks and why it's suddenly working.. Good news in MAUI we do not have this issue, there it breaks for foundable reasons, though should create a ticker for all cases i just personally know why it breaks but we have zero info about it in console, log etc.. :)
 
 * For same reasons `ItemTemplate` is not set when defined in `<DataTemplate>` XAML so set it like this:
 

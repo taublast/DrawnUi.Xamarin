@@ -2,8 +2,6 @@
 using System.Collections;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Windows.Input;
 
 namespace DrawnUi.Maui.Draw
 {
@@ -11,6 +9,23 @@ namespace DrawnUi.Maui.Draw
     public partial class SkiaLayout : SkiaControl, ISkiaGestureListener, ISkiaGridLayout
     {
 
+        public override bool IsGestureForChild(SkiaControlWithRect child, SKPoint point)
+        {
+            if (this.IsStack)
+            {
+                bool inside = false;
+                if (child.Control != null && !child.Control.IsDisposing && !child.Control.IsDisposed &&
+                    !child.Control.InputTransparent && child.Control.CanDraw)
+                {
+                    var transformed = child.Control.ApplyTransforms(child.Rect); //instead of HitRect
+                    inside = transformed.ContainsInclusive(point.X, point.Y) || child.Control == Superview.FocusedChild;
+                }
+
+                return inside;
+            }
+
+            return base.IsGestureForChild(child, point);
+        }
 
         public override void ApplyBindingContext()
         {
@@ -729,42 +744,42 @@ namespace DrawnUi.Maui.Draw
                     switch (Type)
                     {
                         case LayoutType.Absolute:
-                            ContentSize = MeasureAbsolute(constraints.Content, request.Scale);
-                            break;
+                        ContentSize = MeasureAbsolute(constraints.Content, request.Scale);
+                        break;
 
                         case LayoutType.Grid:
 
-                            ContentSize = MeasureGrid(constraints.Content, request.Scale);
-                            break;
+                        ContentSize = MeasureGrid(constraints.Content, request.Scale);
+                        break;
 
                         case LayoutType.Column:
                         case LayoutType.Row:
-                            if (IsTemplated) //fix threads conflict when templates are initialized in background thread
-                            {
-                                var canMeasureTemplates = ChildrenFactory.TemplatesAvailable || force;
+                        if (IsTemplated) //fix threads conflict when templates are initialized in background thread
+                        {
+                            var canMeasureTemplates = ChildrenFactory.TemplatesAvailable || force;
 
-                                if (!canMeasureTemplates)
-                                    return ScaledSize.CreateEmpty(request.Scale);
-                            }
+                            if (!canMeasureTemplates)
+                                return ScaledSize.CreateEmpty(request.Scale);
+                        }
 
-                            ContentSize = MeasureStack(constraints.Content, request.Scale);
-                            break;
+                        ContentSize = MeasureStack(constraints.Content, request.Scale);
+                        break;
 
                         case LayoutType.Wrap:
-                            if (IsTemplated) //fix threads conflict when templates are initialized in background thread
-                            {
-                                var canMeasureTemplates = ChildrenFactory.TemplatesAvailable || force;
+                        if (IsTemplated) //fix threads conflict when templates are initialized in background thread
+                        {
+                            var canMeasureTemplates = ChildrenFactory.TemplatesAvailable || force;
 
-                                if (!canMeasureTemplates)
-                                    return ScaledSize.CreateEmpty(request.Scale);
-                            }
+                            if (!canMeasureTemplates)
+                                return ScaledSize.CreateEmpty(request.Scale);
+                        }
 
-                            ContentSize = MeasureWrap(constraints.Content, request.Scale);
-                            break;
+                        ContentSize = MeasureWrap(constraints.Content, request.Scale);
+                        break;
 
                         default:
-                            ContentSize = ScaledSize.FromPixels(constraints.Content.Width, constraints.Content.Height, request.Scale);
-                            break;
+                        ContentSize = ScaledSize.FromPixels(constraints.Content.Width, constraints.Content.Height, request.Scale);
+                        break;
                     }
                 }
                 else
@@ -1406,38 +1421,38 @@ namespace DrawnUi.Maui.Draw
                 case NotifyCollectionChangedAction.Remove:
                 case NotifyCollectionChangedAction.Replace:
 
-                    if (IsTemplated && !IsMeasuring)
-                    {
+                if (IsTemplated && !IsMeasuring)
+                {
 
-                        ApplyNewItemsSource = false;
-                        ChildrenFactory.ContextCollectionChanged(CreateContentFromTemplate, ItemsSource,
-                            GetTemplatesPoolLimit(),
-                            GetTemplatesPoolPrefill());
+                    ApplyNewItemsSource = false;
+                    ChildrenFactory.ContextCollectionChanged(CreateContentFromTemplate, ItemsSource,
+                        GetTemplatesPoolLimit(),
+                        GetTemplatesPoolPrefill());
 
-                        Invalidate();
-                        return;
-                    }
+                    Invalidate();
+                    return;
+                }
 
-                    break;
+                break;
 
                 case NotifyCollectionChangedAction.Reset:
-                    ResetScroll();
-                    //ClearChildren();
-                    //if (args.NewItems != null)
-                    //{
-                    //	foreach (var newItem in args.NewItems)
-                    //	{
-                    //		SkiaControl view = CreateControl(ItemTemplate);
-                    //		if (view != null)
-                    //		{
-                    //			view.Parent = this;
-                    //			view.BindingContext = newItem;
-                    //			Views.Add(view);
-                    //		}
-                    //	}
-                    //}
-                    //Invalidate();
-                    break;
+                ResetScroll();
+                //ClearChildren();
+                //if (args.NewItems != null)
+                //{
+                //	foreach (var newItem in args.NewItems)
+                //	{
+                //		SkiaControl view = CreateControl(ItemTemplate);
+                //		if (view != null)
+                //		{
+                //			view.Parent = this;
+                //			view.BindingContext = newItem;
+                //			Views.Add(view);
+                //		}
+                //	}
+                //}
+                //Invalidate();
+                break;
             }
 
             PostponeInvalidation(nameof(OnItemSourceChanged), OnItemSourceChanged);

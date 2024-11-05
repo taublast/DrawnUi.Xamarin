@@ -17,48 +17,6 @@ namespace DrawnUi.Maui.Views;
 
 public class Canvas : DrawnView, IGestureListener
 {
-    /*
-
-        /// <summary>
-        /// We need this mainly to autosize inside grid cells
-        /// This is also called when parent visibilty changes
-        /// </summary>
-        /// <param name="bounds"></param>
-        /// <returns></returns>
-        protected override Size ArrangeOverride(Rect bounds)
-        {
-            NeedCheckParentVisibility = true;
-
-            if (NeedAutoSize)
-            {
-                AdaptSizeToContentIfNeeded(bounds.Width, bounds.Height, true);
-            }
-
-            return base.ArrangeOverride(bounds);
-        }
-
-
-        protected override Size MeasureOverride(double widthConstraint, double heightConstraint)
-        {
-            //ResetUpdate();
-            Size ret;
-            NeedCheckParentVisibility = true;
-
-            if (NeedAutoSize || double.IsInfinity(heightConstraint) || double.IsInfinity(widthConstraint))
-            {
-                ret = AdaptSizeToContentIfNeeded(widthConstraint, heightConstraint, NeedMeasure);
-            }
-            else
-            {
-                ret = base.MeasureOverride(widthConstraint, heightConstraint);
-                NeedMeasure = false;
-                Update();
-            }
-
-            return ret;
-        }
-        */
-
     public override void SetChildren(IEnumerable<SkiaControl> views)
     {
         //do not use subviews as we are using Content property for this control
@@ -406,7 +364,7 @@ public class Canvas : DrawnView, IGestureListener
     {
         var args = SkiaGesturesParameters.Create(touchAction, args1);
 
-        Console.WriteLine($"[Touch] OnGestureEvent {Tag} got {args.Type}");
+        //Console.WriteLine($"[Touch] OnGestureEvent {Tag} got {args.Type}");
 
         if (args.Type == TouchActionResult.Panning)
         {
@@ -475,7 +433,7 @@ public class Canvas : DrawnView, IGestureListener
             IsHiddenInViewTree = false; //if we get a gesture, we are visible by design
             bool manageChildFocus = false;
 
-            Console.WriteLine($"[Touch] Canvas {Tag} got {args.Type}");
+            //Console.WriteLine($"[Touch] Canvas {Tag} got {args.Type}");
 
             if (DebugGesturesColor != SkiaControl.TransparentColor && args.Type == TouchActionResult.Down)
             {

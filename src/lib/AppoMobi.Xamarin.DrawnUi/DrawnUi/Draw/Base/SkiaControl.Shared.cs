@@ -1041,7 +1041,7 @@ namespace DrawnUi.Maui.Draw
             if (child.Control != null && !child.Control.IsDisposing && !child.Control.IsDisposed &&
             !child.Control.InputTransparent && child.Control.CanDraw)
             {
-                var transformed = child.Control.ApplyTransforms(child.Rect);//todo HitRect
+                var transformed = child.Control.ApplyTransforms(child.HitRect);
                 inside = transformed.ContainsInclusive(point.X, point.Y) || child.Control == Superview.FocusedChild;
             }
 
