@@ -5241,26 +5241,26 @@ namespace DrawnUi.Maui.Draw
             {
                 if (Background is SolidColorBrush solid)
                 {
-                    if (solid.Color != null)
+                    if (solid.Color.A >= 0)
                         color = solid.Color;
                 }
                 else
                 if (Background is GradientBrush gradientBrush)
                 {
                     gradient = SkiaGradient.FromBrush(gradientBrush);
-                    if (color == null)
+                    if (color.A < 0)
                         color = Color.Black;
                 }
             }
             else
             {
-                if (BackgroundColor != null)
+                if (BackgroundColor.A >= 0)
                 {
                     color = BackgroundColor;
                 }
             }
 
-            if (color == null || color.A == 0 || gradient == null) return false;
+            if (color.A <= 0 && gradient == null) return false;
 
             paint.Color = color.ToSKColor();
             paint.Style = SKPaintStyle.StrokeAndFill;

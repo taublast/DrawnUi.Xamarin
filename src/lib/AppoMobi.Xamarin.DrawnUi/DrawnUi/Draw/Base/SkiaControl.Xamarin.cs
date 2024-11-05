@@ -111,7 +111,8 @@ namespace DrawnUi.Maui.Draw
                 Repaint();
             }
             else
-            if (propertyName.IsEither(nameof(BackgroundColor), nameof(Background),
+            if (propertyName.IsEither(nameof(BackgroundColor),
+                    nameof(Background),
                     nameof(IsClippedToBounds)
                 ))
             {
