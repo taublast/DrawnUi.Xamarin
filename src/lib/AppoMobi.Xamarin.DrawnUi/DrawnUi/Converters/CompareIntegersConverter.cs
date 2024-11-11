@@ -1,5 +1,4 @@
-﻿using AppoMobi.Specials;
-using System.Globalization;
+﻿using System.Globalization;
 
 namespace AppoMobi.Xamarin.DrawnUi.DrawnUi.Converters
 {

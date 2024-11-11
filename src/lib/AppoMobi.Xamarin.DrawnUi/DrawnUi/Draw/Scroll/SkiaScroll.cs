@@ -2120,8 +2120,6 @@ namespace DrawnUi.Maui.Draw
         protected ScaledSize HeaderSize;
         protected ScaledSize FooterSize;
 
-        //private Stopwatch measureWatch = new();
-
         public override ScaledSize Measure(float widthConstraint, float heightConstraint, float scale)
         {
 
@@ -2132,9 +2130,6 @@ namespace DrawnUi.Maui.Draw
 
             try
             {
-
-                //measureWatch.Restart();
-
                 IsMeasuring = true;
 
                 var request = CreateMeasureRequest(widthConstraint, heightConstraint, scale);
@@ -2153,9 +2148,14 @@ namespace DrawnUi.Maui.Draw
 
                     var zoomedScale = (float)(request.Scale * ViewportZoom);
 
-                    heightConstraint = viewport.Height;
+                    var measuredContent = Content.Measure(viewport.Width, viewport.Height, zoomedScale);
 
-                    var measuredContent = Content.Measure(viewport.Width, heightConstraint, zoomedScale);
+                    //if (Content.VerticalOptions.Expands && Content.NeedAutoHeight
+                    //                                    && measuredContent.Pixels.Height < this.Viewport.Pixels.Height)
+                    //{
+                    //    //todo expand  
+                    //    measuredContent = Content.Measure(viewport.Width, heightConstraint, zoomedScale);
+                    //}
 
                     if (ResetScrollPositionOnContentSizeChanged && (ContentSize.Pixels.Height != measuredContent.Pixels.Height || ContentSize.Pixels.Width != measuredContent.Pixels.Width))
                     {
@@ -2185,9 +2185,6 @@ namespace DrawnUi.Maui.Draw
             finally
             {
                 IsMeasuring = false;
-                //measureWatch.Stop();
-
-
             }
 
         }
