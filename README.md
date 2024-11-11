@@ -63,9 +63,9 @@ and
 
 * Loading resources is different from MAUI version:
 
-`SkiaImage` read files from native projects by default. With "resource://" prefix you can load file from shared project, for example `   Source="resource://Resources.Images.breath.jpg"`. You can of course pass an internet url too.
+1. `SkiaLottie` and `SkiaSvg` `Source` property will always read files from shared project, files must be inlcuded with build action as `Embeeded resource`, for example `Source = "Resources\Lottie\plus.json"`. You can specify an internet url too.
 
-`SkiaLottie` and `SkiaSvg` `Source` property will always read files from shared project, files must be inlcuded with build action as `Embeeded resource`, for example `Source = "Resources\Lottie\plus.json"`. You can specify an internet url too.
+2. `SkiaImage` read files from native projects by default. With "resource://" prefix you can load file from shared project, for example `   Source="resource://Resources.Images.breath.jpg"`. You can of course pass an internet url too.
 
 ## To Note
 
