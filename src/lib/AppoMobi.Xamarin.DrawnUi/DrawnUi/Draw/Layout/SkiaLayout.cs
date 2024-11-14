@@ -605,15 +605,21 @@ namespace DrawnUi.Maui.Draw
             Update();
         }
 
+
         public override void InvalidateByChild(SkiaControl child)
         {
-            if (!NeedAutoSize && child.NeedAutoSize)
+            if (!NeedAutoSize && child.NeedAutoSize || !NeedAutoSize && IsTemplated)
+            {
+                UpdateByChild(child);
                 return;
+            }
 
             if (Type == LayoutType.Absolute)
             {
                 //check if this child changed your size, if not exit
-                //todo
+                if (child.SizeRequest.Width <= this.SizeRequest.Width || child.SizeRequest.Height <= this.SizeRequest.Height)
+                    UpdateByChild(child);
+                return;
             }
 
             base.InvalidateByChild(child);

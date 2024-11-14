@@ -366,43 +366,48 @@ public class Canvas : DrawnView, IGestureListener
 
         //Console.WriteLine($"[Touch] OnGestureEvent {Tag} got {args.Type}");
 
-        if (args.Type == TouchActionResult.Panning)
+        if (Device.RuntimePlatform == Device.Android)
         {
 
-            ////filter micro-gestures
-            if ((Math.Abs(args.Event.Distance.Delta.X) < 1 && Math.Abs(args.Event.Distance.Delta.Y) < 1)
-                || (Math.Abs(args.Event.Distance.Velocity.X / RenderingScale) < 1
-                    && Math.Abs(args.Event.Distance.Velocity.Y / RenderingScale) < 1))
-            {
-                return;
-            }
-
-            var threshold = FirstPanThreshold * RenderingScale;
-
-            if (!_isPanning)
+            if (args.Type == TouchActionResult.Panning)
             {
 
-                //filter first panning movement on super sensitive screens
-                if (Math.Abs(args.Event.Distance.Total.X) < threshold && Math.Abs(args.Event.Distance.Total.Y) < threshold)
+                ////filter micro-gestures
+                if ((Math.Abs(args.Event.Distance.Delta.X) < 1 && Math.Abs(args.Event.Distance.Delta.Y) < 1)
+                    || (Math.Abs(args.Event.Distance.Velocity.X / RenderingScale) < 1
+                        && Math.Abs(args.Event.Distance.Velocity.Y / RenderingScale) < 1))
                 {
-                    _panningOffset = SKPoint.Empty;
                     return;
                 }
 
-                if (_panningOffset == SKPoint.Empty)
+                var threshold = FirstPanThreshold * RenderingScale;
+
+                if (!_isPanning)
                 {
-                    _panningOffset = args.Event.Distance.Total.ToSKPoint();
+
+                    //filter first panning movement on super sensitive screens
+                    if (Math.Abs(args.Event.Distance.Total.X) < threshold && Math.Abs(args.Event.Distance.Total.Y) < threshold)
+                    {
+                        _panningOffset = SKPoint.Empty;
+                        return;
+                    }
+
+                    if (_panningOffset == SKPoint.Empty)
+                    {
+                        _panningOffset = args.Event.Distance.Total.ToSKPoint();
+                    }
+
+                    //args.PanningOffset = _panningOffset;
+
+                    _isPanning = true;
                 }
-
-                //args.PanningOffset = _panningOffset;
-
-                _isPanning = true;
             }
-        }
 
-        if (args.Type == TouchActionResult.Down)
-        {
-            _isPanning = false;
+            if (args.Type == TouchActionResult.Down)
+            {
+                _isPanning = false;
+            }
+
         }
 
         //this is intended to not lose gestures when fps drops and avoid crashes in double-buffering

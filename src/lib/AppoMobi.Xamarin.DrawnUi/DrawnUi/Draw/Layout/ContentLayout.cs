@@ -14,6 +14,17 @@ public partial class ContentLayout : SkiaControl, IVisibilityAware, ISkiaGesture
         Update();
     }
 
+    public override void InvalidateByChild(SkiaControl child)
+    {
+        if (!NeedAutoSize && child.NeedAutoSize || !NeedAutoSize && IsTemplated)
+        {
+            UpdateByChild(child);
+            return;
+        }
+
+        base.InvalidateByChild(child);
+    }
+
     public override void OnWillDisposeWithChildren()
     {
         base.OnWillDisposeWithChildren();

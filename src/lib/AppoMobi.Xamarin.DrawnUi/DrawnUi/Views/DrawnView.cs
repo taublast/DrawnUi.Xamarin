@@ -1745,10 +1745,8 @@ namespace DrawnUi.Maui.Views
             }
             catch (Exception e)
             {
-                Super.Log("****************************************************");
+
                 Super.Log(e);
-                Super.Log("****************************************************");
-                throw e;
             }
         }
 

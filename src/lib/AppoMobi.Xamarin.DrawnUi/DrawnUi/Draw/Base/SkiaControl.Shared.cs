@@ -2558,13 +2558,28 @@ namespace DrawnUi.Maui.Draw
             {
                 if (Superview is DrawnView view)
                 {
-                    view.ToBeDisposed.Enqueue(disposable);
+                    try
+                    {
+                        view.ToBeDisposed.Enqueue(disposable);
+                    }
+                    catch (Exception e)
+                    {
+                        Super.Log(e);
+                    }
                 }
                 else
                 {
                     Tasks.StartDelayed(TimeSpan.FromSeconds(3.5), () =>
                     {
-                        disposable?.Dispose();
+                        try
+                        {
+                            disposable?.Dispose();
+                        }
+                        catch (Exception e)
+                        {
+                            Super.Log(e);
+                        }
+
                     });
                 }
             }
@@ -4942,6 +4957,9 @@ namespace DrawnUi.Maui.Draw
             SKRect destination, float scale,
             bool debug = false)
         {
+            if (skiaControls == null)
+                return 0;
+
             var count = 0;
 
             List<SkiaControlWithRect> tree = new();
