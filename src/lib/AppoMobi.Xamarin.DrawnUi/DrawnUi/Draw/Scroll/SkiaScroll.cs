@@ -300,7 +300,14 @@ namespace DrawnUi.Maui.Draw
         {
             if (bindable is SkiaScroll scroll)
             {
-                scroll.SetIsRefreshing((bool)changed);
+                try
+                {
+                    scroll.SetIsRefreshing((bool)changed);
+                }
+                catch (Exception e)
+                {
+                    Super.Log(e);
+                }
             }
         });
         public bool IsRefreshing
@@ -449,23 +456,65 @@ namespace DrawnUi.Maui.Draw
         /// <returns></returns>
         protected virtual Vector2 ClampOffsetWithRubberBand(float x, float y)
         {
-            var clampedElastic = RubberBandUtils.ClampOnTrack(new Vector2(x, y), ContentOffsetBounds, (float)RubberEffect);
+            Vector2 clampedElastic = Vector2.Zero;
 
+            bool clamped = false;
+            if (RefreshEnabled)
+            {
+                if (Orientation == ScrollOrientation.Vertical && y > 0) //pulling down
+                {
+                    clamped = true;
+                    float adjusted = (float)(RefreshIndicator.Height * RenderingScale + 1000);
+                    var customDims = new Vector2(ContentOffsetBounds.Width, adjusted);
+                    clampedElastic = RubberBandUtils.ClampOnTrack(
+                        new Vector2(x, y),
+                        ContentOffsetBounds,
+                        (float)RubberEffect,
+                        customDims
+                    );
+                }
+                else
+                if (Orientation == ScrollOrientation.Horizontal && x > 0)//pulling right
+                {
+                    clamped = true;
+                    float adjusted = (float)(RefreshIndicator.Width * RenderingScale + 1000);
+                    var customDims = new Vector2(adjusted, ContentOffsetBounds.Height);
+
+                    clampedElastic = RubberBandUtils.ClampOnTrack(
+                        new Vector2(x, y),
+                        ContentOffsetBounds,
+                        (float)RubberEffect,
+                        customDims
+                    );
+                }
+
+            }
+
+            if (!clamped)
+            {
+                clampedElastic = RubberBandUtils.ClampOnTrack(
+                    new Vector2(x, y),
+                    ContentOffsetBounds,
+                    (float)RubberEffect
+                );
+            }
+
+            // Preserve the clamping in the non-scrolling direction
             if (Orientation == ScrollOrientation.Vertical)
             {
                 var clampedX = Math.Max(ContentOffsetBounds.Left, Math.Min(ContentOffsetBounds.Right, x));
                 return clampedElastic with { X = clampedX };
             }
-            else
             if (Orientation == ScrollOrientation.Horizontal)
             {
                 var clampedY = Math.Max(ContentOffsetBounds.Top, Math.Min(ContentOffsetBounds.Bottom, y));
                 return clampedElastic with { Y = clampedY };
             }
 
-
             return clampedElastic;
         }
+
+
 
         public virtual Vector2 ClampOffset(float x, float y, bool strict = false)
         {
@@ -604,15 +653,20 @@ namespace DrawnUi.Maui.Draw
             return forChild;
         }
 
-        /// <summary>
-        /// panning interpolation to avoid trembling finlgers
-        /// </summary>
-        private const float InterpolationFactor = 0.1f;
-
         private bool inContact;
+
+        protected bool LockGesturesUntilDown;
 
         public override ISkiaGestureListener ProcessGestures(SkiaGesturesParameters args, GestureEventProcessingInfo apply)
         {
+            if (LockGesturesUntilDown)
+            {
+                if (args.Type != TouchActionResult.Down)
+                    return null;
+
+                LockGesturesUntilDown = false;
+            }
+
             if (args.Type == TouchActionResult.Down)
             {
                 lockHeader = false;
@@ -1768,7 +1822,7 @@ namespace DrawnUi.Maui.Draw
                     }
                     catch (Exception e)
                     {
-                        Trace.WriteLine(e);
+                        Super.Log(e);
                     }
                 }
             }
@@ -2502,10 +2556,9 @@ namespace DrawnUi.Maui.Draw
 
             if (IsUserPanning)
             {
-                if (RefreshCommand != null && ratio >= 1 && !wasRefreshing && !ScrollLocked)
+                if (!IsRefreshing && RefreshCommand != null && ratio >= 1 && !wasRefreshing && !ScrollLocked)
                 {
-                    SetIsRefreshing(true);
-                    RefreshCommand.Execute(this);
+                    IsRefreshing = true;
                 }
             }
             else
@@ -2542,9 +2595,11 @@ namespace DrawnUi.Maui.Draw
             //lock scrolling at top
             if (state)
             {
+                LockGesturesUntilDown = true;
                 wasRefreshing = true;
                 IsRefreshing = true;
                 ScrollLocked = true;
+                RefreshCommand?.Execute(this);
             }
             else
             {
@@ -3184,7 +3239,7 @@ namespace DrawnUi.Maui.Draw
             }
             catch (Exception e)
             {
-                Trace.WriteLine(e);
+                Super.Log(e);
             }
 
         }

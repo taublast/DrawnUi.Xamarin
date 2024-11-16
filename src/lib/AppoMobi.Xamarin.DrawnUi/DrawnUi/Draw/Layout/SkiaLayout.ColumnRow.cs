@@ -98,7 +98,6 @@ namespace DrawnUi.Maui.Draw
         /// <returns></returns>
         public virtual ScaledSize MeasureStack(SKRect rectForChildrenPixels, float scale)
         {
-
             if (ChildrenFactory.GetChildrenCount() > 0)
             {
                 ScaledSize measured;

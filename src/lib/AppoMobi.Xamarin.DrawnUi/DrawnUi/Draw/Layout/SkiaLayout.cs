@@ -913,11 +913,12 @@ namespace DrawnUi.Maui.Draw
 
         bool _trackWasDrawn;
 
-
         protected override void Paint(SkiaDrawingContext ctx, SKRect destination, float scale, object arguments)
         {
             if (destination.Width == 0 || destination.Height == 0)
+            {
                 return;
+            }
 
             if (Type == LayoutType.Grid || IsStack)
             {
@@ -1251,33 +1252,48 @@ namespace DrawnUi.Maui.Draw
 
         public bool ApplyNewItemsSource { get; set; }
 
+        //public virtual void OnItemSourceChanged()
+        //{
+
+        //    if (!BindingContextWasSet && ItemsSource == null) //do not create items from templates until the context was changed properly to avoid bugs
+        //    {
+        //        return;
+        //    }
+
+        //    if (IsTemplated && !IsMeasuring)
+        //    {
+        //        void Apply()
+        //        {
+        //            this.ChildrenFactory.TemplatesInvalidated = true;
+        //            ApplyNewItemsSource = true;
+        //            Invalidate();
+        //        }
+
+        //        if (IsMeasuring)
+        //        {
+        //            Tasks.StartDelayed(TimeSpan.FromMilliseconds(500), Apply);
+        //        }
+        //        else
+        //        {
+        //            Apply();
+        //        }
+        //    }
+
+        //}
+
         public virtual void OnItemSourceChanged()
         {
+            //if (!string.IsNullOrEmpty(Tag))
+            //    Debug.WriteLine($"OnItemSourceChanged {Tag} {IsTemplated} {IsMeasuring}");
 
-            if (!BindingContextWasSet && ItemsSource == null) //do not create items from templates until the context was changed properly to avoid bugs
+            if (!IsTemplated || !BindingContextWasSet && ItemsSource == null) //do not create items from templates until the context was changed properly to avoid bugs
             {
                 return;
             }
 
-            if (IsTemplated && !IsMeasuring)
-            {
-                void Apply()
-                {
-                    this.ChildrenFactory.TemplatesInvalidated = true;
-                    ApplyNewItemsSource = true;
-                    Invalidate();
-                }
-
-                if (IsMeasuring)
-                {
-                    Tasks.StartDelayed(TimeSpan.FromMilliseconds(500), Apply);
-                }
-                else
-                {
-                    Apply();
-                }
-            }
-
+            this.ChildrenFactory.TemplatesInvalidated = true;
+            ApplyNewItemsSource = true;
+            Invalidate();
         }
 
 
@@ -1300,6 +1316,28 @@ namespace DrawnUi.Maui.Draw
 
             if (!IsTemplated)
                 return;
+
+            //todo implement partial stuff like
+            //NotifyCollectionChangedAction.Add, NotifyCollectionChangedAction.Remove etc
+
+            lock (LockMeasure)
+            {
+                ApplyNewItemsSource = false;
+                ChildrenFactory.ContextCollectionChanged(CreateContentFromTemplate, ItemsSource,
+                    GetTemplatesPoolLimit(),
+                    GetTemplatesPoolPrefill());
+
+                if (args.Action == NotifyCollectionChangedAction.Reset)
+                {
+                    ResetScroll();
+                }
+
+                Invalidate();
+            }
+
+
+            return;
+
 
             switch (args.Action)
             {
@@ -1427,17 +1465,19 @@ namespace DrawnUi.Maui.Draw
                 case NotifyCollectionChangedAction.Remove:
                 case NotifyCollectionChangedAction.Replace:
 
-                if (IsTemplated && !IsMeasuring)
-                {
+                //if (IsTemplated)
+                //{
+                //    lock (lockMeasure)
+                //    {
+                //        ApplyNewItemsSource = false;
+                //        ChildrenFactory.ContextCollectionChanged(CreateContentFromTemplate, ItemsSource,
+                //            GetTemplatesPoolLimit(),
+                //            GetTemplatesPoolPrefill());
 
-                    ApplyNewItemsSource = false;
-                    ChildrenFactory.ContextCollectionChanged(CreateContentFromTemplate, ItemsSource,
-                        GetTemplatesPoolLimit(),
-                        GetTemplatesPoolPrefill());
-
-                    Invalidate();
-                    return;
-                }
+                //        Invalidate();
+                //    }
+                //    return;
+                //}
 
                 break;
 
@@ -1461,12 +1501,11 @@ namespace DrawnUi.Maui.Draw
                 break;
             }
 
-            PostponeInvalidation(nameof(OnItemSourceChanged), OnItemSourceChanged);
+            //PostponeInvalidation(nameof(OnItemSourceChanged), OnItemSourceChanged);
+            //Invalidate();
+
             //OnItemSourceChanged();
-            Update();
-
         }
-
 
 
         #endregion

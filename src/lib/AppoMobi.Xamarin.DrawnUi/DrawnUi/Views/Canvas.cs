@@ -419,7 +419,7 @@ public class Canvas : DrawnView, IGestureListener
                    }
                    catch (Exception e)
                    {
-                       Trace.WriteLine(e);
+                       Super.Log(e);
                    }
                });
 
