@@ -1,6 +1,7 @@
 ﻿using AppoMobi.Maui.Gestures;
 using DrawnUi.Maui.Infrastructure.Extensions;
 using SkiaSharp.Views.Forms;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -332,7 +333,7 @@ namespace DrawnUi.Maui.Views
             }
         }
 
-        public Queue<IDisposable> ToBeDisposed { get; } = new();
+        public ConcurrentQueue<IDisposable> ToBeDisposed { get; } = new();
 
         public virtual bool IsVisibleInViewTree()
         {
@@ -1736,8 +1737,9 @@ namespace DrawnUi.Maui.Views
             {
                 while (ToBeDisposed.Count > 0)
                 {
-                    var disposable = ToBeDisposed.Dequeue();
-                    disposable?.Dispose();
+                    if (ToBeDisposed.TryDequeue(out var disposable))
+                        //var disposable = ToBeDisposed.Dequeue();
+                        disposable?.Dispose();
                 }
             }
             catch (Exception e)

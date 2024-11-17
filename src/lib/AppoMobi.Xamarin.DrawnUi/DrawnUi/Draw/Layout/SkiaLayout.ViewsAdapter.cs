@@ -201,7 +201,7 @@ public class ViewsAdapter : IDisposable
                 if (_parent.IsTemplated)
                 {
 
-                    if (_dicoCellsInUse.TryGetValue(index, out SkiaControl ready))
+                    if (template == null && _dicoCellsInUse.TryGetValue(index, out SkiaControl ready))
                     {
                         if (LogEnabled)
                         {
@@ -266,7 +266,6 @@ public class ViewsAdapter : IDisposable
                     }
 
                     return view;
-
                 }
                 else
                 {
@@ -598,6 +597,7 @@ public class ViewsAdapter : IDisposable
 
     public SkiaControl GetViewAtIndex(int index, SkiaControl template = null)
     {
+
         //lock (_lockTemplates) //to avoid getting same view for different indexes
         {
 
@@ -645,6 +645,9 @@ public class ViewsAdapter : IDisposable
 
     public void ReleaseView(SkiaControl viewModel, bool reset = false)
     {
+        if (viewModel == null)
+            return;
+
         //lock (_lockTemplates)
         {
             if (reset)
@@ -665,12 +668,25 @@ public class ViewsAdapter : IDisposable
                 throw new InvalidOperationException("Templates have not been initialized.");
             }
 
-            SkiaControl viewModel = _templatedViewsPool.Get();
-
+            SkiaControl viewModel = _templatedViewsPool.GetStandalone();// .Get();
             return viewModel;
         }
     }
+    public void ReleaseTemplateInstance(SkiaControl viewModel, bool reset = false)
+    {
+        if (viewModel == null)
+            return;
 
+        //lock (_lockTemplates)
+        {
+            if (reset)
+            {
+                viewModel.SetParent(null);
+                //viewModel.BindingContext = null;
+            }
+            _templatedViewsPool.ReturnStandalone(viewModel);
+        }
+    }
 
     /// <summary>
     /// Used by ViewsProvider
@@ -771,6 +787,54 @@ public class ViewsAdapter : IDisposable
             }
 
         }
+
+
+        public SkiaControl GetStandalone()
+        {
+            lock (_syncLock)
+            {
+                if (_standalone != null && _standalone.IsDisposing)
+                {
+                    _standalone = null;
+                }
+
+                var ret = _standalone;
+                if (ret == null)
+                {
+                    ret = CreateFromTemplate();
+                }
+                return ret;
+            }
+        }
+
+        public void ReturnStandalone(SkiaControl ret)
+        {
+            lock (_syncLock)
+            {
+                if (_standalone != null)
+                {
+                    var kill = _standalone;
+                    _standalone = null;
+                    Tasks.StartDelayed(TimeSpan.FromSeconds(3.5), () =>
+                    {
+                        try
+                        {
+                            kill?.Dispose();
+                        }
+                        catch (Exception e)
+                        {
+                            Super.Log(e);
+                        }
+                    });
+                }
+                if (_standalone == null)
+                {
+                    _standalone = ret;
+                }
+            }
+        }
+
+        private SkiaControl _standalone;
 
         public SkiaControl Get()
         {

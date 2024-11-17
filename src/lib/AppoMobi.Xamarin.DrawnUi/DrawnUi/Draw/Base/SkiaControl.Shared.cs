@@ -4723,10 +4723,6 @@ namespace DrawnUi.Maui.Draw
         protected bool NeedRemeasuring;
 
 
-
-
-
-
         protected virtual void PaintWithEffects(
             SkiaDrawingContext ctx, SKRect destination, float scale, object arguments)
         {

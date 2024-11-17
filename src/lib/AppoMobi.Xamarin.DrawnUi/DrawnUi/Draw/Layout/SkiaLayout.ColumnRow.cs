@@ -279,12 +279,13 @@ namespace DrawnUi.Maui.Draw
 
                 var layoutStructure = BuildStackStructure(scale);
 
-                bool useOneTemplate =
-                                       //ItemSizingStrategy == ItemSizingStrategy.MeasureFirstItem &&
-                                       RecyclingTemplate == RecyclingTemplate.Enabled;
+                bool standalone = false;
+                bool useOneTemplate = IsTemplated && //ItemSizingStrategy == ItemSizingStrategy.MeasureFirstItem ||
+                RecyclingTemplate == RecyclingTemplate.Enabled;
 
-                if (IsTemplated && useOneTemplate)
+                if (useOneTemplate)
                 {
+                    standalone = true;
                     template = ChildrenFactory.GetTemplateInstance();
                 }
 
@@ -296,6 +297,9 @@ namespace DrawnUi.Maui.Draw
                 List<SecondPassArrange> listSecondPass = new();
 
                 //measure
+
+
+
                 //left to right, top to bottom
                 for (var row = 0; row < layoutStructure.MaxRows; row++)
                 {
@@ -303,6 +307,17 @@ namespace DrawnUi.Maui.Draw
                     var maxWidth = 0.0f;
 
                     var columnsCount = layoutStructure.GetColumnCountForRow(row);
+
+                    var needMeasureAll = true;
+                    if (useOneTemplate)
+                    {
+                        needMeasureAll = RecyclingTemplate == RecyclingTemplate.Disabled ||
+                        ItemSizingStrategy == ItemSizingStrategy.MeasureAllItems ||
+                                         (ItemSizingStrategy == ItemSizingStrategy.MeasureFirstItem
+                                          && columnsCount != Split)
+                                         || !(ItemSizingStrategy == ItemSizingStrategy.MeasureFirstItem
+                                              && firstCell != null);
+                    }
 
                     if (!DynamicColumns && columnsCount < Split)
                     {
@@ -325,7 +340,6 @@ namespace DrawnUi.Maui.Draw
                     int column;
                     for (column = 0; column < columnsCount; column++)
                     {
-
                         try
                         {
                             if (layoutStructure.GetColumnCountForRow(row) < column + 1)
@@ -360,35 +374,23 @@ namespace DrawnUi.Maui.Draw
                             rectForChild.Left += GetSpacingForIndex(column, scale);
                             var rectFitChild = new SKRect(rectForChild.Left, rectForChild.Top, rectForChild.Left + widthPerColumn, rectForChild.Bottom);
 
-                            if (IsTemplated)
+
+
+                            if (!needMeasureAll)
                             {
-                                bool needMeasure = (ItemSizingStrategy == ItemSizingStrategy.MeasureFirstItem && columnsCount != Split) || !(ItemSizingStrategy == ItemSizingStrategy.MeasureFirstItem && firstCell != null);
+                                //apply first measured size to cell
+                                var offsetX = rectFitChild.Left - firstCell.Area.Left;
+                                var offsetY = rectFitChild.Top - firstCell.Area.Top;
+                                var arranged = firstCell.Destination;
+                                arranged.Offset(new(offsetX, offsetY));
 
-                                if (needMeasure)
-                                {
-                                    measured = MeasureAndArrangeCell(rectFitChild, cell, child, scale);
-                                    firstCell = cell;
-                                }
-                                else
-                                {
-                                    //apply first measured size to cell
-                                    var offsetX = rectFitChild.Left - firstCell.Area.Left;
-                                    var offsetY = rectFitChild.Top - firstCell.Area.Top;
-                                    var arranged = firstCell.Destination;
-                                    arranged.Offset(new(offsetX, offsetY));
-
-                                    cell.Area = rectFitChild;
-                                    cell.Measured = measured.Clone();
-                                    cell.Destination = arranged;
-                                }
+                                cell.Area = rectFitChild;
+                                cell.Measured = measured.Clone();
+                                cell.Destination = arranged;
                             }
                             else
                             {
                                 measured = MeasureAndArrangeCell(rectFitChild, cell, child, scale);
-                                if (child.Tag == "First")
-                                {
-                                    var stop = 1;
-                                }
                                 if (maybeSecondPass) //has infinity in destination
                                 {
                                     if (Type == LayoutType.Column && child.HorizontalOptions.Alignment != LayoutOptions.Start.Alignment)
@@ -460,9 +462,12 @@ namespace DrawnUi.Maui.Draw
                 }
 
 
-                if (IsTemplated && useOneTemplate)
+                if (useOneTemplate)
                 {
-                    ChildrenFactory.ReleaseView(template);
+                    if (standalone)
+                        ChildrenFactory.ReleaseTemplateInstance(template);
+                    else
+                        ChildrenFactory.ReleaseView(template);
                 }
 
                 if (HorizontalOptions.Alignment == LayoutAlignment.Fill && WidthRequest < 0)
@@ -472,6 +477,11 @@ namespace DrawnUi.Maui.Draw
                 if (VerticalOptions.Alignment == LayoutAlignment.Fill && HeightRequest < 0)
                 {
                     stackHeight = rectForChildrenPixels.Height;
+                }
+
+                if (stackHeight == 0)
+                {
+                    var stop = 1;
                 }
 
                 return ScaledSize.FromPixels(stackWidth, stackHeight, scale);
