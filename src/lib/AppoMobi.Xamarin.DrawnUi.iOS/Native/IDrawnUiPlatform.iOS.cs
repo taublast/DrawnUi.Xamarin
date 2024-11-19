@@ -29,9 +29,6 @@ namespace AppoMobi.Xamarin.DrawnUi.Apple
 
         }
 
-        static Looper Looper { get; set; }
-        public static event EventHandler OnFrame;
-        
         public static void Initialize<T>() where T : Application
         {
             Super.AppAssembly = typeof(T).Assembly;
@@ -55,14 +52,6 @@ namespace AppoMobi.Xamarin.DrawnUi.Apple
 
             Super.InsetsChanged?.Invoke(null, null);
 
-            Looper = new(() =>
-            {
-                OnFrame?.Invoke(null, null);
-            });
-
-            Looper.StartOnMainThread(120);
-            
-            /*
             Tasks.StartDelayed(TimeSpan.FromMilliseconds(250), async () =>
             {
                 while (!_loopStarted)
@@ -95,8 +84,6 @@ namespace AppoMobi.Xamarin.DrawnUi.Apple
                     await Task.Delay(100);
                 }
             });
-            */
-            
         }
 
         static bool _loopStarting = false;
@@ -105,10 +92,10 @@ namespace AppoMobi.Xamarin.DrawnUi.Apple
         public static event EventHandler DisplayLinkCallback;
         static CADisplayLink _displayLink;
 
-        // static void OnFrame()
-        // {
-        //     DisplayLinkCallback?.Invoke(null, null);
-        // }
+        static void OnFrame()
+        {
+            DisplayLinkCallback?.Invoke(null, null);
+        }
 
         public static bool DisableCache;
 
@@ -148,26 +135,16 @@ namespace AppoMobi.Xamarin.DrawnUi.Apple
             //NukeHelper.ClearCache();
         }
 
-        // public void RegisterLooperCallback(EventHandler callback)
-        // {
-        //     DisplayLinkCallback += callback;
-        // }
-        //
-        // public void UnregisterLooperCallback(EventHandler callback)
-        // {
-        //     DisplayLinkCallback -= callback;
-        // }
-
         public void RegisterLooperCallback(EventHandler callback)
         {
-            OnFrame += callback;
+            DisplayLinkCallback += callback;
         }
 
         public void UnregisterLooperCallback(EventHandler callback)
         {
-            OnFrame -= callback;
+            DisplayLinkCallback -= callback;
         }
-        
+
         public bool CheckNativeVisibility(object handler)
         {
 
