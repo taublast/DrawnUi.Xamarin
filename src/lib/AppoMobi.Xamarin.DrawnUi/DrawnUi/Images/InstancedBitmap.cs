@@ -36,14 +36,23 @@ public class LoadedImageSource : IDisposable
     /// </summary>
     public bool ProtectFromDispose { get; set; }
 
+    /// <summary>
+    /// Should be set to true for loaded with SkiaImageManager.ReuseBitmaps
+    /// </summary>
+    public bool ProtectBitmapFromDispose { get; set; }
+
     public void Dispose()
     {
         if (!IsDisposed && !ProtectFromDispose)
         {
             IsDisposed = true;
 
-            Bitmap?.Dispose();
+            if (!ProtectBitmapFromDispose)
+            {
+                Bitmap?.Dispose();
+            }
             Bitmap = null;
+
             Image?.Dispose();
             Image = null;
         }
@@ -69,13 +78,79 @@ public class LoadedImageSource : IDisposable
 
     }
 
-    public int Width => Bitmap?.Width ?? Image?.Width ?? 0;
-    public int Height => Bitmap?.Height ?? Image?.Height ?? 0;
+    private int _height = 0;
+    private int _width = 0;
+    private SKBitmap _bitmap;
+    private SKImage _image;
+
+    public int Width
+    {
+        get
+        {
+            return _width;
+        }
+    }
+    public int Height
+    {
+        get
+        {
+            return _height;
+        }
+    }
 
     public bool IsDisposed { get; protected set; }
 
-    public SKBitmap Bitmap { get; set; }
-    public SKImage Image { get; set; }
+    public SKBitmap Bitmap
+    {
+        get => _bitmap;
+        set
+        {
+            _bitmap = value;
+            if (_bitmap == null)
+            {
+                if (_image == null)
+                {
+                    _height = 0;
+                    _width = 0;
+                }
+                else
+                {
+                    _height = _image.Height;
+                    _width = _image.Width;
+                }
+            }
+            else
+            {
+                _height = _bitmap.Height;
+                _width = _bitmap.Width;
+            }
+        }
+    }
+
+    public SKImage Image
+    {
+        get => _image;
+        set
+        {
+            _image = value;
+            if (_image == null)
+            {
+                if (_bitmap == null)
+                {
+                    _height = 0;
+                    _width = 0;
+                }
+            }
+            else
+            {
+                if (_bitmap == null)
+                {
+                    _height = _image.Height;
+                    _width = _image.Width;
+                }
+            }
+        }
+    }
 
     public SKBitmap GetBitmap()
     {

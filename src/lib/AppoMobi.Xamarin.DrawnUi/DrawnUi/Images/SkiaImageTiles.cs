@@ -1,6 +1,4 @@
-﻿using AppoMobi.Specials;
-
-namespace DrawnUi.Maui.Draw;
+﻿namespace DrawnUi.Maui.Draw;
 
 public class SkiaImageTiles : SkiaImage
 {
@@ -126,6 +124,11 @@ public class SkiaImageTiles : SkiaImage
 
     protected virtual SkiaImage CreateTile(double width, double height, LoadedImageSource source)
     {
+        if (source != null)
+        {
+            source.ProtectBitmapFromDispose = SkiaImageManager.ReuseBitmaps;
+        }
+
         var tile = new SkiaImage()
         {
             Aspect = this.TileAspect,

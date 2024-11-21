@@ -1,12 +1,9 @@
-﻿using AppoMobi.Specials;
-using DrawnUi.Maui.Infrastructure.Models;
+﻿using DrawnUi.Maui.Infrastructure.Models;
 using DrawnUi.Maui.Infrastructure.Xaml;
 using System.Collections;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Xamarin.Essentials;
 
 namespace DrawnUi.Maui.Draw;
@@ -1345,13 +1342,11 @@ public partial class SkiaImageManager : IDisposable
     private readonly PriorityQueue<QueueItem, LoadPriority> _queue = new();
 
     private readonly ConcurrentDictionary<string, Task<SKBitmap>> _trackLoadingBitmapsUris = new();
+    private readonly ConcurrentDictionary<string, ConcurrentStack<QueueItem>> _pendingLoadsLow = new();
+    private readonly ConcurrentDictionary<string, ConcurrentStack<QueueItem>> _pendingLoadsNormal = new();
+    private readonly ConcurrentDictionary<string, ConcurrentStack<QueueItem>> _pendingLoadsHigh = new();
 
-    //todo avoid conflicts, cannot use concurrent otherwise will loose data
-    private readonly Dictionary<string, Stack<QueueItem>> _pendingLoadsLow = new();
-    private readonly Dictionary<string, Stack<QueueItem>> _pendingLoadsNormal = new();
-    private readonly Dictionary<string, Stack<QueueItem>> _pendingLoadsHigh = new();
-
-    private Dictionary<string, Stack<QueueItem>> GetPendingLoadsDictionary(LoadPriority priority)
+    private ConcurrentDictionary<string, ConcurrentStack<QueueItem>> GetPendingLoadsDictionary(LoadPriority priority)
     {
         return priority switch
         {
@@ -1446,26 +1441,12 @@ public partial class SkiaImageManager : IDisposable
                 var urlAlreadyLoading = _trackLoadingBitmapsUris.ContainsKey(uri);
                 if (urlAlreadyLoading)
                 {
-                    lock (lockPending)
-                    {
-                        // we're currently loading the same image, save the task to pendingLoads
-                        TraceLog($"ImageLoadManager: Same image already loading, pausing task for UriImageSource {uri}");
+                    // we're currently loading the same image, save the task to pendingLoads
+                    TraceLog($"ImageLoadManager: Same image already loading, pausing task for UriImageSource {uri}");
 
-                        var pendingLoads = GetPendingLoadsDictionary(priority);
-
-                        if (pendingLoads.TryGetValue(uri, out var stack))
-                        {
-                            stack.Push(tuple);
-                        }
-                        else
-                        {
-                            var pendingStack = new Stack<QueueItem>();
-                            pendingStack.Push(tuple);
-                            pendingLoads[uri] = pendingStack;
-                        }
-
-                        Monitor.PulseAll(lockPending);
-                    }
+                    var pendingLoads = GetPendingLoadsDictionary(priority);
+                    var stack = pendingLoads.GetOrAdd(uri, _ => new ConcurrentStack<QueueItem>());
+                    stack.Push(tuple);
                 }
                 else
                 {
@@ -1515,7 +1496,6 @@ public partial class SkiaImageManager : IDisposable
 
                 SKBitmap bitmap = await Super.Native.LoadImageOnPlatformAsync(queueItem.Source, queueItem.Cancel.Token);
 
-
                 // Add the loaded bitmap to the context cache
                 if (bitmap != null)
                 {
@@ -1549,19 +1529,59 @@ public partial class SkiaImageManager : IDisposable
                         queueItem.Task.TrySetResult(bitmap.Copy());
                     }
 
+                    //process pending requests
+                    string pendingUri = null;
+                    if (queueItem.Source is UriImageSource pendingSourceUri)
+                    {
+                        pendingUri = pendingSourceUri.Uri.ToString();
+                    }
+                    else if (queueItem.Source is FileImageSource sourceFile)
+                    {
+                        pendingUri = sourceFile.File;
+                    }
+
+                    if (pendingUri != null)
+                    {
+                        foreach (LoadPriority priority in Enum.GetValues(typeof(LoadPriority)))
+                        {
+                            var pendingLoads = GetPendingLoadsDictionary((LoadPriority)priority);
+                            if (pendingLoads.TryGetValue(pendingUri, out var stack))
+                            {
+                                QueueItem pendingQueueItem;
+                                while (stack.TryPop(out pendingQueueItem))
+                                {
+                                    if (ReuseBitmaps)
+                                    {
+                                        pendingQueueItem.Task.TrySetResult(bitmap);
+                                    }
+                                    else
+                                    {
+                                        pendingQueueItem.Task.TrySetResult(bitmap.Copy());
+                                    }
+                                    // Optional: Log or handle the unpaused task
+                                }
+                                // Clean up the dictionary entry if the stack is empty
+                                if (stack.IsEmpty)
+                                {
+                                    pendingLoads.TryRemove(pendingUri, out _);
+                                }
+                            }
+                        }
+                    }
                 }
                 else
                 {
                     //might happen when task was canceled
-                    //TraceLog($"ImageLoadManager: BITMAP NULL for {queueItem.Source}");
-                    throw new OperationCanceledException("Platform bitmap returned null");
+                    queueItem.Task.TrySetCanceled();
+
+                    FreedQueuedItem(queueItem);
                 }
 
 
             }
             catch (Exception ex)
             {
-                TraceLog($"ImageLoadManager: Exception {ex}");
+                //TraceLog($"ImageLoadManager: Exception {ex}");
 
                 if (ex is OperationCanceledException || ex is System.Threading.Tasks.TaskCanceledException)
                 {
@@ -1569,18 +1589,11 @@ public partial class SkiaImageManager : IDisposable
                 }
                 else
                 {
+                    Super.Log(ex);
                     queueItem.Task.TrySetException(ex);
                 }
 
-                if (queueItem.Source is UriImageSource sourceUri)
-                {
-                    _trackLoadingBitmapsUris.TryRemove(sourceUri.Uri.ToString(), out _);
-                }
-                else
-                if (queueItem.Source is FileImageSource sourceFile)
-                {
-                    _trackLoadingBitmapsUris.TryRemove(sourceFile.File, out _);
-                }
+                FreedQueuedItem(queueItem);
             }
             finally
             {
@@ -1590,6 +1603,18 @@ public partial class SkiaImageManager : IDisposable
         }
     }
 
+    void FreedQueuedItem(QueueItem queueItem)
+    {
+        if (queueItem.Source is UriImageSource sourceUri)
+        {
+            _trackLoadingBitmapsUris.TryRemove(sourceUri.Uri.ToString(), out _);
+        }
+        else
+        if (queueItem.Source is FileImageSource sourceFile)
+        {
+            _trackLoadingBitmapsUris.TryRemove(sourceFile.File, out _);
+        }
+    }
 
     public bool IsDisposed { get; protected set; }
 
@@ -1602,9 +1627,11 @@ public partial class SkiaImageManager : IDisposable
             {
                 if (pendingPair.Value.Count != 0)
                 {
-                    var nextTcs = pendingPair.Value.Pop();
-                    TraceLog($"ImageLoadManager: [UNPAUSED] task for {pendingPair.Key}");
-                    return nextTcs;
+                    if (pendingPair.Value.TryPop(out var nextTcs))
+                    {
+                        TraceLog($"ImageLoadManager: [UNPAUSED] task for {pendingPair.Key}");
+                        return nextTcs;
+                    }
                 }
             }
             catch
@@ -1620,7 +1647,7 @@ public partial class SkiaImageManager : IDisposable
         {
             try
             {
-                if (IsLoadingLocked || semaphoreLoad.CurrentCount < 1)
+                if (IsLoadingLocked)
                 {
                     TraceLog($"ImageLoadManager: Loading Locked!");
                     await Task.Delay(50);
@@ -1698,7 +1725,25 @@ public partial class SkiaImageManager : IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Return bitmap from cache if existing, respects the `ReuseBitmaps` flag.
+    /// </summary>
+    /// <param name="url"></param>
+    /// <returns></returns>
     public SKBitmap GetFromCache(string url)
+    {
+        var bitmap = GetFromCacheInternal(url);
+        if (bitmap != null)
+            return ReuseBitmaps ? bitmap : bitmap.Copy();
+        return null;
+    }
+
+    /// <summary>
+    /// Used my manager for cache organization. You should use `GetFromCache` for custom controls instead.
+    /// </summary>
+    /// <param name="url"></param>
+    /// <returns></returns>
+    public SKBitmap GetFromCacheInternal(string url)
     {
         return _cachingProvider.Get<SKBitmap>(url)?.Value;
     }
@@ -1710,16 +1755,8 @@ public partial class SkiaImageManager : IDisposable
             TraceLog($"Preload: Empty source");
             return;
         }
-        string uri = null;
-        if (source is UriImageSource sourceUri)
-        {
-            uri = sourceUri.Uri.ToString();
-        }
-        else
-        if (source is FileImageSource sourceFile)
-        {
-            uri = sourceFile.File;
-        }
+        string uri = GetUriFromImageSource(source);
+
         if (string.IsNullOrEmpty(uri))
         {
             TraceLog($"Preload: Invalid source {uri}");
@@ -1751,18 +1788,26 @@ public partial class SkiaImageManager : IDisposable
         }
     }
 
-    private string GetUriFromImageSource(ImageSource source)
+    public static string GetUriFromImageSource(ImageSource source)
     {
+        if (source is UriImageSource uriSource)
+        {
+            return uriSource.Uri.ToString();
+        }
+        if (source is FileImageSource fileSource)
+        {
+            return fileSource.File;
+        }
+        if (source is ImageSourceResourceStream resourceStream)
+        {
+            return resourceStream.Url;
+        }
         if (source is StreamImageSource)
+        {
             return Guid.NewGuid().ToString();
-        else if (source is UriImageSource sourceUri)
-            return sourceUri.Uri.ToString();
-        else if (source is FileImageSource sourceFile)
-            return sourceFile.File;
-
+        }
         return null;
     }
-
 
 
     public void Dispose()
@@ -1795,7 +1840,7 @@ public partial class SkiaImageManager : IDisposable
         {
             cancel.ThrowIfCancellationRequested();
 
-            SKBitmap bitmap = SkiaImageManager.Instance.GetFromCache(filename);
+            SKBitmap bitmap = SkiaImageManager.Instance.GetFromCacheInternal(filename);
             if (bitmap != null)
             {
                 TraceLog($"ImageLoadManager: Loaded local bitmap from cache {filename}");

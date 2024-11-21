@@ -168,13 +168,13 @@ public partial class Super
     public static Color ColorAccent { get; set; } = Color.Orange;
     public static Color ColorPrimary { get; set; } = Color.Gray;
 
-    private static bool enableRendering;
+    private static bool _enableRendering = true;
     public static bool EnableRendering
     {
-        get => enableRendering;
+        get => _enableRendering;
         set
         {
-            enableRendering = value;
+            _enableRendering = value;
             if (value)
                 NeedGlobalUpdate();
         }

@@ -11,6 +11,9 @@ namespace DrawnUi.Maui.Draw
 
         public override bool IsGestureForChild(SkiaControlWithRect child, SKPoint point)
         {
+            if (IsDisposing)
+                return false;
+
             if (this.IsStack)
             {
                 bool inside = false;
@@ -29,6 +32,9 @@ namespace DrawnUi.Maui.Draw
 
         public override void ApplyBindingContext()
         {
+            if (IsDisposing)
+                return;
+
             UpdateRowColumnBindingContexts();
 
             base.ApplyBindingContext();

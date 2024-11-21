@@ -527,8 +527,10 @@ namespace DrawnUi.Maui.Draw
 
             RenderingPaint ??= new SKPaint()
             {
-                //IsAntialias = true,
+                IsAntialias = true
             };
+
+            RenderingPaint.IsDither = IsDistorted;
 
             //if (IsDistorted)
             //{

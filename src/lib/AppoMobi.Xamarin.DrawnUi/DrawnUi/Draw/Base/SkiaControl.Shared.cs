@@ -5882,7 +5882,10 @@ namespace DrawnUi.Maui.Draw
         /// </summary>
         public virtual void ApplyBindingContext()
         {
-            foreach (var content in this.Views)
+            if (IsDisposing)
+                return;
+
+            foreach (var content in this.Views.ToList())
             {
                 content.SetInheritedBindingContext(BindingContext);
             }
@@ -5901,6 +5904,9 @@ namespace DrawnUi.Maui.Draw
         /// <param name="context"></param>
         public virtual void SetInheritedBindingContext(object context)
         {
+            if (IsDisposing)
+                return;
+
             BindingContext = context;
         }
 
