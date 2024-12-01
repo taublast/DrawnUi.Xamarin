@@ -16,7 +16,8 @@ namespace DrawnUi.Maui.Views
 {
 
     [ContentProperty("Children")]
-    public partial class DrawnView : ContentView, IDrawnBase, IAnimatorsManager
+    public partial class DrawnView : ContentView,
+        IDrawnBase, IAnimatorsManager
     {
         protected virtual void Draw(SkiaDrawingContext context, SKRect destination, float scale)
         {
@@ -333,7 +334,6 @@ namespace DrawnUi.Maui.Views
             }
         }
 
-        public ConcurrentQueue<IDisposable> ToBeDisposed { get; } = new();
 
         public virtual bool IsVisibleInViewTree()
         {
@@ -1010,6 +1010,8 @@ namespace DrawnUi.Maui.Views
 
             IsDisposed = true;
 
+            DisposeManager.Dispose();
+
             Parent = null;
 
             PaintSystem?.Dispose();
@@ -1025,6 +1027,7 @@ namespace DrawnUi.Maui.Views
             ClearChildren();
 
             DisposePlatform();
+
         }
         /// <summary>
         /// Makes the control dirty, in need to be remeasured and rendered but this doesn't call Update, it's up yo you
@@ -1730,6 +1733,201 @@ namespace DrawnUi.Maui.Views
         protected object LockDraw = new();
 
         long renderedFrames;
+
+
+        #region DISPOSE STUFF
+
+        public void DisposeObject(IDisposable resource)
+        {
+            if (this.IsDisposed)
+                return;
+
+            DisposeManager.EnqueueDisposable(resource);
+        }
+
+        protected DisposableManager DisposeManager { get; } = new(3.5);
+
+        public readonly struct TimedDisposable : IDisposable
+        {
+            public IDisposable Disposable { get; }
+            public DateTime EnqueuedTime { get; }
+
+            public TimedDisposable(IDisposable disposable)
+            {
+                Disposable = disposable ?? throw new ArgumentNullException(nameof(disposable));
+                EnqueuedTime = DateTime.UtcNow;
+            }
+
+            public void Dispose()
+            {
+                Disposable.Dispose();
+            }
+        }
+
+        public class DisposableManager : IDisposable
+        {
+            private readonly ConcurrentQueue<TimedDisposable> _toBeDisposed = new ConcurrentQueue<TimedDisposable>();
+            private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+            private readonly Task _disposalTask;
+            private readonly double _disposeDelaySeconds;
+            private bool _disposed = false;
+
+            /// <summary>
+            /// Initializes a new instance of the DisposableManager class.
+            /// </summary>
+            /// <param name="disposeDelaySeconds">The delay in seconds before an IDisposable is disposed after being enqueued. Default is 3.5 seconds.</param>
+            public DisposableManager(double disposeDelaySeconds = 3.5)
+            {
+                if (disposeDelaySeconds <= 0)
+                    throw new ArgumentOutOfRangeException(nameof(disposeDelaySeconds), "Dispose delay must be positive.");
+
+                _disposeDelaySeconds = disposeDelaySeconds;
+                _disposalTask = Task.Run(() => PeriodicDisposeAsync(_cancellationTokenSource.Token));
+            }
+
+            /// <summary>
+            /// Enqueues an IDisposable object with the current timestamp.
+            /// </summary>
+            /// <param name="disposable">The IDisposable object to enqueue.</param>
+            public void EnqueueDisposable(IDisposable disposable)
+            {
+                if (disposable == null)
+                    return;
+
+                var timedDisposable = new TimedDisposable(disposable);
+                _toBeDisposed.Enqueue(timedDisposable);
+            }
+
+            /// <summary>
+            /// Periodically disposes of eligible disposables.
+            /// </summary>
+            /// <param name="cancellationToken">Cancellation token to stop the disposal loop.</param>
+            private async Task PeriodicDisposeAsync(CancellationToken cancellationToken)
+            {
+                try
+                {
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        DisposeDisposables();
+                        await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                    // Expected when cancellationToken is canceled
+                }
+                catch (Exception ex)
+                {
+                    // Log unexpected exceptions
+                    LogError(ex);
+                }
+            }
+
+            /// <summary>
+            /// Disposes of all IDisposable objects that have been in the queue for more than the specified delay.
+            /// </summary>
+            private void DisposeDisposables()
+            {
+                DateTime now = DateTime.UtcNow;
+
+                while (_toBeDisposed.TryPeek(out var timedDisposable))
+                {
+                    var elapsed = now - timedDisposable.EnqueuedTime;
+                    if (elapsed.TotalSeconds >= _disposeDelaySeconds)
+                    {
+                        if (_toBeDisposed.TryDequeue(out var disposableToDispose))
+                        {
+                            try
+                            {
+                                disposableToDispose.Dispose();
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log the exception and continue disposing other items
+                                LogError(ex);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Since the queue is FIFO, no need to check further
+                        break;
+                    }
+                }
+            }
+
+
+            private void LogError(Exception ex)
+            {
+                Super.Log(ex);
+            }
+
+            /// <summary>
+            /// Disposes all remaining disposables immediately and stops the periodic disposal task.
+            /// </summary>
+            public void Dispose()
+            {
+                if (_disposed)
+                    return;
+
+                _disposed = true;
+
+                // Cancel the disposal loop
+                _cancellationTokenSource.Cancel();
+
+                try
+                {
+                    // Wait for the disposal task to complete
+                    _disposalTask.Wait();
+                }
+                catch (AggregateException ae)
+                {
+                    ae.Handle(ex =>
+                    {
+                        LogError(ex);
+                        return true;
+                    });
+                }
+
+                // Dispose remaining disposables
+                DisposeAllRemaining();
+
+                // Dispose the cancellation token source
+                _cancellationTokenSource.Dispose();
+            }
+
+            /// <summary>
+            /// Disposes all remaining IDisposable objects in the queue.
+            /// </summary>
+            private void DisposeAllRemaining()
+            {
+                List<TimedDisposable> remainingDisposables = new List<TimedDisposable>();
+
+                while (_toBeDisposed.TryDequeue(out var timedDisposable))
+                {
+                    remainingDisposables.Add(timedDisposable);
+                }
+
+                foreach (var disposable in remainingDisposables)
+                {
+                    try
+                    {
+                        disposable.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the exception and continue disposing other items
+                        LogError(ex);
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+
+
+        public ConcurrentQueue<IDisposable> ToBeDisposed { get; } = new();
 
         public virtual void DisposeDisposables()
         {

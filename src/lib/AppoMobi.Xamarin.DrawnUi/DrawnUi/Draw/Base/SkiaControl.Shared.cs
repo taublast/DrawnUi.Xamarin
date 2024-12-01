@@ -2547,6 +2547,9 @@ namespace DrawnUi.Maui.Draw
             return (startPoint.x, startPoint.y, endPoint.x, endPoint.y);
         }
 
+        public ObjectAliveType IsAlive { get; set; }
+
+        public static TimeSpan DisposalDelay = TimeSpan.FromSeconds(3.5);
 
         /// <summary>
         /// Dispose with needed delay. 
@@ -2560,7 +2563,7 @@ namespace DrawnUi.Maui.Draw
                 {
                     try
                     {
-                        view.ToBeDisposed.Enqueue(disposable);
+                        view.DisposeObject(disposable);
                     }
                     catch (Exception e)
                     {
@@ -2569,17 +2572,25 @@ namespace DrawnUi.Maui.Draw
                 }
                 else
                 {
-                    Tasks.StartDelayed(TimeSpan.FromSeconds(3.5), () =>
+                    if (disposable is SkiaControl skia)
+                    {
+                        skia.IsAlive = ObjectAliveType.BeingDisposed;
+                    }
+
+                    Tasks.StartDelayed(DisposalDelay, () =>
                     {
                         try
                         {
                             disposable?.Dispose();
+                            if (disposable is SkiaControl skia)
+                            {
+                                skia.IsAlive = ObjectAliveType.Disposed;
+                            }
                         }
                         catch (Exception e)
                         {
                             Super.Log(e);
                         }
-
                     });
                 }
             }

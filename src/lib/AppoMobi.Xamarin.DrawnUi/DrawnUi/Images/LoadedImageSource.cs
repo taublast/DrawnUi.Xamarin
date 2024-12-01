@@ -14,18 +14,28 @@ public class LoadedImageSource : IDisposable
             // Clone the SKBitmap
             var bitmapClone = new SKBitmap(Bitmap.Width, Bitmap.Height, Bitmap.ColorType, Bitmap.AlphaType);
             Bitmap.CopyTo(bitmapClone);
-            return new LoadedImageSource(bitmapClone);
+            return new LoadedImageSource(bitmapClone)
+            {
+                ProtectBitmapFromDispose = this.ProtectBitmapFromDispose,
+                ProtectFromDispose = this.ProtectFromDispose
+            };
         }
         else if (Image != null)
         {
             // Clone the SKImage
             var imageClone = SKImage.FromBitmap(SKBitmap.FromImage(Image));
-            return new LoadedImageSource(imageClone);
+            return new LoadedImageSource(imageClone)
+            {
+                ProtectFromDispose = this.ProtectFromDispose
+            };
         }
         else
         {
             // If there's no image or bitmap, return a new empty instance
-            return new LoadedImageSource();
+            return new LoadedImageSource()
+            {
+                ProtectFromDispose = this.ProtectFromDispose
+            };
         }
     }
 
@@ -105,24 +115,27 @@ public class LoadedImageSource : IDisposable
         get => _bitmap;
         set
         {
-            _bitmap = value;
-            if (_bitmap == null)
+            if (!IsDisposed)
             {
-                if (_image == null)
+                _bitmap = value;
+                if (_bitmap == null)
                 {
-                    _height = 0;
-                    _width = 0;
+                    if (_image == null)
+                    {
+                        _height = 0;
+                        _width = 0;
+                    }
+                    else
+                    {
+                        _height = _image.Height;
+                        _width = _image.Width;
+                    }
                 }
                 else
                 {
-                    _height = _image.Height;
-                    _width = _image.Width;
+                    _height = _bitmap.Height;
+                    _width = _bitmap.Width;
                 }
-            }
-            else
-            {
-                _height = _bitmap.Height;
-                _width = _bitmap.Width;
             }
         }
     }
@@ -132,21 +145,24 @@ public class LoadedImageSource : IDisposable
         get => _image;
         set
         {
-            _image = value;
-            if (_image == null)
+            if (!IsDisposed)
             {
-                if (_bitmap == null)
+                _image = value;
+                if (_image == null)
                 {
-                    _height = 0;
-                    _width = 0;
+                    if (_bitmap == null)
+                    {
+                        _height = 0;
+                        _width = 0;
+                    }
                 }
-            }
-            else
-            {
-                if (_bitmap == null)
+                else
                 {
-                    _height = _image.Height;
-                    _width = _image.Width;
+                    if (_bitmap == null)
+                    {
+                        _height = _image.Height;
+                        _width = _image.Width;
+                    }
                 }
             }
         }

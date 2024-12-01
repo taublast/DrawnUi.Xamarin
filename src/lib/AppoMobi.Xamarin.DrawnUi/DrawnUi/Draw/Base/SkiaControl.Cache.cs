@@ -317,10 +317,7 @@ CachedObject reuseSurfaceFrom,
                 RenderObjectPreviousNeedsUpdate = false;
                 if (kill != null)
                 {
-                    Tasks.StartDelayed(TimeSpan.FromSeconds(3.5), () =>
-                    {
-                        kill.Dispose();
-                    });
+                    DisposeObject(kill);
                 }
             }
 
@@ -658,10 +655,7 @@ CachedObject reuseSurfaceFrom,
             }
             if (usingCacheType != SkiaCacheType.ImageDoubleBuffered && usingCacheType != SkiaCacheType.ImageComposite)
             {
-                Tasks.StartDelayed(TimeSpan.FromSeconds(3.5), () =>
-                {
-                    oldObject.Dispose();
-                });
+                DisposeObject(oldObject);
             }
         }
 
