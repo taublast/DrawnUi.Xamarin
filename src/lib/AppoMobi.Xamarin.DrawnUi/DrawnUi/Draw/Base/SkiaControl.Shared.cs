@@ -5157,10 +5157,10 @@ namespace DrawnUi.Maui.Draw
             if (UpdateLocked)
                 return;
 
-            if (IsParentIndependent)
-                return;
-
-            Parent?.UpdateByChild(this);
+            if (!WillNotUpdateParent)
+            {
+                Parent?.UpdateByChild(this);
+            }
         }
 
         /// <summary>

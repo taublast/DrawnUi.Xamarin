@@ -37,6 +37,9 @@ public class CachedObject : IDisposable
 
     public void Draw(SKCanvas canvas, SKRect destination, SKPaint paint)
     {
+        if (IsDisposed)
+            return;
+
         try
         {
             if (Picture != null)

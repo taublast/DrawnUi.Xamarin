@@ -41,6 +41,7 @@ public partial class SkiaControl
             {
                 var kill = _renderObjectPrevious;
                 _renderObjectPrevious = value;
+
                 if (kill != null && UsingCacheType != SkiaCacheType.Image && UsingCacheType == SkiaCacheType.ImageComposite)
                     DisposeObject(kill);
             }

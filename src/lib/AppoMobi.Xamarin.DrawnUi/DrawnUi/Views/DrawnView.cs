@@ -26,8 +26,6 @@ namespace DrawnUi.Maui.Views
 
             //Debug.WriteLine($"[DRAW] {Tag}");
 
-            DisposeDisposables();
-
             if (IsDisposed || UpdateLocked)
             {
                 return;
@@ -1020,8 +1018,6 @@ namespace DrawnUi.Maui.Views
 
             Content = null;
 
-            DisposeDisposables();
-
             //this.Handler?.DisconnectHandler();
 
             ClearChildren();
@@ -1809,7 +1805,7 @@ namespace DrawnUi.Maui.Views
                     while (!cancellationToken.IsCancellationRequested)
                     {
                         DisposeDisposables();
-                        await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+                        await Task.Delay(500, cancellationToken); //.ConfigureAwait(false);
                     }
                 }
                 catch (TaskCanceledException)
@@ -1924,28 +1920,6 @@ namespace DrawnUi.Maui.Views
         }
 
         #endregion
-
-
-
-        public ConcurrentQueue<IDisposable> ToBeDisposed { get; } = new();
-
-        public virtual void DisposeDisposables()
-        {
-            try
-            {
-                while (ToBeDisposed.Count > 0)
-                {
-                    if (ToBeDisposed.TryDequeue(out var disposable))
-                        //var disposable = ToBeDisposed.Dequeue();
-                        disposable?.Dispose();
-                }
-            }
-            catch (Exception e)
-            {
-
-                Super.Log(e);
-            }
-        }
 
         /// <summary>
         /// For debugging purposes check if dont have concurrent threads

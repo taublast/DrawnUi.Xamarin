@@ -190,6 +190,9 @@ namespace DrawnUi.Maui.Draw
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual void DrawTextInternal(SKCanvas canvas, string text, float x, float y, SKPaint paint, float scale)
         {
+            if (IsDisposing)
+                return;
+
             //canvas.DrawText(text, x, y, paint);
             canvas.DrawText(text, (int)Math.Round(x), (int)Math.Round(y), paint);
         }
@@ -337,7 +340,6 @@ namespace DrawnUi.Maui.Draw
 
         public override ScaledSize Measure(float widthConstraint, float heightConstraint, float scale)
         {
-
             lock (LockFont)
             {
                 if (IsDisposed || IsDisposing)
@@ -631,6 +633,8 @@ namespace DrawnUi.Maui.Draw
 
         public override void OnDisposing()
         {
+            IsDisposing = true;
+
             if (_spans != null)
             {
                 lock (_spanLock)
@@ -643,7 +647,6 @@ namespace DrawnUi.Maui.Draw
                     _spans.Clear();
                 }
             }
-
 
             PaintDefault?.Dispose();
             PaintStroke?.Dispose();
@@ -737,13 +740,15 @@ namespace DrawnUi.Maui.Draw
         {
             lock (LockFont)
             {
+                if (IsDisposing)
+                    return;
+
                 base.Paint(ctx, destination, scale, arguments);
 
                 var rectForChildren = ContractPixelsRect(destination, scale, Padding);
 
                 if (Lines != null)
                     DrawLines(ctx, PaintDefault, SKPoint.Empty, Lines, rectForChildren, scale);
-
             }
         }
 

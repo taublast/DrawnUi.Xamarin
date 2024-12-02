@@ -29,7 +29,7 @@ namespace DrawnUi.Maui.Draw
             }
         }
 
-        protected ScaledSize MeasureAndArrangeCell(SKRect destination, ControlInStack cell, SkiaControl child, float scale)
+        protected ScaledSize MeasureAndArrangeCell(SKRect destination, ControlInStack cell, SkiaControl child, SKRect rectForChildrenPixels, float scale)
         {
             cell.Area = destination;
 
@@ -37,17 +37,41 @@ namespace DrawnUi.Maui.Draw
 
             cell.Measured = measured;
 
-            LayoutCell(measured, cell, child, scale);
+            LayoutCell(measured, cell, child, rectForChildrenPixels, scale);
 
             return measured;
         }
 
-        void LayoutCell(ScaledSize measured, ControlInStack cell, SkiaControl child, float scale)
+        public virtual void LayoutCell(
+            ScaledSize measured,
+            ControlInStack cell,
+            SkiaControl child,
+            SKRect rectForChildrenPixels,
+            float scale)
         {
             if (!measured.IsEmpty)
             {
+                var area = cell.Area;
+                if (child != null)
+                {
+                    if (Type == LayoutType.Column && child.VerticalOptions.Alignment != LayoutAlignment.Start && child.VerticalOptions.Alignment != LayoutAlignment.Fill)
+                    {
+                        area = new(area.Left,
+                            rectForChildrenPixels.Top,
+                            area.Right,
+                            rectForChildrenPixels.Bottom);
+                    }
+                    else
+                    if (Type == LayoutType.Row && child.HorizontalOptions.Alignment != LayoutAlignment.Start && child.HorizontalOptions.Alignment != LayoutAlignment.Fill)
+                    {
+                        area = new(rectForChildrenPixels.Left,
+                            area.Top,
+                            rectForChildrenPixels.Right,
+                            area.Bottom);
+                    }
+                }
 
-                child.Arrange(cell.Area, measured.Units.Width, measured.Units.Height, scale);
+                child.Arrange(area, measured.Units.Width, measured.Units.Height, scale);
 
                 var maybeArranged = child.Destination;
 
@@ -56,12 +80,13 @@ namespace DrawnUi.Maui.Draw
                         cell.Area.Left + cell.Measured.Pixels.Width,
                         cell.Area.Top + cell.Measured.Pixels.Height);
 
-                if (maybeArranged.Height.IsNormal())
+                if (!float.IsNaN(maybeArranged.Height) && !float.IsInfinity(maybeArranged.Height))
                 {
                     arranged.Top = maybeArranged.Top;
                     arranged.Bottom = maybeArranged.Bottom;
                 }
-                if (maybeArranged.Width.IsNormal())
+
+                if (!float.IsNaN(maybeArranged.Width) && !float.IsInfinity(maybeArranged.Width))
                 {
                     arranged.Left = maybeArranged.Left;
                     arranged.Right = maybeArranged.Right;
@@ -70,7 +95,6 @@ namespace DrawnUi.Maui.Draw
                 cell.Destination = arranged;
             }
         }
-
         /// <summary>
         /// Cell.Area contains the area for layout
         /// </summary>
@@ -280,26 +304,21 @@ namespace DrawnUi.Maui.Draw
                 var layoutStructure = BuildStackStructure(scale);
 
                 bool standalone = false;
-                bool useOneTemplate = IsTemplated && //ItemSizingStrategy == ItemSizingStrategy.MeasureFirstItem ||
-                RecyclingTemplate == RecyclingTemplate.Enabled;
+                bool useOneTemplate = IsTemplated && //ItemSizingStrategy == ItemSizingStrategy.MeasureFirstItem &&
+                                      RecyclingTemplate != RecyclingTemplate.Disabled;
 
                 if (useOneTemplate)
                 {
                     standalone = true;
                     template = ChildrenFactory.GetTemplateInstance();
+                    template.UseCache = SkiaCacheType.None;
                 }
 
-                var maybeSecondPass = Type == LayoutType.Row &&
-                                      (float.IsInfinity(rectForChild.Bottom) || float.IsInfinity(rectForChild.Top))
-                                      || Type == LayoutType.Column &&
-                                      (float.IsInfinity(rectForChild.Right) || float.IsInfinity(rectForChild.Left));
+                var maybeSecondPass = true;
 
                 List<SecondPassArrange> listSecondPass = new();
 
                 //measure
-
-
-
                 //left to right, top to bottom
                 for (var row = 0; row < layoutStructure.MaxRows; row++)
                 {
@@ -311,8 +330,10 @@ namespace DrawnUi.Maui.Draw
                     var needMeasureAll = true;
                     if (useOneTemplate)
                     {
-                        needMeasureAll = RecyclingTemplate == RecyclingTemplate.Disabled ||
-                        ItemSizingStrategy == ItemSizingStrategy.MeasureAllItems ||
+                        needMeasureAll =
+                            ItemSizingStrategy != ItemSizingStrategy.MeasureFirstItem ||
+                            RecyclingTemplate == RecyclingTemplate.Disabled ||
+                                         ItemSizingStrategy == ItemSizingStrategy.MeasureAllItems ||
                                          (ItemSizingStrategy == ItemSizingStrategy.MeasureFirstItem
                                           && columnsCount != Split)
                                          || !(ItemSizingStrategy == ItemSizingStrategy.MeasureFirstItem
@@ -340,6 +361,7 @@ namespace DrawnUi.Maui.Draw
                     int column;
                     for (column = 0; column < columnsCount; column++)
                     {
+
                         try
                         {
                             if (layoutStructure.GetColumnCountForRow(row) < column + 1)
@@ -374,31 +396,41 @@ namespace DrawnUi.Maui.Draw
                             rectForChild.Left += GetSpacingForIndex(column, scale);
                             var rectFitChild = new SKRect(rectForChild.Left, rectForChild.Top, rectForChild.Left + widthPerColumn, rectForChild.Bottom);
 
-
-
-                            if (!needMeasureAll)
+                            if (IsTemplated)
                             {
-                                //apply first measured size to cell
-                                var offsetX = rectFitChild.Left - firstCell.Area.Left;
-                                var offsetY = rectFitChild.Top - firstCell.Area.Top;
-                                var arranged = firstCell.Destination;
-                                arranged.Offset(new(offsetX, offsetY));
+                                bool needMeasure =
+                                    needMeasureAll ||
+                                    (ItemSizingStrategy == ItemSizingStrategy.MeasureFirstItem && columnsCount != Split) || !(ItemSizingStrategy == ItemSizingStrategy.MeasureFirstItem && firstCell != null);
+                                if (needMeasure)
+                                {
+                                    measured = MeasureAndArrangeCell(rectFitChild, cell, child, rectForChildrenPixels, scale);
+                                    firstCell = cell;
+                                }
+                                else
+                                {
+                                    //apply first measured size to cell
+                                    var offsetX = rectFitChild.Left - firstCell.Area.Left;
+                                    var offsetY = rectFitChild.Top - firstCell.Area.Top;
+                                    var arranged = firstCell.Destination;
+                                    arranged.Offset(new(offsetX, offsetY));
 
-                                cell.Area = rectFitChild;
-                                cell.Measured = measured.Clone();
-                                cell.Destination = arranged;
+                                    cell.Area = rectFitChild;
+                                    cell.Measured = measured.Clone();
+                                    cell.Destination = arranged;
+                                }
                             }
                             else
                             {
-                                measured = MeasureAndArrangeCell(rectFitChild, cell, child, scale);
+                                measured = MeasureAndArrangeCell(rectFitChild, cell, child, rectForChildrenPixels, scale);
+
                                 if (maybeSecondPass) //has infinity in destination
                                 {
-                                    if (Type == LayoutType.Column && child.HorizontalOptions.Alignment != LayoutOptions.Start.Alignment)
+                                    if (Type == LayoutType.Column && child.HorizontalOptions.Alignment != LayoutAlignment.Start)
                                     {
                                         listSecondPass.Add(new(cell, child, scale));
                                     }
                                     else
-                                    if (Type == LayoutType.Row && child.VerticalOptions.Alignment != LayoutOptions.Start.Alignment)
+                                    if (Type == LayoutType.Row && child.VerticalOptions.Alignment != LayoutAlignment.Start)
                                     {
                                         listSecondPass.Add(new(cell, child, scale));
                                     }
@@ -435,7 +467,31 @@ namespace DrawnUi.Maui.Draw
 
                 }//end of iterate rows
 
-                //second layout pass for if we had infinity
+                if (HorizontalOptions.Alignment == LayoutAlignment.Fill || SizeRequest.Width >= 0)
+                {
+                    stackWidth = rectForChildrenPixels.Width;
+                }
+                if (VerticalOptions.Alignment == LayoutAlignment.Fill || SizeRequest.Height >= 0)
+                {
+                    stackHeight = rectForChildrenPixels.Height;
+                }
+
+                //second layout pass in some cases
+                var autoRight = rectForChildrenPixels.Right;
+                if (this.HorizontalOptions.Alignment != LayoutAlignment.Fill)
+                {
+                    autoRight = rectForChildrenPixels.Left + stackWidth;
+                }
+                var autoBottom = rectForChildrenPixels.Bottom;
+                if (this.VerticalOptions.Alignment != LayoutAlignment.Fill)
+                {
+                    autoBottom = rectForChildrenPixels.Top + stackHeight;
+                }
+                var autoRect = new SKRect(
+                    rectForChildrenPixels.Left, rectForChildrenPixels.Top,
+                    autoRight,
+                    autoBottom);
+
                 foreach (var secondPass in listSecondPass)
                 {
                     if (float.IsInfinity(secondPass.Cell.Area.Bottom))
@@ -448,6 +504,12 @@ namespace DrawnUi.Maui.Draw
                         secondPass.Cell.Area = new(secondPass.Cell.Area.Left, secondPass.Cell.Area.Bottom - stackHeight, secondPass.Cell.Area.Right, secondPass.Cell.Area.Bottom);
                     }
 
+                    if (secondPass.Cell.Area.Height > stackHeight)
+                    {
+                        secondPass.Cell.Area = new(secondPass.Cell.Area.Left, secondPass.Cell.Area.Top,
+                            secondPass.Cell.Area.Right, secondPass.Cell.Area.Top + stackHeight);
+                    }
+
                     if (float.IsInfinity(secondPass.Cell.Area.Right))
                     {
                         secondPass.Cell.Area = new(secondPass.Cell.Area.Left, secondPass.Cell.Area.Top, secondPass.Cell.Area.Left + stackWidth, secondPass.Cell.Area.Bottom);
@@ -458,9 +520,15 @@ namespace DrawnUi.Maui.Draw
                         secondPass.Cell.Area = new(secondPass.Cell.Area.Right - stackWidth, secondPass.Cell.Area.Top, secondPass.Cell.Area.Right, secondPass.Cell.Area.Bottom);
                     }
 
-                    LayoutCell(secondPass.Child.MeasuredSize, secondPass.Cell, secondPass.Child, secondPass.Scale);
-                }
+                    if (secondPass.Cell.Area.Width > stackWidth)
+                    {
+                        secondPass.Cell.Area = new(secondPass.Cell.Area.Left, secondPass.Cell.Area.Top, secondPass.Cell.Area.Left + stackWidth, secondPass.Cell.Area.Bottom);
+                    }
 
+                    LayoutCell(secondPass.Child.MeasuredSize, secondPass.Cell, secondPass.Child,
+                        autoRect,
+                        secondPass.Scale);
+                }
 
                 if (useOneTemplate)
                 {
@@ -477,11 +545,6 @@ namespace DrawnUi.Maui.Draw
                 if (VerticalOptions.Alignment == LayoutAlignment.Fill && HeightRequest < 0)
                 {
                     stackHeight = rectForChildrenPixels.Height;
-                }
-
-                if (stackHeight == 0)
-                {
-                    var stop = 1;
                 }
 
                 return ScaledSize.FromPixels(stackWidth, stackHeight, scale);

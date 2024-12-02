@@ -937,7 +937,7 @@ namespace DrawnUi.Maui.Draw
             }
             else
             {
-                DirtyChildren.Clear();
+                DirtyChildrenTracker.Clear();
             }
 
             base.Paint(ctx, destination, scale, arguments);
@@ -987,7 +987,7 @@ namespace DrawnUi.Maui.Draw
 
             ClearChildren();
 
-            DirtyChildren.Clear();
+            DirtyChildrenTracker.Clear();
 
             DirtyChildrenInternal.Clear();
 
@@ -1023,7 +1023,7 @@ namespace DrawnUi.Maui.Draw
 
 
                     // Add more children that are not already added but intersect with the dirty regions
-                    var asSpans = DirtyChildren.GetList();//CollectionsMarshal.AsSpan(DirtyChildren.GetList());
+                    var asSpans = DirtyChildrenTracker.GetList();//CollectionsMarshal.AsSpan(DirtyChildren.GetList());
                     foreach (var item in asSpans)
                     {
                         DirtyChildrenInternal.Add(item);
@@ -1040,7 +1040,7 @@ namespace DrawnUi.Maui.Draw
                         }
                     }
 
-                    DirtyChildren.Clear();
+                    DirtyChildrenTracker.Clear();
 
                     var count = 0;
                     foreach (var dirtyChild in DirtyChildrenInternal)
@@ -1058,11 +1058,12 @@ namespace DrawnUi.Maui.Draw
                     //Super.Log($"[ImageComposite] {Tag} drawing new");
 
                     IsRenderingWithComposition = false;
-                    DirtyChildren.Clear();
+                    DirtyChildrenTracker.Clear();
                 }
             }
             else
             {
+                DirtyChildrenTracker.Clear();
                 IsRenderingWithComposition = false;
             }
         }

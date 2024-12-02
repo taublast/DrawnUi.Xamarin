@@ -18,7 +18,6 @@ public class SkiaImage : SkiaControl
     /// <param name="loaded"></param>
     protected virtual LoadedImageSource SetImage(LoadedImageSource loaded)
     {
-
         if (loaded == null)
         {
             OnCleared?.Invoke(this, null);
@@ -32,7 +31,7 @@ public class SkiaImage : SkiaControl
 
         var kill = ApplyNewSource;
         ApplyNewSource = loaded;
-        if (kill != null)
+        if (kill != null && kill != loaded)
         {
             DisposeObject(kill);
         }

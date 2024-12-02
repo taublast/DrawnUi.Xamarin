@@ -20,6 +20,8 @@ public class ViewsAdapter : IDisposable
     public void Dispose()
     {
         DisposeViews();
+
+        IsDisposed = true;
     }
 
     object lockVisible = new();
@@ -115,11 +117,12 @@ public class ViewsAdapter : IDisposable
     protected virtual void AttachView(SkiaControl view, int index)
     {
         //todo check how it behaves when sources changes
-        //lock (_lockTemplates)
+        lock (_lockTemplates)
         {
             if (IsDisposed)
                 return;
 
+            view.IsParentIndependent = true;
             view.Parent = _parent;
             if (index == 0 || view.ContextIndex != index)
             //if (view.BindingContext == null || _parent.RecyclingTemplate == RecyclingTemplate.Enabled)
@@ -392,7 +395,7 @@ public class ViewsAdapter : IDisposable
     /// <param name="reserve">Pre-create number of views to avoid lag spikes later, useful to do in backgound.</param>
     public void InitializeTemplates(Func<object> template, IList dataContexts, int poolSize, int reserve = 0)
     {
-        if (IsDisposed)
+        if (IsDisposed || _parent != null && _parent.IsDisposing)
             return;
 
 
@@ -492,7 +495,7 @@ public class ViewsAdapter : IDisposable
             if (layoutChanged || _templatedViewsPool == null || _dataContexts != dataContexts || CheckTemplateChanged())
             {
                 //temporarily fixed to android until issue found
-                //lock (_lockTemplates)
+                lock (_lockTemplates)
                 {
                     //kill provider ability to provide deprecated templates
                     _wrappers.Clear();
@@ -582,7 +585,7 @@ public class ViewsAdapter : IDisposable
 
     public ViewsIterator GetViewsIterator()
     {
-        //lock (_lockTemplates)
+        lock (_lockTemplates)
         {
             if (_parent.IsTemplated)
             {
@@ -638,7 +641,7 @@ public class ViewsAdapter : IDisposable
     public SkiaControl GetViewAtIndex(int index, SkiaControl template = null)
     {
 
-        //lock (_lockTemplates) //to avoid getting same view for different indexes
+        lock (_lockTemplates) //to avoid getting same view for different indexes
         {
 
             if (_templatedViewsPool == null || _dataContexts == null)
@@ -851,7 +854,6 @@ public class TemplatedViewsPool : IDisposable
             if (IsDisposing)
                 return null;
 
-
             if (_standalone != null && _standalone.IsDisposing)
             {
                 _standalone = null;
@@ -861,6 +863,7 @@ public class TemplatedViewsPool : IDisposable
             if (ret == null)
             {
                 ret = CreateFromTemplate();
+                ret.IsParentIndependent = true;
             }
             return ret;
         }

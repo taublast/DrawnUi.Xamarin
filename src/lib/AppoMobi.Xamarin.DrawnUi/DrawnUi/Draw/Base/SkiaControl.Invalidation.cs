@@ -1,153 +1,151 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DrawnUi.Maui.Draw
+﻿namespace DrawnUi.Maui.Draw
 {
-	public partial class SkiaControl
-	{
-		#region INVALIDATION
+    public partial class SkiaControl
+    {
+        #region INVALIDATION
 
-		/// <summary>
-		/// Soft invalidation, without requiring update. So next time we try to draw this one it will recalc everything.
-		/// </summary>
-		public virtual void InvalidateInternal()
-		{
-			InvalidateViewsList();
-			IsLayoutDirty = true;
-			NeedMeasure = true;
-			InvalidateCacheWithPrevious();
-		}
+        /// <summary>
+        /// Soft invalidation, without requiring update. So next time we try to draw this one it will recalc everything.
+        /// </summary>
+        public virtual void InvalidateInternal()
+        {
+            InvalidateViewsList();
+            IsLayoutDirty = true;
+            NeedMeasure = true;
+            InvalidateCacheWithPrevious();
+        }
 
-		/// <summary>
-		/// Base calls InvalidateInternal and InvalidateParent
-		/// </summary>
-		public virtual void Invalidate()
-		{
-			InvalidateInternal();
+        /// <summary>
+        /// Base calls InvalidateInternal and InvalidateParent
+        /// </summary>
+        public virtual void Invalidate()
+        {
+            InvalidateInternal();
 
-			InvalidateParent();
-		}
+            InvalidateParent();
+        }
 
-		public virtual bool ShouldInvalidateByChildren
-		{
-			get
-			{
-				return NeedAutoSize;
-			}
-		}
+        public virtual bool ShouldInvalidateByChildren
+        {
+            get
+            {
+                return NeedAutoSize;
+            }
+        }
 
-		public bool IsParentIndependent { get; set; }
+        /// <summary>
+        /// Will not invalidate the measurement of parent if True
+        /// </summary>
+        public bool IsParentIndependent { get; set; }
 
-		public void InvalidateParents()
-		{
-			if (IsParentIndependent)
-				return;
+        /// <summary>
+        /// Will not call Update on Parent if True
+        /// </summary>
+        public bool WillNotUpdateParent { get; set; }
 
-			if (Parent != null)
-			{
-				if (Parent.ShouldInvalidateByChildren)
-					Parent.Invalidate();
-				Parent.InvalidateParents();
-			}
-		}
+        public void InvalidateParents()
+        {
+            if (IsParentIndependent)
+                return;
 
-		public bool InvalidatedParent;
-		private bool _invalidatedParentPostponed;
+            if (Parent != null)
+            {
+                if (Parent.ShouldInvalidateByChildren)
+                    Parent.Invalidate();
+                Parent.InvalidateParents();
+            }
+        }
 
-		public virtual void InvalidateParent()
-		{
-			if (IsParentIndependent)
-				return;
+        public bool InvalidatedParent;
+        private bool _invalidatedParentPostponed;
 
-			if (InvalidatedParent)
-			{
-				if (IsRendering)
-					_invalidatedParentPostponed = true;
-				else
-				{
-					Superview?.SetChildAsDirty(this);
-				}
-				return;
-			}
+        public virtual void InvalidateParent()
+        {
+            if (IsParentIndependent)
+                return;
 
-			InvalidatedParent = true;
+            if (InvalidatedParent)
+            {
+                if (IsRendering)
+                    _invalidatedParentPostponed = true;
+                else
+                {
+                    Superview?.SetChildAsDirty(this);
+                }
+                return;
+            }
 
-			var parent = Parent;
-			if (parent != null)
-			{
-				if (parent is SkiaControl skia)
-				{
+            InvalidatedParent = true;
 
-					if (skia.IgnoreChildrenInvalidations && skia.UsingCacheType == SkiaCacheType.None)
-					{
-						return;
-					}
+            var parent = Parent;
+            if (parent != null)
+            {
+                if (parent is SkiaControl skia)
+                {
 
-					if (skia.ShouldInvalidateByChildren || skia.UsingCacheType != SkiaCacheType.None)
-					{
-						parent.InvalidateByChild(this);
-					}
-					else
-					{
-						parent.Update();
-					}
-				}
-				else
-				{
-					parent.InvalidateByChild(this);
-				}
+                    if (skia.IgnoreChildrenInvalidations && skia.UsingCacheType == SkiaCacheType.None)
+                    {
+                        return;
+                    }
 
-			}
-		}
+                    if (skia.ShouldInvalidateByChildren || skia.UsingCacheType != SkiaCacheType.None)
+                    {
+                        parent.InvalidateByChild(this);
+                    }
+                    else
+                    {
+                        parent.Update();
+                    }
+                }
+                else
+                {
+                    parent.InvalidateByChild(this);
+                }
 
-		/// <summary>
-		/// To be able to fast track dirty children
-		/// </summary>
-		/// <param name="child"></param>
-		public virtual void InvalidateByChild(SkiaControl child)
-		{
-			DirtyChildren.Add(child);
+            }
+        }
 
-			Invalidate();
-		}
+        /// <summary>
+        /// To be able to fast track dirty children
+        /// </summary>
+        /// <param name="child"></param>
+        public virtual void InvalidateByChild(SkiaControl child)
+        {
+            DirtyChildrenTracker.Add(child);
 
-		/// <summary>
-		/// Indicated that wants to be re-measured without invalidating cache
-		/// </summary>
-		public virtual void InvalidateViewport()
-		{
-			if (IsParentIndependent)
-				return;
+            Invalidate();
+        }
 
-			if (!IsDisposed)
-			{
-				NeedMeasure = true;
-				NeedMeasure = true;
-				IsLayoutDirty = true; //force recalc of DrawingRect
-				Parent?.InvalidateViewport();
-			}
-		}
+        /// <summary>
+        /// Indicated that wants to be re-measured without invalidating cache
+        /// </summary>
+        public virtual void InvalidateViewport()
+        {
+            if (IsParentIndependent)
+                return;
 
-		protected readonly ControlsTracker DirtyChildren = new();
+            if (!IsDisposed)
+            {
+                NeedMeasure = true;
+                NeedMeasure = true;
+                IsLayoutDirty = true; //force recalc of DrawingRect
+                Parent?.InvalidateViewport();
+            }
+        }
 
-		protected HashSet<SkiaControl> DirtyChildrenInternal { get; set; } = new();
+        protected readonly ControlsTracker DirtyChildrenTracker = new();
 
-		public virtual void UpdateByChild(SkiaControl control)
-		{
-			DirtyChildren.Add(control);
+        protected HashSet<SkiaControl> DirtyChildrenInternal { get; set; } = new();
 
-			UpdateInternal();
-		}
+        public virtual void UpdateByChild(SkiaControl control)
+        {
+            if (UsingCacheType == SkiaCacheType.ImageComposite)
+                DirtyChildrenTracker.Add(control);
 
-		#endregion
+            UpdateInternal();
+        }
 
+        #endregion
 
-
-
-	}
+    }
 }
