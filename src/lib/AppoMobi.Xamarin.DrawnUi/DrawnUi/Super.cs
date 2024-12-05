@@ -58,39 +58,67 @@ public partial class Super
         if (view == null)
             throw e;
 
-        var scroll = new ScrollView()
+        if (view is SkiaControl skia)
         {
-            Content = new Label
+            var scroll = new SkiaScroll()
             {
-                Margin = new Thickness(32),
-                TextColor = Color.Red,
-                Text = $"{e}"
-            }
-        };
+                HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Fill,
+                Content = new SkiaLabel
+                {
+                    Margin = new Thickness(32),
+                    TextColor = Color.Red,
+                    Text = $"{e}"
+                }
+            };
 
-        if (view is ContentPage page)
-        {
-            page.Content = scroll;
-        }
-        else
-        if (view is ContentView contentView)
-        {
-            contentView.Content = scroll;
-        }
-        else
-        if (view is Grid grid)
-        {
-            grid.Children.Add(scroll);
-        }
-        else
-        if (view is StackLayout stack)
-        {
-            stack.Children.Add(scroll);
+            if (skia is ContentLayout content)
+            {
+                content.Content = scroll;
+            }
+            else
+            {
+                skia.AddSubView(scroll);
+            }
         }
         else
         {
-            throw e;
+
+            var scroll = new ScrollView()
+            {
+                Content = new Label
+                {
+                    Margin = new Thickness(32),
+                    TextColor = Color.Red,
+                    Text = $"{e}"
+                }
+            };
+
+            if (view is ContentPage page)
+            {
+                page.Content = scroll;
+            }
+            else
+            if (view is ContentView contentView)
+            {
+                contentView.Content = scroll;
+            }
+            else
+            if (view is Grid grid)
+            {
+                grid.Children.Add(scroll);
+            }
+            else
+            if (view is StackLayout stack)
+            {
+                stack.Children.Add(scroll);
+            }
+            else
+            {
+                throw e;
+            }
         }
+
     }
 
     public static void Log(Exception e, [CallerMemberName] string caller = null)
