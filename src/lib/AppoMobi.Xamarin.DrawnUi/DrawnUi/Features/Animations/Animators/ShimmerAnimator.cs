@@ -21,7 +21,10 @@ public class ShimmerAnimator : RenderingAnimator
 
     public override void Dispose()
     {
-        Paint?.Dispose();
+        if (Parent != null)
+        {
+            Parent.DisposeObject(Paint);
+        }
 
         base.Dispose();
     }
@@ -30,7 +33,7 @@ public class ShimmerAnimator : RenderingAnimator
 
     protected override bool OnRendering(IDrawnBase control, SkiaDrawingContext context, double scale)
     {
-        if (IsRunning)
+        if (IsRunning && control != null && !control.IsDisposed && !control.IsDisposing)
         {
             var color = Color;
 
