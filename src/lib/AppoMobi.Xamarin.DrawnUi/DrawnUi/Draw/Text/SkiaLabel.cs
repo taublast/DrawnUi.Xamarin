@@ -72,7 +72,8 @@ namespace DrawnUi.Maui.Draw
                 {
                     return string.Concat(Spans.Select(span => span.Text));
                 }
-                return this.Text;
+
+                return this.TextInternal;
             }
         }
 
@@ -388,7 +389,7 @@ namespace DrawnUi.Maui.Draw
 
                         string text = null;
 
-                        Glyphs = GetGlyphs(Text, PaintDefault.Typeface);
+                        Glyphs = GetGlyphs(TextInternal, PaintDefault.Typeface);
 
                         if (AutoFindFont)
                         {
@@ -399,7 +400,7 @@ namespace DrawnUi.Maui.Draw
                                     needsShaping = true;
                                 }
                             }
-                            text = Text;
+                            text = TextInternal;
                         }
                         else
                         {
@@ -423,7 +424,7 @@ namespace DrawnUi.Maui.Draw
                             }
                             else
                             {
-                                text = Text;
+                                text = TextInternal;
                             }
                         }
 
@@ -509,7 +510,7 @@ namespace DrawnUi.Maui.Draw
                                 if (index == mergedLines.Count) //do not process last line
                                     break;
 
-                                if (line.Value.Right(1) == " ")
+                                if (line.Value.Right(1) == Splitter)
                                 {
                                     var span = line.Spans.LastOrDefault();
                                     //if (span.Span != null)
@@ -907,9 +908,9 @@ namespace DrawnUi.Maui.Draw
             var moveToBaseline = 0f;
             var useLineHeight = 0f;
 
+
             foreach (var line in processLines)
             {
-
                 if (!baseLineCalculated)
                 {
 
@@ -1123,7 +1124,7 @@ namespace DrawnUi.Maui.Draw
 
                         float MoveOffsetAdjustmentX(float x, string p)
                         {
-                            if (enlargeSpaceCharacter > 0 && p == " ")
+                            if (enlargeSpaceCharacter > 0 && p == Splitter)
                             {
                                 x += enlargeSpaceCharacter;
                             }
@@ -1208,6 +1209,11 @@ namespace DrawnUi.Maui.Draw
 
                     offsetX += lineSpan.Size.Width + offsetAdjustmentX;
                     spanIndex++;
+                }
+
+                if (MaxLines > 0 && lineNb == MaxLines)
+                {
+                    break;
                 }
 
                 if (LineHeightUniform)
@@ -1474,7 +1480,7 @@ namespace DrawnUi.Maui.Draw
                         if (paint.TextSize == 0)
                         {
                             //wtf just happened
-                            Trace.WriteLine($"[SkiaLabel] Error couldn't fit text '{this.Text}' inside label width {this.Width}");
+                            Trace.WriteLine($"[SkiaLabel] Error couldn't fit text '{this.TextInternal}' inside label width {this.Width}");
                             if (Debugger.IsAttached)
                                 Debugger.Break();
                             paint.TextSize = 12;
@@ -2320,7 +2326,7 @@ namespace DrawnUi.Maui.Draw
                     bool severalWords = false;
                     if (width > 0) //got some text from previous pass
                     {
-                        if (lineResult.Right(1) == " " || word.Left() == " ")
+                        if (lineResult.Right(1) == Splitter || word.Left() == Splitter)
                         {
                             textLine = lineResult + word;
                         }
@@ -2555,6 +2561,18 @@ namespace DrawnUi.Maui.Draw
 
 
         #region PROPERTIES
+
+        public static readonly BindableProperty TextTransformProperty = BindableProperty.Create(nameof(TextTransform),
+            typeof(TextTransform),
+            typeof(SkiaLabel),
+            TextTransform.None,
+            propertyChanged: NeedUpdateFont);
+
+        public TextTransform TextTransform
+        {
+            get { return (TextTransform)GetValue(TextTransformProperty); }
+            set { SetValue(TextTransformProperty, value); }
+        }
 
         public static readonly BindableProperty FontAttributesProperty = BindableProperty.Create(nameof(FontAttributes),
         typeof(FontAttributes),
@@ -2816,8 +2834,50 @@ namespace DrawnUi.Maui.Draw
             if (IsDisposed || IsDisposing)
                 return;
 
+            SetTextInternal();
+
             InvalidateMeasure();
         }
+
+        public static string Splitter = " ";
+
+        /// <summary>
+        /// Aplies transforms etc
+        /// </summary>
+        protected virtual void SetTextInternal()
+        {
+            if (Text != null)
+            {
+                switch (TextTransform)
+                {
+                    case TextTransform.Uppercase:
+                    TextInternal = Text.ToUpper();
+                    break;
+
+                    case TextTransform.Lowercase:
+                    TextInternal = Text.ToLower();
+                    break;
+
+                    case TextTransform.Titlecase:
+                    TextInternal = Text.ToTitleCase(Splitter, false);
+                    break;
+
+                    case TextTransform.Phrasecase:
+                    TextInternal = Text.ToPhraseCase(true);
+                    break;
+
+                    default:
+                    TextInternal = Text;
+                    break;
+                }
+            }
+            else
+            {
+                TextInternal = string.Empty;
+            }
+        }
+
+        protected string TextInternal { get; set; }
 
         public static readonly BindableProperty FallbackCharacterProperty = BindableProperty.Create(
             nameof(FallbackCharacter),

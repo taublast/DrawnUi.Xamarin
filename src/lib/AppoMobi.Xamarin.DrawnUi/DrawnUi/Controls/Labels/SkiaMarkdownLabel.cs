@@ -1,10 +1,6 @@
-﻿using AppoMobi.Specials;
-using DrawnUi.Maui.Draw;
-using ExCSS;
-using Markdig;
+﻿using Markdig;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
-using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Windows.Input;
 using Color = Xamarin.Forms.Color;
@@ -37,7 +33,9 @@ public class SkiaMarkdownLabel : SkiaLabel
 
     public override void InvalidateText()
     {
-        var markdownDocument = Markdig.Markdown.Parse(Text, _pipeline);
+        base.InvalidateText();
+
+        var markdownDocument = Markdig.Markdown.Parse(TextInternal, _pipeline);
 
         Spans.Clear();
 
@@ -53,8 +51,6 @@ public class SkiaMarkdownLabel : SkiaLabel
         {
             RenderBlock(block);
         }
-
-        base.InvalidateText();
     }
 
     protected virtual TextSpan SpanWithAttributes(TextSpan span)
@@ -269,74 +265,74 @@ public class SkiaMarkdownLabel : SkiaLabel
         switch (inline)
         {
 
-        case LineBreakInline lineBreak:
-        //just add new line to previous span
-        var last = Spans.LastOrDefault();
-        if (last == null)
-        {
-            Spans.Add(new()
+            case LineBreakInline lineBreak:
+            //just add new line to previous span
+            var last = Spans.LastOrDefault();
+            if (last == null)
             {
-                Text = "\n"
-            }); ;
-        }
-        else
-        {
-            last.Text += "\n";
-        }
-        break;
-
-        case LiteralInline literal:
-        //todo detect available font
-        AddTextSpan(literal.Content.ToStringSafe());
-        break;
-
-        case CodeInline code:
-        AddCodeSpan(code);
-        break;
-
-        case LinkInline link:
-        AddLinkSpan(link);
-        break;
-
-        case EmphasisInline emphasis:
-        if (emphasis.DelimiterCount == 3)
-        {
-            if (emphasis.DelimiterChar is '_' or '*')
-            {
-                isBold = true;
-                isItalic = true;
-            }
-        }
-        else
-        if (emphasis.DelimiterCount == 2)
-        {
-            if (emphasis.DelimiterChar == '~')
-            {
-                isStrikethrough = true;
+                Spans.Add(new()
+                {
+                    Text = "\n"
+                }); ;
             }
             else
-            if (emphasis.DelimiterChar is '_' or '*')
             {
-                isBold = true;
+                last.Text += "\n";
             }
-        }
-        else
-        if (emphasis.DelimiterCount == 1)
-        {
-            if (emphasis.DelimiterChar is '_' or '*')
+            break;
+
+            case LiteralInline literal:
+            //todo detect available font
+            AddTextSpan(literal.Content.ToStringSafe());
+            break;
+
+            case CodeInline code:
+            AddCodeSpan(code);
+            break;
+
+            case LinkInline link:
+            AddLinkSpan(link);
+            break;
+
+            case EmphasisInline emphasis:
+            if (emphasis.DelimiterCount == 3)
             {
-                isItalic = true;
+                if (emphasis.DelimiterChar is '_' or '*')
+                {
+                    isBold = true;
+                    isItalic = true;
+                }
             }
-        }
+            else
+            if (emphasis.DelimiterCount == 2)
+            {
+                if (emphasis.DelimiterChar == '~')
+                {
+                    isStrikethrough = true;
+                }
+                else
+                if (emphasis.DelimiterChar is '_' or '*')
+                {
+                    isBold = true;
+                }
+            }
+            else
+            if (emphasis.DelimiterCount == 1)
+            {
+                if (emphasis.DelimiterChar is '_' or '*')
+                {
+                    isItalic = true;
+                }
+            }
 
-        var child = emphasis.FirstChild;
-        while (child != null)
-        {
-            RenderInline(child);
-            child = child.NextSibling;
-        }
+            var child = emphasis.FirstChild;
+            while (child != null)
+            {
+                RenderInline(child);
+                child = child.NextSibling;
+            }
 
-        break;
+            break;
 
         }
 
@@ -354,7 +350,7 @@ public class SkiaMarkdownLabel : SkiaLabel
     {
         base.OnFontUpdated();
 
-        OnTextChanged(this.Text);
+        OnTextChanged(this.TextInternal);
     }
 
     public virtual (SKTypeface, int) FindBestTypefaceForString(string text)
