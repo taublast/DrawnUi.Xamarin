@@ -124,7 +124,8 @@ public partial class SkiaButton : SkiaLayout, ISkiaGestureListener
 
         if (MainFrame != null)
         {
-            MainFrame.BackgroundColor = this.TintColor;
+            MainFrame.BackgroundColor = this.BackgroundColor;
+            MainFrame.Background = this.Background;
             MainFrame.CornerRadius = this.CornerRadius;
         }
     }
@@ -193,12 +194,12 @@ public partial class SkiaButton : SkiaLayout, ISkiaGestureListener
     }
 
     bool hadDown;
+    protected SKPoint _lastDownPts;
 
     public static float PanThreshold = 5;
 
     public override ISkiaGestureListener ProcessGestures(SkiaGesturesParameters args, GestureEventProcessingInfo apply)
     {
-
         //Debug.WriteLine($"SkiaButton {Text}. {args.Type} {args.Event.Distance.Delta}");
 
         var point = TranslateInputOffsetToPixels(args.Event.Location, apply.childOffset);
@@ -526,23 +527,6 @@ public partial class SkiaButton : SkiaLayout, ISkiaGestureListener
     }
 
 
-
-    public static readonly BindableProperty TintColorProperty = BindableProperty.Create(
-        nameof(TintColor),
-        typeof(Color),
-        typeof(SkiaButton),
-        RedColor,
-        propertyChanged: NeedApplyProperties);
-
-
-    protected SKPoint _lastDownPts;
-
-    public Color TintColor
-    {
-        get { return (Color)GetValue(TintColorProperty); }
-        set { SetValue(TintColorProperty, value); }
-    }
-
     public static readonly BindableProperty TextColorProperty = BindableProperty.Create(
         nameof(TextColor),
         typeof(Color),
@@ -577,7 +561,26 @@ public partial class SkiaButton : SkiaLayout, ISkiaGestureListener
         }
     }
 
+    protected override void OnPropertyChanged(string propertyName = null)
+    {
+        base.OnPropertyChanged(propertyName);
+
+        if (propertyName.IsEither(nameof(Background), nameof(BackgroundColor)))
+        {
+            ApplyProperties();
+        }
+    }
+
     #endregion
 
+    protected override bool SetupBackgroundPaint(SKPaint paint, SKRect destination)
+    {
+        if (MainFrame != null)
+        {
+            //will paint its background instead
+            return false;
+        }
 
+        return base.SetupBackgroundPaint(paint, destination);
+    }
 }
