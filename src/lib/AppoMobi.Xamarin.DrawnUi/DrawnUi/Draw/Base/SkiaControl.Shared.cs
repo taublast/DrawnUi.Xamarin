@@ -2622,9 +2622,9 @@ namespace DrawnUi.Maui.Draw
         {
             return this.Parent == null;
         }
-
+ 
         /// <summary>
-        ///  destination in PIXELS, requests in UNITS
+        ///  Destination in PIXELS, requests in UNITS. This is affected by HorizontalFillRatio and VerticalFillRatio.
         /// </summary>
         /// <param name="destination"></param>
         /// <param name="widthRequest"></param>
@@ -2632,7 +2632,7 @@ namespace DrawnUi.Maui.Draw
         /// <param name="scale"></param>
         /// <returns></returns>
         public ScaledSize DefineAvailableSize(SKRect destination,
-            float widthRequest, float heightRequest, float scale)
+            float widthRequest, float heightRequest, float scale, bool useModifiers = true)
         {
             var rectWidth = destination.Width;
             var wants = widthRequest * scale;
@@ -2643,6 +2643,18 @@ namespace DrawnUi.Maui.Draw
             wants = heightRequest * scale;
             if (wants >= 0 && wants < rectHeight)
                 rectHeight = (int)wants;
+
+            if (useModifiers)
+            {
+                if (HorizontalFillRatio != 1)
+                {
+                    rectWidth *= (float)HorizontalFillRatio;
+                }
+                if (VerticalFillRatio != 1)
+                {
+                    rectHeight *= (float)VerticalFillRatio;
+                }
+            }
 
             return ScaledSize.FromPixels(rectWidth, rectHeight, scale);
         }
@@ -2933,8 +2945,7 @@ namespace DrawnUi.Maui.Draw
             }
         }
 
-
-        protected bool WasMeasured;
+        public bool WasMeasured;
 
         protected virtual void OnDrawingSizeChanged()
         {
@@ -3584,22 +3595,39 @@ namespace DrawnUi.Maui.Draw
 
             RenderingScale = scale;
 
-            //LastMeasureRequest = new()
-            //{
-            //    Parent = this.Parent,
-            //    WidthRequest = widthConstraint,
-            //    HeightRequest = heightConstraint,
-            //};
-
-            if (HorizontalFillRatio != 1 && widthConstraint.IsFinite() && widthConstraint > 0)
+            if (!float.IsInfinity(widthConstraint) && widthConstraint > 0)
             {
-                widthConstraint *= (float)HorizontalFillRatio;
-            }
-            if (VerticalFillRatio != 1 && heightConstraint.IsFinite() && heightConstraint > 0)
-            {
-                heightConstraint *= (float)VerticalFillRatio;
+                if (HorizontalFillRatio != 1)
+                {
+                    widthConstraint *= (float)HorizontalFillRatio;
+                }
+
+                if (MaximumWidthRequest >= 0)
+                {
+                    var maxWidth = (float)(MaximumWidthRequest * scale);
+                    if (widthConstraint > maxWidth)
+                    {
+                        widthConstraint = maxWidth;
+                    }
+                }
             }
 
+            if (!float.IsInfinity(heightConstraint) && heightConstraint > 0)
+            {
+                if (VerticalFillRatio != 1)
+                {
+                    heightConstraint *= (float)VerticalFillRatio;
+                }
+                if (MaximumHeightRequest >= 0)
+                {
+                    var maxHeight = (float)(MaximumHeightRequest * scale);
+                    if (widthConstraint > maxHeight)
+                    {
+                        widthConstraint = maxHeight;
+                    }
+                }
+            }           
+            
             if (LockRatio < 0)
             {
                 var size = Math.Min(heightConstraint, widthConstraint);
@@ -4129,14 +4157,20 @@ namespace DrawnUi.Maui.Draw
             if (NeedMeasure)
             {
                 //self measuring
-                var adjustedDestination = CalculateLayout(destination, widthRequest, heightRequest, scale);
-                ArrangedDestination = adjustedDestination;
-                Measure(adjustedDestination.Width, adjustedDestination.Height, scale);
+                //var adjustedDestination = CalculateLayout(destination, widthRequest, heightRequest, scale);
+                //ArrangedDestination = adjustedDestination;
+                //Measure(adjustedDestination.Width, adjustedDestination.Height, scale);
+                //ApplyMeasureResult();
+
+                //self measuring, for top controls and those invalidated-redrawn when parents didn't re-measure them
+                var rectAvailable = DefineAvailableSize(destination, widthRequest, heightRequest, scale, false);
+                Measure(rectAvailable.Pixels.Width, rectAvailable.Pixels.Height, scale);
                 ApplyMeasureResult();
+
             }
             else
             {
-                _lastArrangedInside = destination;
+                LastArrangedInside = destination;
             }
 
             return true;
@@ -4199,6 +4233,7 @@ namespace DrawnUi.Maui.Draw
         }
 
         public event EventHandler Rendered;
+
 
         /// <summary>
         /// Lock between replacing and using RenderObject
@@ -6319,7 +6354,7 @@ namespace DrawnUi.Maui.Draw
         protected float _lastMeasuredForScale;
         private bool _isLayoutDirty;
         private Thickness _margins;
-        private SKRect _lastArrangedInside;
+        protected SKRect LastArrangedInside;
         private double _lastArrangedForScale;
         private bool _needUpdateFrontCache;
 

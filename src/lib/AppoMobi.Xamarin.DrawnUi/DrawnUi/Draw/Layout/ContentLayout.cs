@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace DrawnUi.Maui.Draw;
 
 [ContentProperty("Content")]
-public partial class ContentLayout : SkiaControl, IVisibilityAware, ISkiaGestureListener
+public partial class ContentLayout : SkiaControl, IVisibilityAware, ISkiaGestureListener, IWithContent
 {
 
     public override void Invalidate()

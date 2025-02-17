@@ -51,7 +51,7 @@ public partial class Super
     /// </summary>
     /// <param name="view"></param>
     /// <param name="e"></param>
-    public static void DisplayException(Element view, Exception e)
+    public static void DisplayException(VisualElement view, Exception e)
     {
         Trace.WriteLine(e);
 

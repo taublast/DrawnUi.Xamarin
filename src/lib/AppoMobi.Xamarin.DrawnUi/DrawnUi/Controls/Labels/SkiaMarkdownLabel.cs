@@ -53,7 +53,13 @@ public class SkiaMarkdownLabel : SkiaLabel
         }
     }
 
-    protected virtual TextSpan SpanWithAttributes(TextSpan span)
+    /// <summary>
+    /// Creates a text span with passed data.
+    /// </summary>
+    /// <param name="span">Data for span creation</param>
+    /// <param name="fontAttributes">Force setting attributes</param>
+    /// <returns></returns>
+    protected virtual TextSpan SpanWithAttributes(TextSpan span, FontAttributes fontAttributes)
     {
         span.IsBold = isBold || span.IsBold;
         span.IsItalic = isItalic || span.IsItalic;
@@ -73,6 +79,10 @@ public class SkiaMarkdownLabel : SkiaLabel
             span.IsBold = true;
             span.FontSize += 3;
         }
+
+        span.IsBold |= fontAttributes.HasFlag(FontAttributes.Bold);
+        span.IsItalic |= fontAttributes.HasFlag(FontAttributes.Italic);
+
         return span;
     }
 
@@ -487,7 +497,7 @@ public class SkiaMarkdownLabel : SkiaLabel
                 NeedShape = Shape
             };
             modifySpan?.Invoke(span);
-            Spans.Add(SpanWithAttributes(span));
+            Spans.Add(SpanWithAttributes(span, this.FontAttributes));
         }
     }
 

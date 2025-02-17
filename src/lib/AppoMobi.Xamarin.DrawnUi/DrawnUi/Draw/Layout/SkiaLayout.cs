@@ -5,9 +5,67 @@ using System.Linq;
 
 namespace DrawnUi.Maui.Draw
 {
-
     public partial class SkiaLayout : SkiaControl, ISkiaGestureListener, ISkiaGridLayout
     {
+        public override bool PreArrange(SKRect destination, float widthRequest, float heightRequest, float scale)
+        {
+            if (!CanDraw)
+                return false;
+
+            if (Tag == "WD")
+            {
+                var stop = 1;
+            }
+
+            if (WillInvalidateMeasure)
+            {
+                WillInvalidateMeasure = false;
+                InvalidateMeasureInternal();
+            }
+
+            if (NeedMeasure)
+            {
+                if (Tag == "WD")
+                {
+                    var stop = 1;
+                }
+
+                //self measuring, for top controls and those invalidated-redrawn when parents didn't re-measure them
+                var rectAvailable = DefineAvailableSize(destination, widthRequest, heightRequest, scale, false);
+                Measure(rectAvailable.Pixels.Width, rectAvailable.Pixels.Height, scale);
+                ApplyMeasureResult();
+            }
+            else
+            {
+                LastArrangedInside = destination;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// For easier code-behind use
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="apply"></param>
+        /// <returns></returns>
+        public override ISkiaGestureListener OnSkiaGestureEvent(SkiaGesturesParameters args, GestureEventProcessingInfo apply)
+        {
+            if (!CanDraw)
+                return null;
+
+            if (OnGestures != null)
+            {
+                return OnGestures(args, apply);
+            }
+
+            return base.OnSkiaGestureEvent(args, apply);
+        }
+
+        /// <summary>
+        /// Delegate for use instead of calling base.OnSkiaGestureEvent
+        /// </summary>
+        public Func<SkiaGesturesParameters, GestureEventProcessingInfo, ISkiaGestureListener> OnGestures;
 
         public override bool IsGestureForChild(SkiaControlWithRect child, SKPoint point)
         {

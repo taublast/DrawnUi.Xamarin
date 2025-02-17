@@ -127,36 +127,26 @@ namespace DrawnUi.Maui.Draw
 
                     if (child is SkiaControl control && child.IsVisible)
                     {
-                        SKRect destinationRect;
-                        if (IsTemplated && ItemSizingStrategy == ItemSizingStrategy.MeasureAllItems)
+                        if (child.NeedMeasure)
                         {
-                            if (child.Height != cell.Measured.Units.Height)
+                            if (!child.WasMeasured || GetSizeKey(child.MeasuredSize.Pixels) != GetSizeKey(cell.Measured.Pixels))
                             {
-                                //child.InvalidateWithChildren();
+                                child.Measure((float)cell.Area.Width, (float)cell.Area.Height, scale);
                             }
+                        }
 
+                        SKRect destinationRect;
+                        if (IsTemplated && RecyclingTemplate != RecyclingTemplate.Disabled)
+                        {
                             //when context changes we need all available space for remeasuring cell
-                            destinationRect = new SKRect(cell.Drawn.Left, cell.Drawn.Top, cell.Drawn.Left + cell.Area.Width, cell.Drawn.Top + cell.Area.Bottom);
+                            destinationRect = new SKRect(cell.Drawn.Left, cell.Drawn.Top,
+                                cell.Drawn.Left + cell.Area.Width, cell.Drawn.Top + cell.Area.Bottom);
                         }
                         else
                         {
-                            destinationRect = new SKRect(cell.Drawn.Left, cell.Drawn.Top, cell.Drawn.Right, cell.Drawn.Bottom);
+                            destinationRect = new SKRect(cell.Drawn.Left, cell.Drawn.Top, cell.Drawn.Right,
+                                cell.Drawn.Bottom);
                         }
-
-                        //fixes case we changed size of columns/cells and there where already measured..
-                        /*
-                        if (IsTemplated
-                            && (DynamicColumns || ItemSizingStrategy == Microsoft.Maui.Controls.ItemSizingStrategy.MeasureAllItems)
-                            && RecyclingTemplate == RecyclingTemplate.Enabled
-                            && child.RenderedAtDestination != SKRect.Empty
-                            && (destinationRect.Width != child.RenderedAtDestination.Width
-                                || destinationRect.Height != child.RenderedAtDestination.Height))
-                        {
-                            //size is different but template is the same - need to invalidate!
-                            //for example same template rendering on 2 columns in one row and 1 column on the last one
-                            InvalidateChildrenTree(control);
-                        }
-                        */
 
                         if (IsRenderingWithComposition)
                         {
@@ -216,6 +206,23 @@ namespace DrawnUi.Maui.Draw
             return drawn;
         }
 
+        protected int GetSizeKey(SKSize size)
+        {
+            int hKey = 0;
+            if (RecyclingTemplate != RecyclingTemplate.Disabled)
+            {
+                if (Type == LayoutType.Column)
+                {
+                    hKey = (int)Math.Round(size.Height);
+                }
+                else
+                if (Type == LayoutType.Row)
+                {
+                    hKey = (int)Math.Round(size.Width);
+                }
+            }
+            return hKey;
+        }
 
         /// <summary>
         /// Implementation for LayoutType.Wrap 
