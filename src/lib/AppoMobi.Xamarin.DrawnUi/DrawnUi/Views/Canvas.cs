@@ -698,7 +698,7 @@ public class Canvas : DrawnView, IGestureListener
     /// </summary>
     public virtual void EnableUpdates()
     {
-        UpdateLocked = false;
+        UpdateLocks = 0;
         NeedCheckParentVisibility = true;
         Update();
     }
@@ -708,7 +708,7 @@ public class Canvas : DrawnView, IGestureListener
     /// </summary>
     public virtual void DisableUpdates()
     {
-        UpdateLocked = true;
+        UpdateLocks ++;
     }
 
 

@@ -1228,11 +1228,11 @@ namespace DrawnUi.Maui.Draw
             }
         }
 
-        public bool UpdateLocked { get; set; }
+        public bool UpdateLocks { get; set; }
 
         public void LockUpdate(bool value)
         {
-            UpdateLocked = value;
+            UpdateLocks = value;
         }
 
         private void Init()
@@ -4067,7 +4067,7 @@ namespace DrawnUi.Maui.Draw
                 Draw(context, destination, scale);
             }
 
-            //UpdateLocked = false;
+            //UpdateLocks = false;
 
             OnAfterDrawing(context, destination, scale);
 
@@ -4339,7 +4339,7 @@ namespace DrawnUi.Maui.Draw
                 || IsDisposed || Parent == null)
                 return;
 
-            if (!Parent.UpdateLocked)
+            if (!Parent.UpdateLocks)
             {
                 Parent.Update();
             }
@@ -4883,7 +4883,7 @@ namespace DrawnUi.Maui.Draw
             NeedUpdateFrontCache = true;
             NeedUpdate = true;
 
-            if (UpdateLocked)
+            if (UpdateLocks)
                 return;
 
             if (IsParentIndependent)
@@ -5110,14 +5110,14 @@ namespace DrawnUi.Maui.Draw
 
         public virtual void InvalidateWithChildren()
         {
-            UpdateLocked = true;
+            UpdateLocks = true;
 
             foreach (var view in Views) //will crash? why adapter nor used??
             {
                 InvalidateChildren(view as SkiaControl);
             }
 
-            UpdateLocked = false;
+            UpdateLocks = false;
 
             InvalidateInternal();
         }

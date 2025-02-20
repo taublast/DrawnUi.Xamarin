@@ -26,7 +26,7 @@ namespace DrawnUi.Maui.Views
 
             //Debug.WriteLine($"[DRAW] {Tag}");
 
-            if (IsDisposed || UpdateLocked)
+            if (IsDisposed || UpdateLocks>0)
             {
                 return;
             }
@@ -873,7 +873,7 @@ namespace DrawnUi.Maui.Views
         }
 
         /// <summary>
-        /// Set this to true if you do not want the canvas to be redrawn as transparent and showing content below the canvas (splash?..) when UpdateLocked is True
+        /// Set this to true if you do not want the canvas to be redrawn as transparent and showing content below the canvas (splash?..) when UpdateLocks is True
         /// </summary>
         public bool StopDrawingWhenUpdateIsLocked { get; set; }
 
@@ -1107,16 +1107,16 @@ namespace DrawnUi.Maui.Views
             }
         }
 
-        public static readonly BindableProperty UpdateLockedProperty = BindableProperty.Create(
-            nameof(UpdateLocked),
-            typeof(bool),
+        public static readonly BindableProperty UpdateLocksProperty = BindableProperty.Create(
+            nameof(UpdateLocks),
+            typeof(int),
             typeof(DrawnView),
-            false);
+            0);
 
-        public bool UpdateLocked
+        public int UpdateLocks
         {
-            get { return (bool)GetValue(UpdateLockedProperty); }
-            set { SetValue(UpdateLockedProperty, value); }
+            get { return (int)GetValue(UpdateLocksProperty); }
+            set { SetValue(UpdateLocksProperty, value); }
         }
 
 

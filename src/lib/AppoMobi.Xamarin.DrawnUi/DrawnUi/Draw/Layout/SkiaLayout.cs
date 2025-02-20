@@ -891,6 +891,7 @@ namespace DrawnUi.Maui.Draw
 
             try
             {
+                //LockUpdate(true);
 
                 IsMeasuring = true;
 
@@ -941,6 +942,8 @@ namespace DrawnUi.Maui.Draw
             }
             finally
             {
+                //LockUpdate(false);
+
                 IsMeasuring = false;
             }
 
@@ -988,6 +991,8 @@ namespace DrawnUi.Maui.Draw
             {
                 return;
             }
+
+            LockUpdate(true);
 
             if (Type == LayoutType.Grid || IsStack)
             {
@@ -1037,6 +1042,8 @@ namespace DrawnUi.Maui.Draw
                 _trackWasDrawn = true;
                 OnAppeared();
             }
+
+            LockUpdate(false);
         }
 
         public override void OnDisposing()

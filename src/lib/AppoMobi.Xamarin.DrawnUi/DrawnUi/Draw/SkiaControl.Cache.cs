@@ -505,7 +505,7 @@ CachedObject reuseSurfaceFrom,
 					RenderObject = RenderObjectPreparing;
 					_renderObjectPreparing = null;
 
-					if (Parent != null && !Parent.UpdateLocked)
+					if (Parent != null && !Parent.UpdateLocks)
 					{
 						Parent?.UpdateByChild(this); //repaint us
 					}

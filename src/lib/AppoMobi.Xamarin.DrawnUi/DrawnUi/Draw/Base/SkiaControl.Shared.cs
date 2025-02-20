@@ -1363,11 +1363,33 @@ namespace DrawnUi.Maui.Draw
         }
 
 
-        public bool UpdateLocked { get; set; }
+        public int UpdateLocks { get; private set; }
+
+        public void UnlockUpdate()
+        {
+            LockUpdate(false);
+        }
+
+        private volatile bool _neededUpdate;
 
         public void LockUpdate(bool value)
         {
-            UpdateLocked = value;
+            bool fire = UpdateLocks > 0 && !value;
+            if (value)
+            {
+                UpdateLocks++;
+            }
+            else
+            {
+                if (UpdateLocks > 0)
+                {
+                    UpdateLocks--;
+                }
+            }
+            if (fire && _neededUpdate)
+            {
+                UpdateInternal();
+            }
         }
 
         private void Init()
@@ -4223,7 +4245,7 @@ namespace DrawnUi.Maui.Draw
                 Draw(context, destination, scale);
             }
 
-            //UpdateLocked = false;
+            //UpdateLocks = false;
 
             OnAfterDrawing(context, destination, scale);
 
@@ -4493,10 +4515,7 @@ namespace DrawnUi.Maui.Draw
                 || IsDisposed || Parent == null)
                 return;
 
-            if (!Parent.UpdateLocked)
-            {
-                Parent?.UpdateByChild(this);
-            }
+            Parent?.UpdateByChild(this);
         }
 
         protected SKPaint _paintWithEffects = null;
@@ -5186,11 +5205,17 @@ namespace DrawnUi.Maui.Draw
             if (IsDisposing || IsDisposed)
                 return;
 
+            if (UpdateLocks > 0)
+            {
+                _neededUpdate = true;
+                return;
+            }
+
+            _neededUpdate = false;
+
             NeedUpdateFrontCache = true;
             NeedUpdate = true;
 
-            if (UpdateLocked)
-                return;
 
             if (!WillNotUpdateParent)
             {
@@ -5476,14 +5501,14 @@ namespace DrawnUi.Maui.Draw
 
         public virtual void InvalidateWithChildren()
         {
-            UpdateLocked = true;
+            LockUpdate(true);
 
             foreach (var view in Views) //will crash? why adapter nor used??
             {
                 InvalidateChildren(view as SkiaControl);
             }
 
-            UpdateLocked = false;
+            LockUpdate(false);
 
             InvalidateInternal();
         }

@@ -80,7 +80,7 @@ public partial class DrawnView
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool CheckCanDraw()
     {
-        if (UpdateLocked && StopDrawingWhenUpdateIsLocked)
+        if (UpdateLocks && StopDrawingWhenUpdateIsLocked)
             return false;
 
         return CanvasView != null
@@ -125,7 +125,7 @@ public partial class DrawnView
             return
                 CanvasView != null && this.HasHandler
                                    && IsDirty
-                                   && !(UpdateLocked && StopDrawingWhenUpdateIsLocked)
+                                   && !(UpdateLocks>0 && StopDrawingWhenUpdateIsLocked)
                                    && IsVisible && Super.EnableRendering;
         }
 
@@ -135,7 +135,7 @@ public partial class DrawnView
             IsDirty &&
             CanvasView != null && this.HasHandler
             && !CanvasView.IsDrawing
-            && !(UpdateLocked && StopDrawingWhenUpdateIsLocked)
+            && !(UpdateLocks>0 && StopDrawingWhenUpdateIsLocked)
             && IsVisible && Super.EnableRendering;
     }
 
